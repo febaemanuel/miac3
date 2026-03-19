@@ -9,16 +9,16 @@
         <div class="organograma-pagination-container">
             <div class="row organograma-row">
                 {% for organograma, tipos in organogramas.items() %}
-                    {% set primeiro_tipo = tipos.values()|list|first %}
-                    {% set primeiro_doc = primeiro_tipo[0] %}
+                    {% set primeiro_tipo = tipos.values()|list|first or [] %}
+                    {% set primeiro_doc = primeiro_tipo[0] if primeiro_tipo else None %}
                     <div class="col-md-3 mb-4 organograma-card-container">
     <div class="card organograma-card animate__animated animate__fadeInUp" 
          data-bs-toggle="modal" 
          data-bs-target="#modal{{ organograma|replace(' ', '') }}" 
          data-abrangencia="{{ abrangencia }}"
          data-organograma="{{ organograma|lower }}"
-         data-nome-completo="{{ primeiro_doc.nome_completo|default('', true)|lower }}"
-         {% if primeiro_doc.nome_completo %}title="{{ primeiro_doc.nome_completo }}"{% endif %}>
+         data-nome-completo="{{ (primeiro_doc.nome_completo if primeiro_doc else '')|lower }}"
+         {% if primeiro_doc and primeiro_doc.nome_completo %}title="{{ primeiro_doc.nome_completo }}"{% endif %}>
         <div class="card-body text-center">
             <i class="fas fa-sitemap icon-animate"></i>
             <h5 class="card-title">{{ organograma }}</h5>
@@ -89,7 +89,7 @@
                     <button class="btn btn-sm btn-outline-warning btn-favorito"
         data-id="{{ documento.id }}"
         data-nome="{{ documento.nome }}"
-        data-tipo="{{ documento.tipo }}"
+        data-tipo="{{ documento.tipo_documento }}"
         data-caminho="{{ documento.caminho }}">
     <i class="fas fa-star"></i> Favorito
 </button>

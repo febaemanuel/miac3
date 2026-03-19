@@ -994,7 +994,7 @@ $('#search-organograma').on('input', function () {
 
     $('.organograma-card').each(function () {
         let cardText = $(this).find('h5').text().toLowerCase();
-        let nomeCompleto = $(this).data('nome-completo'); // Já convertido para lowercase
+        let nomeCompleto = $(this).data('nome-completo') || ''; // Já convertido para lowercase
         if (cardText.includes(searchTerm) || nomeCompleto.includes(searchTerm)) {
             $(this).closest('.organograma-card-container').show();
             hasResults = true;
@@ -1299,19 +1299,27 @@ function initializePagination() {
             }
         }
 
+        // Clona os botões para remover listeners anteriores (evita stacking de handlers)
+        const prevOld = container.querySelector('.btn-pagination.prev');
+        const nextOld = container.querySelector('.btn-pagination.next');
+        const prevButton2 = prevOld.cloneNode(true);
+        const nextButton2 = nextOld.cloneNode(true);
+        prevOld.parentNode.replaceChild(prevButton2, prevOld);
+        nextOld.parentNode.replaceChild(nextButton2, nextOld);
+
         // Evento para o botão "Voltar"
-        container.querySelector('.btn-pagination.prev').addEventListener('click', () => {
+        prevButton2.addEventListener('click', () => {
             if (currentPage > 0) {
-                currentPage--; // Vai para a página anterior
+                currentPage--;
                 showPage(currentPage);
                 updateButtons();
             }
         });
 
         // Evento para o botão "Próximo"
-        container.querySelector('.btn-pagination.next').addEventListener('click', () => {
+        nextButton2.addEventListener('click', () => {
             if (currentPage < Math.ceil(totalCards / cardsPerPage) - 1) {
-                currentPage++; // Vai para a próxima página
+                currentPage++;
                 showPage(currentPage);
                 updateButtons();
             }

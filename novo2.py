@@ -693,6 +693,8 @@ def lista():
 # ========== NOVA ROTA PARA CARREGAR MODAL ========== #
 @app.route("/miac/carregar_documentos_modal", methods=["GET"])
 def carregar_documentos_modal():
+    if "username" not in session:
+        return jsonify({"error": "Não autenticado"}), 401
     organograma = request.args.get("organograma", "").strip()
     abrangencia = request.args.get("abrangencia", "HUWC").strip()
 
@@ -873,6 +875,8 @@ def estatisticas():
 
 @app.route("/miac/buscar2", methods=["GET"])
 def buscar2():
+    if "username" not in session:
+        return jsonify({"error": "Não autenticado"}), 401
     # Obter parâmetros de pesquisa
     nome = request.args.get("nome", "").strip()
     organograma = request.args.get("organograma", "").strip()
@@ -1306,6 +1310,8 @@ def documento_detalhes(doc_id):
 
 @app.route("/miac/publicados2", methods=["GET"])
 def publicados2():
+    if "username" not in session:
+        return redirect(url_for("login"))
     # Atualiza o status dos documentos antes de exibi-los
     atualizar_status_documentos()
 
@@ -1341,7 +1347,8 @@ def publicados2():
 
 @app.route("/miac/documento2/<int:doc_id>", methods=["GET"])
 def documento2_detalhes(doc_id):
-
+    if "username" not in session:
+        return redirect(url_for("login"))
     documento = db.session.get(Documento2, doc_id)
     if documento:
         documento_url = url_for(
