@@ -845,6 +845,7 @@ function atualizarResultados() {
     // Função para filtrar os documentos com base na abrangência
     function filterByAbrangencia(abrangencia) {
         currentAbrangencia = abrangencia;
+        sessionStorage.setItem("lastAbrangencia", abrangencia);
         $('#organograma-grid').html('<p>Carregando...</p>');
         $.ajax({
             url: "{{ url_for('buscar2') }}",
@@ -938,16 +939,18 @@ function searchDocuments(page = 1) {
     $.ajax({
         url: "{{ url_for('buscar2') }}",
         method: 'GET',
-        data: { 
-            nome, 
-            organograma, 
-            tipo_documento, 
-            abrangencia: currentAbrangencia, 
+        data: {
+            nome,
+            organograma,
+            tipo_documento,
+            abrangencia: currentAbrangencia,
             page: page,
-            apenas_complexo: apenas_complexo
+            apenas_complexo: apenas_complexo,
+            search_organograma: $('#search-organograma').val()
         },
         success: function (response) {
             $('#organograma-grid').html(response);
+            initializePagination();
         },
         error: function () {
             alert('Erro ao buscar documentos. Tente novamente.');
@@ -963,6 +966,7 @@ $('#limpar-filtros').on('click', function () {
     $('#nome').val('');
     $('#organograma').val('');
     $('#tipo_documento').val('');
+    $('#search-organograma').val('');
     $('#apenas-complexo').prop('checked', false);
     
     // Recupera os marcadores salvos
@@ -1249,7 +1253,7 @@ if (!$('.toast-container').length) {
 
 
 // Verificar se já foi visto antes
-if(localStorage.getItem('favoritosHighlightVisto') === 'true') {
+if(localStorage.getItem(VIEWED_KEY) === 'true') {
     $('#ver-favoritos').removeClass('btn-highlight-novo');
     $('.tooltip-novidade').remove();
 }
@@ -1363,17 +1367,10 @@ function initializePagination() {
 
     // ============= FIM DO NOVO CÓDIGO ============= //
 
-    // Salva a última abrangência selecionada na sessão
-    $('.abrangencia-navigation .btn').on('click', function () {
-        sessionStorage.setItem("lastAbrangencia", currentAbrangencia);
-    });
-
     // Garantia de abrangência na geração de relatórios
-    window.gerarRelatorio = function (organograma) {
-        if (!currentAbrangencia) {
-            currentAbrangencia = 'HUWC';
-        }
-        window.location.href = `/miac/gerar_relatorio/${currentAbrangencia}/${organograma}`;
+    window.gerarRelatorio = function (organograma, abrangencia) {
+        const ab = abrangencia || currentAbrangencia || 'HUWC';
+        window.location.href = `/miac/gerar_relatorio/${ab}/${organograma}`;
     };
 });
 </script>

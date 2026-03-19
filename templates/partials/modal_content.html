@@ -64,7 +64,8 @@
 // Filtro de documentos dentro do modal
 $(document).on('input', '#search-documentos{{ organograma }}', function() {
     let searchTerm = $(this).val().toLowerCase();
-    $('.document-list li').each(function() {
+    let container = $(this).closest('.modal-body');
+    container.find('.document-list li').each(function() {
         let docText = $(this).find('h5').text().toLowerCase();
         $(this).toggle(docText.includes(searchTerm));
     });
