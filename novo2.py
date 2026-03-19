@@ -12,19 +12,29 @@ from flask import (
     flash,
 )
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import or_
+from sqlalchemy import or_, inspect, JSON
+from sqlalchemy.ext.mutable import MutableList
 from dotenv import load_dotenv
-import PyPDF2
-import requests
+import fitz
+import json
+import logging
 import os
-import time
 import re
-from sqlalchemy import inspect
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
+import requests
+import time
+import traceback
+import unicodedata
+from datetime import datetime
 from io import BytesIO
+from werkzeug.utils import secure_filename
+
+import qrcode
 from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.colors import HexColor
+from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import cm
 from reportlab.platypus import (
     SimpleDocTemplate,
     Table,
@@ -33,39 +43,23 @@ from reportlab.platypus import (
     Spacer,
     Image,
 )
-from reportlab.lib.units import cm
-from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib.colors import HexColor
-from datetime import datetime
-from werkzeug.utils import secure_filename
-
-import qrcode
-from reportlab.lib.utils import ImageReader
-from io import BytesIO
-import tempfile
-from sqlalchemy.ext.mutable import MutableList
-from sqlalchemy import JSON
-from datetime import datetime
-import json
-import os
-from flask import flash, redirect, render_template, request, url_for
-import unicodedata
-
-# Configuração do Google Cloud Vision
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "google_credentials.json"
 
 load_dotenv()
 
-app = Flask(__name__)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger(__name__)
 
-app.secret_key = os.urandom(24)
+app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY") or os.urandom(24)
 
 db_host = os.getenv("DB_HOST")
 db_port = os.getenv("DB_PORT")
 db_user = os.getenv("DB_USER")
 db_password = os.getenv("DB_PASSWORD")
 db_name = os.getenv("DB_NAME")
+
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
+CHATGPT_API_KEY = os.getenv("CHATGPT_API_KEY", "")
 
 # Configuração do SQLAlchemy
 app.config["SQLALCHEMY_DATABASE_URI"] = (
@@ -163,9 +157,9 @@ def criar_banco_de_dados():
         ):
             # Cria todas as tabelas definidas nos modelos
             db.create_all()
-            print("Banco de dados e tabelas criados com sucesso!")
+            logger.info("Banco de dados e tabelas criados com sucesso!")
         else:
-            print("Banco de dados já existe.")
+            logger.info("Banco de dados já existe.")
 
 
 # Executa a função para criar o banco de dados
@@ -182,14 +176,74 @@ def login_user(username, password):
     return False
 
 
+DATE_FORMATS = ["%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y", "%d.%m.%Y"]
+
+
 def parse_data(data_str):
-    formatos = ["%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y", "%d.%m.%Y"]
-    for fmt in formatos:
+    """Retorna datetime a partir de string em qualquer formato suportado."""
+    for fmt in DATE_FORMATS:
         try:
             return datetime.strptime(data_str, fmt)
         except ValueError:
             continue
     raise ValueError(f"Formato de data inválido: {data_str}")
+
+def calcular_status(doc):
+    """Retorna dict com status, detalhes, cor e vencimento formatado para um documento."""
+    try:
+        if not doc.vencimento:
+            return {
+                "status": "Sem data",
+                "detalhes": "Sem data de vencimento",
+                "cor": "gray",
+                "vencimento": "N/A",
+            }
+
+        try:
+            data_vencimento = parse_data(doc.vencimento)
+        except ValueError:
+            return {
+                "status": "Inválido",
+                "detalhes": "Formato desconhecido",
+                "cor": "darkorange",
+                "vencimento": doc.vencimento,
+            }
+
+        hoje = datetime.now()
+
+        if data_vencimento >= hoje:
+            dias_restantes = (data_vencimento - hoje).days
+            return {
+                "status": "Atualizado",
+                "detalhes": f"Vence em {dias_restantes} dias",
+                "cor": "green",
+                "vencimento": data_vencimento.strftime("%d/%m/%Y"),
+            }
+        else:
+            dias_vencido = (hoje - data_vencimento).days
+            if dias_vencido < 30:
+                tempo = f"Há {dias_vencido} dias"
+            elif dias_vencido < 365:
+                meses = dias_vencido // 30
+                tempo = f"Há {meses} meses"
+            else:
+                anos = dias_vencido // 365
+                resto_meses = (dias_vencido % 365) // 30
+                tempo = f"Há {anos} anos e {resto_meses} meses"
+            return {
+                "status": "Vencido",
+                "detalhes": tempo,
+                "cor": "red",
+                "vencimento": data_vencimento.strftime("%d/%m/%Y"),
+            }
+    except Exception:
+        return {
+            "status": "Inválido",
+            "detalhes": "Data inválida",
+            "cor": "darkorange",
+            "vencimento": doc.vencimento if doc.vencimento else "N/A",
+        }
+
 
 @app.route("/miac/gerar_relatorio/<abrangencia>/<organograma>")
 def gerar_relatorio(abrangencia, organograma):
@@ -201,73 +255,6 @@ def gerar_relatorio(abrangencia, organograma):
 
         if not documentos:
             return "Nenhum documento encontrado para os critérios especificados", 404
-
-        # Função para calcular o status e o tempo restante/vencido
-        def calcular_status(doc):
-            try:
-                if doc.vencimento:
-                    # Tenta converter a data de vencimento em vários formatos
-                    data_vencimento = None
-                    formatos = ["%d/%m/%Y", "%Y-%m-%d", "%d.%m.%Y", "%d-%m-%Y"]
-
-                    for formato in formatos:
-                        try:
-                            data_vencimento = datetime.strptime(doc.vencimento, formato)
-                            break
-                        except ValueError:
-                            continue
-
-                    if data_vencimento is None:
-                        return {
-                            "status": "Inválido",
-                            "detalhes": "Formato desconhecido",
-                            "cor": "darkorange",
-                            "vencimento": doc.vencimento if doc.vencimento else "N/A",
-                        }
-
-                    hoje = datetime.now()
-
-                    if data_vencimento >= hoje:
-                        dias_restantes = (data_vencimento - hoje).days
-                        return {
-                            "status": "Atualizado",
-                            "detalhes": f"Vence em {dias_restantes} dias",
-                            "cor": "green",
-                            "vencimento": data_vencimento.strftime("%d/%m/%Y"),
-                        }
-                    else:
-                        dias_vencido = (hoje - data_vencimento).days
-
-                        if dias_vencido < 30:
-                            tempo = f"Há {dias_vencido} dias"
-                        elif dias_vencido < 365:
-                            meses = dias_vencido // 30
-                            tempo = f"Há {meses} meses"
-                        else:
-                            anos = dias_vencido // 365
-                            resto_meses = (dias_vencido % 365) // 30
-                            tempo = f"Há {anos} anos e {resto_meses} meses"
-
-                        return {
-                            "status": "Vencido",
-                            "detalhes": tempo,
-                            "cor": "red",
-                            "vencimento": data_vencimento.strftime("%d/%m/%Y"),
-                        }
-                else:
-                    return {
-                        "status": "Sem data",
-                        "detalhes": "Sem data de vencimento",
-                        "cor": "gray",
-                        "vencimento": "N/A",
-                    }
-            except Exception as e:
-                return {
-                    "status": "Inválido",
-                    "detalhes": "Data inválida",
-                    "cor": "darkorange",
-                    "vencimento": doc.vencimento if doc.vencimento else "N/A",
-                }
 
         # Ordenação: primeiro por tipo de documento (A-Z), depois vencidos por último dentro do tipo
         documentos_ordenados = sorted(
@@ -756,8 +743,7 @@ def gerar_relatorio(abrangencia, organograma):
         )
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        logger.exception("Erro ao gerar relatório")
         return f"Erro ao gerar relatório: {str(e)}", 500
 
 
@@ -767,7 +753,7 @@ def add_watermark(canvas, doc):
     # Verifique se a imagem de fundo existe
     marca_fundo_path = os.path.join("static", "marca_fundo.png")
     if not os.path.exists(marca_fundo_path):
-        print(f"Erro: A imagem {marca_fundo_path} não foi encontrada.")
+        logger.warning("Imagem de fundo %s não encontrada.", marca_fundo_path)
     else:
         canvas.setFillAlpha(0.05)
         canvas.drawImage(
@@ -783,7 +769,7 @@ def add_watermark(canvas, doc):
     # Verifique se a imagem do cabeçalho existe
     marca_cabecalho_path = os.path.join("static", "marca_cabecalho.png")
     if not os.path.exists(marca_cabecalho_path):
-        print(f"Erro: A imagem {marca_cabecalho_path} não foi encontrada.")
+        logger.warning("Imagem de cabeçalho %s não encontrada.", marca_cabecalho_path)
     else:
         canvas.setFillAlpha(1.0)
         canvas.drawImage(
@@ -1014,27 +1000,6 @@ def estatisticas():
         else:
             stats["por_marcador"][marcador]["desatualizados"] += 1
 
-    # Verifica notificações
-    def verificar_vencimentos():
-        documentos = Documento2.query.filter(Documento2.vencimento.isnot(None)).all()
-        notificacoes = []
-        for doc in documentos:
-            try:
-                data_vencimento = parse_data(doc.vencimento).date()
-                hoje = datetime.now().date()
-                dias_restantes = (data_vencimento - hoje).days
-                if dias_restantes <= 30 and dias_restantes >= 0:
-                    notificacoes.append(
-                        f"Documento '{doc.nome}' vence em {dias_restantes} dias."
-                    )
-                elif dias_restantes < 0:
-                    notificacoes.append(
-                        f"Documento '{doc.nome}' está vencido há {-dias_restantes} dias."
-                    )
-            except ValueError:
-                continue
-        return notificacoes
-
     notificacoes = verificar_vencimentos()
 
     # Identifica documentos com erro
@@ -1052,6 +1017,24 @@ def estatisticas():
             Documento2.tipo_documento
         ).distinct(),
     )
+
+
+def verificar_vencimentos():
+    """Retorna lista de notificações sobre documentos vencidos ou próximos do vencimento."""
+    documentos = Documento2.query.filter(Documento2.vencimento.isnot(None)).all()
+    notificacoes = []
+    for doc in documentos:
+        try:
+            data_vencimento = parse_data(doc.vencimento).date()
+            hoje = datetime.now().date()
+            dias_restantes = (data_vencimento - hoje).days
+            if 0 <= dias_restantes <= 30:
+                notificacoes.append(f"Documento '{doc.nome}' vence em {dias_restantes} dias.")
+            elif dias_restantes < 0:
+                notificacoes.append(f"Documento '{doc.nome}' está vencido há {-dias_restantes} dias.")
+        except ValueError:
+            continue
+    return notificacoes
 
 
 def identificar_documentos_com_erro():
@@ -1083,10 +1066,6 @@ def identificar_documentos_com_erro():
             documentos_com_erro.append({"documento": documento, "erros": erros})
 
     return documentos_com_erro
-
-
-import unicodedata
-from flask import request, render_template
 
 
 @app.route("/miac/buscar2", methods=["GET"])
@@ -1215,10 +1194,6 @@ def index():
     return render_template("index.html", documentos=documentos)
 
 
-from google.cloud import vision
-import fitz
-
-
 def read_last_page(file_path):
     """
     Versão simplificada que:
@@ -1237,7 +1212,7 @@ def read_last_page(file_path):
         return cleaned_text if cleaned_text.strip() else None
 
     except Exception as e:
-        print(f"Erro crítico: {str(e)}")
+        logger.error("Erro ao ler última página do PDF: %s", e)
         return None
     finally:
         if "doc" in locals():
@@ -1266,12 +1241,10 @@ def send_to_deepseek_with_retry(prompt, api_key, retries=3, delay=2):
             if response.status_code == 200:
                 return response.json()["choices"][0]["message"]["content"]
             else:
-                print(
-                    f"Tentativa {i+1} falhou. Erro: {response.status_code}, {response.text}"
-                )
+                logger.warning("DeepSeek tentativa %d falhou: %s %s", i + 1, response.status_code, response.text)
 
         except Exception as e:
-            print(f"Tentativa {i+1} falhou. Erro ao comunicar com o DeepSeek: {e}")
+            logger.warning("DeepSeek tentativa %d falhou: %s", i + 1, e)
 
         time.sleep(delay)
     return None
@@ -1293,11 +1266,9 @@ def send_to_gpt_with_retry(prompt, api_key, retries=3, delay=2):
             if response.status_code == 200:
                 return response.json()["choices"][0]["message"]["content"]
             else:
-                print(
-                    f"Tentativa {i+1} falhou. Erro: {response.status_code}, {response.text}"
-                )
+                logger.warning("ChatGPT tentativa %d falhou: %s %s", i + 1, response.status_code, response.text)
         except Exception as e:
-            print(f"Tentativa {i+1} falhou. Erro ao comunicar com o ChatGPT: {e}")
+            logger.warning("ChatGPT tentativa %d falhou: %s", i + 1, e)
         time.sleep(delay)
     return None
 
@@ -1380,9 +1351,9 @@ def obter_dados():
                     )
 
                     if modelo_ia == "deepseek":
-                        gpt_response = send_to_deepseek_with_retry(prompt, deepseek_api_key)
+                        gpt_response = send_to_deepseek_with_retry(prompt, DEEPSEEK_API_KEY)
                     elif modelo_ia == "chatgpt":
-                        gpt_response = send_to_gpt_with_retry(prompt, chatgpt_api_key)
+                        gpt_response = send_to_gpt_with_retry(prompt, CHATGPT_API_KEY)
                     else:
                         return jsonify({"error": "Modelo de IA inválido"}), 400
 
@@ -1461,25 +1432,19 @@ def obter_dados():
                         try:
                             os.remove(file_path)
                         except Exception as e:
-                            print(f"Erro ao remover arquivo temporário: {e}")
+                            logger.warning("Erro ao remover arquivo temporário: %s", e)
 
         return jsonify(resultados)
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        logger.exception("Erro ao processar arquivos")
         return jsonify({"error": f"Erro ao processar arquivos: {str(e)}"}), 500
 
 
 
 def converter_data(data):
-    formatos = ["%Y-%m-%d", "%d/%m/%Y"]
-    for formato in formatos:
-        try:
-            return datetime.strptime(data, formato).date()
-        except ValueError:
-            continue
-    raise ValueError(f"Formato de data inválido: {data}")
+    """Retorna date object a partir de string."""
+    return parse_data(data).date()
 
 
 def atualizar_status_documentos():
@@ -1490,7 +1455,7 @@ def atualizar_status_documentos():
                 data_vencimento = converter_data(documento.vencimento)
                 documento.atualizado = data_vencimento >= datetime.now().date()
             except ValueError as e:
-                print(f"Erro ao converter data: {e}")
+                logger.warning("Erro ao converter data do documento %d: %s", documento.id, e)
 
     db.session.commit()
 
@@ -1539,9 +1504,7 @@ def publicar2():
 
         # Verifica se o número de títulos corresponde ao número de arquivos
         if len(titulos) != len(files):
-            print(
-                f"Erro: Número de títulos ({len(titulos)}) não corresponde ao número de arquivos ({len(files)})"
-            )
+            logger.warning("Número de títulos (%d) não corresponde ao número de arquivos (%d)", len(titulos), len(files))
             return (
                 jsonify(
                     {
@@ -1642,18 +1605,13 @@ def publicar2():
         # Salva as alterações no banco de dados
         db.session.commit()
 
-        print("\n=== LOG DE PUBLICAÇÃO ===")
         for log in log_detalhado:
-            print(log)
-        print("=========================\n")
+            logger.info("Publicação: %s", log)
 
         return jsonify({"message": "Documentos publicados com sucesso!"})
 
     except Exception as e:
-        import traceback
-
-        erro_detalhado = traceback.format_exc()
-        print(f"Erro ao publicar documentos:\n{erro_detalhado}")
+        logger.exception("Erro ao publicar documentos")
         return (
             jsonify({"error": f"Erro ao publicar documentos. Detalhes: {str(e)}"}),
             500,
@@ -1834,22 +1792,16 @@ def gerenciar_marcadores():
 
 @app.route("/miac/editar_documento2/<int:doc_id>", methods=["GET", "POST"])
 def editar_documento2(doc_id):
-    print(f"\n=== INÍCIO editar_documento2 para doc_id={doc_id} ===")
-
     # Verificação de autenticação e autorização
     if "username" not in session or session.get("nivel_acesso") != "elevado":
-        print("Acesso negado - usuário não autenticado ou sem privilégios")
         return redirect(url_for("login"))
 
     documento = db.session.get(Documento2, doc_id)
     if not documento:
-        print(f"Documento {doc_id} não encontrado")
         return "Documento não encontrado", 404
 
     if request.method == "POST":
         try:
-            print("\nProcessando POST...")
-            print(f"Dados do formulário: {request.form}")
 
             # Atualização dos campos básicos
             documento.nome = request.form.get("nome", documento.nome)
@@ -1875,90 +1827,54 @@ def editar_documento2(doc_id):
             # Processamento de novo arquivo PDF
             if "novo_pdf" in request.files and request.files["novo_pdf"].filename != "":
                 novo_pdf = request.files["novo_pdf"]
-                print(f"\nNovo PDF recebido: {novo_pdf.filename}")
 
                 if novo_pdf.filename.lower().endswith(".pdf"):
                     # Inicialização do histórico
                     if documento.historico_versoes is None:
-                        print("Inicializando histórico como MutableList vazio")
                         documento.historico_versoes = MutableList()
                     elif not isinstance(documento.historico_versoes, MutableList):
-                        print("Convertendo histórico para MutableList")
                         documento.historico_versoes = MutableList(
                             documento.historico_versoes
                         )
 
                     # Criação da nova entrada no histórico
                     historico_entry = {
-                        "versao": (
-                            documento.versao_atual
-                            if documento.versao_atual is not None
-                            else 1
-                        ),
+                        "versao": documento.versao_atual if documento.versao_atual is not None else 1,
                         "caminho": documento.caminho,
                         "data": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
                         "responsavel": session["username"],
-                        "nome_arquivo": (
-                            os.path.basename(documento.caminho)
-                            if documento.caminho
-                            else None
-                        ),
+                        "nome_arquivo": os.path.basename(documento.caminho) if documento.caminho else None,
                     }
-                    print(f"Nova entrada de histórico: {historico_entry}")
 
-                    # Adição ao histórico
+                    # Adição ao histórico e atualização da versão
                     documento.historico_versoes.append(historico_entry)
-                    print(f"Histórico após adição: {documento.historico_versoes}")
-
-                    # Atualização da versão
-                    versao_anterior = documento.versao_atual
-                    documento.versao_atual = (
-                        documento.versao_atual
-                        if documento.versao_atual is not None
-                        else 1
-                    ) + 1
-                    print(
-                        f"Versão atualizada: {versao_anterior} -> {documento.versao_atual}"
-                    )
+                    documento.versao_atual = (documento.versao_atual or 1) + 1
 
                     # Salvamento do novo arquivo
-                    file_name = (
-                        f"doc_{doc_id}_v{documento.versao_atual}_{int(time.time())}.pdf"
-                    )
+                    file_name = f"doc_{doc_id}_v{documento.versao_atual}_{int(time.time())}.pdf"
                     file_path = os.path.join(UPLOAD_FOLDER2, file_name)
                     novo_pdf.save(file_path)
-                    print(f"Arquivo salvo em: {file_path}")
+                    logger.info("Novo PDF do documento %d salvo em %s", doc_id, file_path)
 
                     # Atualização dos caminhos
                     documento.pdf_antigo = documento.caminho
                     documento.caminho = file_path.replace("\\", "/")
                     documento.data_atualizacao = datetime.now()
-                    print(f"Caminhos atualizados. Novo caminho: {documento.caminho}")
 
             # Commit das alterações
             db.session.commit()
-            print("Commit no banco de dados realizado com sucesso")
             flash("Documento atualizado com sucesso!", "success")
             return redirect(url_for("documento2_detalhes", doc_id=doc_id))
 
         except Exception as e:
             db.session.rollback()
-            print(f"\nERRO durante a atualização: {str(e)}")
-            import traceback
-
-            traceback.print_exc()
+            logger.exception("Erro ao atualizar documento %d", doc_id)
             flash(f"Erro ao atualizar documento: {str(e)}", "error")
             return redirect(url_for("editar_documento2", doc_id=doc_id))
 
     # Preparação dos dados para o template (GET)
-    print("\nPreparando dados para visualização (GET)")
-
-    # Tratamento do histórico para exibição
     historico = []
     if documento.historico_versoes:
-        print(f"Tipo do histórico: {type(documento.historico_versoes)}")
-
-        # Conversão para lista comum se necessário
         if isinstance(documento.historico_versoes, (MutableList, list)):
             historico = list(documento.historico_versoes)
         elif isinstance(documento.historico_versoes, str):
@@ -1967,52 +1883,35 @@ def editar_documento2(doc_id):
             except json.JSONDecodeError:
                 historico = []
 
-    # Ordenação do histórico
     try:
-        print("Ordenando histórico...")
         historico_ordenado = sorted(
             [h for h in historico if isinstance(h, dict) and "versao" in h],
             key=lambda x: x["versao"],
             reverse=True,
         )
-        print(f"Histórico ordenado: {len(historico_ordenado)} entradas")
     except Exception as e:
-        print(f"Erro ao ordenar histórico: {str(e)}")
+        logger.warning("Erro ao ordenar histórico do documento %d: %s", doc_id, e)
         historico_ordenado = []
 
-    # Preparação dos dados para o template
     dados_template = {
         "documento": documento,
-        "versao_efetiva": (
-            documento.versao_atual if documento.versao_atual is not None else 1
-        ),
+        "versao_efetiva": documento.versao_atual if documento.versao_atual is not None else 1,
         "historico_efetivo": historico_ordenado,
         "data_elaboracao": formatar_data_para_input(documento.data_elaboracao),
         "vencimento": formatar_data_para_input(documento.vencimento),
     }
 
-    print(f"\nDados enviados para o template:")
-    print(f"Versão efetiva: {dados_template['versao_efetiva']}")
-    print(f"Quantidade de entradas no histórico: {len(historico_ordenado)}")
-    print("=== FIM editar_documento2 ===")
-
     return render_template("editar_documento2.html", **dados_template)
 
 
 def formatar_data_para_input(data_str):
-    """Converte datas no formato dd/mm/yyyy para yyyy-mm-dd (input type='date')"""
+    """Converte data para formato yyyy-mm-dd (input type='date')."""
     if not data_str:
         return ""
-
     try:
-        if "/" in data_str:
-            return datetime.strptime(data_str, "%d/%m/%Y").strftime("%Y-%m-%d")
-        elif "-" in data_str:
-            return data_str.split()[0]  # Assume formato yyyy-mm-dd
+        return parse_data(data_str).strftime("%Y-%m-%d")
     except ValueError:
         return ""
-
-    return data_str
 
 
 @app.route("/miac/restaurar_versao/<int:doc_id>/<int:versao>", methods=["POST"])
@@ -2139,5 +2038,5 @@ if __name__ == "__main__":
         if not inspector.has_table("documento2"):
             db.create_all()
 
-    print("Rodando")
+    logger.info("Iniciando servidor na porta 8090")
     serve(app, host="0.0.0.0", port=8090)
