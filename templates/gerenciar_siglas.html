@@ -148,7 +148,7 @@
                                 {% for sigla in siglas %}
                                 <tr>
                                     <td><strong>{{ sigla.organograma }}</strong></td>
-                                    <td>{{ sigla.nome_completo if sigla.nome_completo else '<span class="text-muted">Não definido</span>'|safe }}</td>
+                                    <td>{{ sigla.nome_completo if sigla.nome_completo else 'Não definido' }}</td>
                                     <td class="text-center">
                                         <span class="badge bg-primary rounded-pill">
                                             {{ sigla.total_documentos }}
