@@ -939,30 +939,6 @@ function atualizarFiltros(response) {
 }
 
 
-    $(document).ready(function () {
-    let currentAbrangencia = 'HUWC'; // Define um valor padrão
-
-    // Função para filtrar os documentos com base na abrangência
-    function filterByAbrangencia(abrangencia) {
-    currentAbrangencia = abrangencia;
-    $('#organograma-grid').html('<p>Carregando...</p>');
-    $.ajax({
-        url: "{{ url_for('buscar2') }}",
-        method: 'GET',
-        data: { abrangencia: abrangencia },
-        success: function (response) {
-            $('#organograma-grid').html(response);
-            // Reaplica a paginação após carregar os documentos
-            initializePagination();
-            // Preservar os marcadores
-            sessionStorage.setItem("marcadores", $('#organograma-grid').html());
-        },
-        error: function () {
-            alert('Erro ao buscar documentos. Tente novamente.');
-        }
-    });
-}
-
     // Evento de clique nos botões HUWC e MEAC
     $('#btn-huwc').on('click', function () {
         filterByAbrangencia('HUWC');
@@ -1030,7 +1006,6 @@ $('#limpar-filtros').on('click', function () {
         let page = $(this).attr('href').split('page=')[1];
         searchDocuments(page);
     });
-});
 
     // Fechar outros accordions ao abrir um
     $('.accordion-button').on('click', function () {
