@@ -379,9 +379,11 @@
                 <a href="{{ url_for('documento2_detalhes', doc_id=documento.id) }}" class="btn btn-secondary">
                     <i class="fas fa-times"></i> Cancelar
                 </a>
-                <a href="{{ url_for('excluir_documento', doc_id=documento.id, tipo='documento2') }}" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja excluir este documento e todas suas versões?');">
-                    <i class="fas fa-trash"></i> Excluir
-                </a>
+                <form method="POST" action="{{ url_for('excluir_documento', doc_id=documento.id, tipo='documento2') }}" style="display:inline" onsubmit="return confirm('Tem certeza que deseja excluir este documento e todas suas versões?')">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Excluir
+                    </button>
+                </form>
             </div>
         </form>
     </div>

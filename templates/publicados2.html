@@ -696,8 +696,8 @@ h1.titulo-meac::before {
 
     <!-- Botões HUWC e MEAC -->
     <div class="abrangencia-navigation mb-4">
-        <button class="btn btn-primary w-100 mb-2" id="btn-huwc" onclick="filterByAbrangencia('HUWC')">HUWC E CH</button>
-        <button class="btn btn-primary w-100" id="btn-meac" onclick="filterByAbrangencia('MEAC')">MEAC</button>
+        <button class="btn btn-primary w-100 mb-2" id="btn-huwc">HUWC E CH</button>
+        <button class="btn btn-primary w-100" id="btn-meac">MEAC</button>
     </div>
 
     <ul>
@@ -900,15 +900,6 @@ function atualizarResultados() {
         }
     }
 
-$('#limpar-filtros').on('click', function () {
-    $('#nome').val('');
-    $('#organograma').val('');
-    $('#tipo_documento').val('');
-    
-    filterByAbrangencia(currentAbrangencia);
-});
-
-
 function atualizarFiltros(response) {
     const organogramas = new Set();
     const tiposDocumentos = new Set();
@@ -936,20 +927,6 @@ function atualizarFiltros(response) {
         $('#tipo_documento').append(`<option value="${tipo}">${tipo}</option>`);
     });
 }
-
-
-    // Evento de clique nos botões HUWC e MEAC
-    $('#btn-huwc').on('click', function () {
-        filterByAbrangencia('HUWC');
-        $(this).addClass('active');
-        $('#btn-meac').removeClass('active');
-    });
-
-    $('#btn-meac').on('click', function () {
-        filterByAbrangencia('MEAC');
-        $(this).addClass('active');
-        $('#btn-huwc').removeClass('active');
-    });
 
 
 function searchDocuments(page = 1) {
@@ -1092,19 +1069,6 @@ $('#search-organograma').on('input', function () {
         // Filtra os documentos com base no termo de pesquisa
         filterDocumentsInModal(modalId, searchTerm);
     });
-
-    // Ajusta a navegação da abrangência ao carregar a página
-    if (sessionStorage.getItem("lastAbrangencia")) {
-        currentAbrangencia = sessionStorage.getItem("lastAbrangencia");
-        filterByAbrangencia(currentAbrangencia);
-        if (currentAbrangencia === 'HUWC') {
-            $('#btn-huwc').addClass('active');
-            $('#btn-meac').removeClass('active');
-        } else {
-            $('#btn-meac').addClass('active');
-            $('#btn-huwc').removeClass('active');
-        }
-    }
 
 // ========== FAVORITOS - LOCALSTORAGE ==========
 
@@ -1284,22 +1248,11 @@ if (!$('.toast-container').length) {
 }
 
 
-// Remover o destaque depois que o usuário clicar
-$('#ver-favoritos').on('click', function() {
-    $(this).removeClass('btn-highlight-novo');
-    $(this).find('.tooltip-novidade').remove();
-    
-    // Salvar no localStorage que o usuário já viu
-    localStorage.setItem('favoritosHighlightVisto', 'true');
-});
-
 // Verificar se já foi visto antes
-$(document).ready(function() {
-    if(localStorage.getItem('favoritosHighlightVisto') === 'true') {
-        $('#ver-favoritos').removeClass('btn-highlight-novo');
-        $('.tooltip-novidade').remove();
-    }
-});
+if(localStorage.getItem('favoritosHighlightVisto') === 'true') {
+    $('#ver-favoritos').removeClass('btn-highlight-novo');
+    $('.tooltip-novidade').remove();
+}
 
 function initializePagination() {
     document.querySelectorAll('.organograma-pagination-container').forEach(container => {

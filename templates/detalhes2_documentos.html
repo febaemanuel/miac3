@@ -281,7 +281,7 @@
 
         <!-- Botões de Ação (movido para cima) -->
         <div class="btn-container">
-             <a href="/miac/static/uploads2/{{ documento.caminho.split('/')[-1] }}" class="btn btn-secondary" target="_blank">
+             <a href="{{ url_for('static', filename='uploads2/' + documento.caminho.split('/')[-1]) }}" class="btn btn-secondary" target="_blank">
                 <i class="fas fa-file-pdf"></i> Visualizar PDF
             </a>
             {% if nivel_acesso == 'elevado' %}

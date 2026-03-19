@@ -97,8 +97,9 @@ users = {
 # Executa a função para criar o banco de dados
 criar_banco_de_dados(app)
 
-# Função de login
-
+# ---------------------------------------------------------------------------
+# Helpers de autenticação
+# ---------------------------------------------------------------------------
 
 def login_user(username, password):
     if username in users and users[username]["senha"] == password:
@@ -108,8 +109,34 @@ def login_user(username, password):
     return False
 
 
+# ---------------------------------------------------------------------------
+# Helpers de consulta reutilizáveis
+# ---------------------------------------------------------------------------
+
+def _get_organogramas_formatados():
+    """Retorna lista de dicts {sigla, nome_completo} ordenada por nome."""
+    rows = db.session.query(Documento2.organograma, Documento2.nome_completo).distinct().all()
+    result = [{"sigla": r[0], "nome_completo": r[1]} for r in rows]
+    result.sort(key=lambda x: (x["nome_completo"] or x["sigla"] or "").lower())
+    return result
+
+
+def _agrupar_documentos(documentos):
+    """Agrupa lista de Documento2 em {marcador: {organograma: {tipo: [docs]}}}."""
+    agrupados = {}
+    for doc in documentos:
+        marcador = doc.marcador or "Sem Marcador"
+        agrupados.setdefault(marcador, {})
+        agrupados[marcador].setdefault(doc.organograma, {})
+        agrupados[marcador][doc.organograma].setdefault(doc.tipo_documento, [])
+        agrupados[marcador][doc.organograma][doc.tipo_documento].append(doc)
+    return agrupados
+
+
 @app.route("/miac/gerar_relatorio/<abrangencia>/<organograma>")
 def gerar_relatorio(abrangencia, organograma):
+    if "username" not in session:
+        return redirect(url_for("login"))
     try:
         # Consulta os documentos no banco de dados
         documentos = Documento2.query.filter_by(
@@ -631,9 +658,9 @@ def login():
     return render_template("login.html")
 
 
-@app.route("/miac/excluir_documento/<int:doc_id>/<tipo>", methods=["GET"])
+@app.route("/miac/excluir_documento/<int:doc_id>/<tipo>", methods=["POST"])
 def excluir_documento(doc_id, tipo):
-    if "username" not in session:
+    if "username" not in session or session.get("nivel_acesso") != "elevado":
         return redirect(url_for("login"))
 
     if tipo == "documento":
@@ -893,42 +920,18 @@ def buscar2():
                (doc.nome_completo and search_organograma in normalizar_texto(doc.nome_completo)))
         ]
 
-    documentos_agrupados = {}
-    if not (nome or organograma or tipo_documento or search_organograma or apenas_complexo):
-        for doc in documentos:
-            marcador = doc.marcador if doc.marcador else "Sem Marcador"
-            if marcador not in documentos_agrupados:
-                documentos_agrupados[marcador] = {}
-            if doc.organograma not in documentos_agrupados[marcador]:
-                documentos_agrupados[marcador][doc.organograma] = {}
-            if doc.tipo_documento not in documentos_agrupados[marcador][doc.organograma]:
-                documentos_agrupados[marcador][doc.organograma][doc.tipo_documento] = []
-            documentos_agrupados[marcador][doc.organograma][doc.tipo_documento].append(doc)
+    tem_filtro = bool(nome or organograma or tipo_documento or search_organograma or apenas_complexo)
+    documentos_agrupados = {} if tem_filtro else _agrupar_documentos(documentos)
 
-    # Buscar organogramas únicos
-    organogramas_completos = db.session.query(
-        Documento2.organograma,
-        Documento2.nome_completo
-    ).distinct().all()
-
-    organogramas_formatados = [
-        {"sigla": org[0], "nome_completo": org[1]} 
-        for org in organogramas_completos
-    ]
-    
-    # Ordenação corrigida
-    organogramas_formatados.sort(key=lambda x: (x["nome_completo"] or x["sigla"]).lower())
-
-    tipos_documento_unicos = set(doc.tipo_documento for doc in documentos if doc.tipo_documento)
-    tipos_documento = sorted(list(tipos_documento_unicos))
+    tipos_documento = sorted({doc.tipo_documento for doc in documentos if doc.tipo_documento})
 
     return render_template(
         "partials/document_list2.html",
         documentos_agrupados=documentos_agrupados,
         documentos=documentos,
-        exibir_lista=bool(nome or organograma or tipo_documento or search_organograma or apenas_complexo),
+        exibir_lista=tem_filtro,
         abrangencia=abrangencia,
-        organogramas=organogramas_formatados,
+        organogramas=_get_organogramas_formatados(),
         tipos_documento=tipos_documento,
         organograma_filtro=organograma,
         tipo_documento_filtro=tipo_documento
@@ -1283,6 +1286,8 @@ def static_files(filename):
 
 @app.route("/miac/documento/<int:doc_id>", methods=["GET"])
 def documento_detalhes(doc_id):
+    if "username" not in session:
+        return redirect(url_for("login"))
 
     documento = db.session.get(Documento, doc_id)
     if documento:
@@ -1321,54 +1326,13 @@ def publicados2():
     # Executar a query
     documentos = query.all()
 
-    # Agrupar documentos por marcador, organograma e tipo de documento
-    documentos_agrupados = {}
-    tipos_documento_unicos = set()
-
-    for documento in documentos:
-        # Verifica se o marcador existe; caso contrário, usa "Sem Marcador"
-        marcador = documento.marcador if documento.marcador else "Sem Marcador"
-
-        # Estrutura de agrupamento: {marcador: {organograma: {tipo_documento: [documentos]}}}
-        if marcador not in documentos_agrupados:
-            documentos_agrupados[marcador] = {}
-        if documento.organograma not in documentos_agrupados[marcador]:
-            documentos_agrupados[marcador][documento.organograma] = {}
-        if (
-            documento.tipo_documento
-            not in documentos_agrupados[marcador][documento.organograma]
-        ):
-            documentos_agrupados[marcador][documento.organograma][
-                documento.tipo_documento
-            ] = []
-        documentos_agrupados[marcador][documento.organograma][
-            documento.tipo_documento
-        ].append(documento)
-
-        # Adiciona valores únicos para tipos de documento
-        if documento.tipo_documento:
-            tipos_documento_unicos.add(documento.tipo_documento)
-
-    # Busca organogramas únicos COM nome_completo
-    organogramas_completos = db.session.query(
-        Documento2.organograma,
-        Documento2.nome_completo
-    ).distinct().all()
-
-    # Organiza em uma lista de dicionários e ordena por nome_completo ou sigla
-    organogramas_formatados = [
-        {"sigla": org[0], "nome_completo": org[1]} 
-        for org in organogramas_completos
-    ]
-    organogramas_formatados.sort(key=lambda x: (x["nome_completo"] or "").lower() or x["sigla"].lower())
-
-    # Converter conjunto de tipos de documento para lista ordenada
-    tipos_documento = sorted(list(tipos_documento_unicos))
+    documentos_agrupados = _agrupar_documentos(documentos)
+    tipos_documento = sorted({doc.tipo_documento for doc in documentos if doc.tipo_documento})
 
     return render_template(
         "publicados2.html",
         documentos_agrupados=documentos_agrupados,
-        organogramas=organogramas_formatados,
+        organogramas=_get_organogramas_formatados(),
         tipos_documento=tipos_documento,
         abrangencia_selecionada=abrangencia_selecionada,
         organograma_filtro=organograma_filtro,
@@ -1627,21 +1591,27 @@ def publicar2_page():
 
 @app.route("/miac/gerenciar_opcoes", methods=["GET", "POST"])
 def gerenciar_opcoes():
-    if "username" not in session:
+    if "username" not in session or session.get("nivel_acesso") != "elevado":
         return redirect(url_for("login"))
 
     if request.method == "POST":
         tipo = request.form.get("tipo")
-        nome = request.form.get("nome")
+        nome = request.form.get("nome", "").strip()
 
-        if tipo == "organograma":
-            novo_organograma = Organograma(nome=nome)
-            db.session.add(novo_organograma)
-        elif tipo == "tipo_documento":
-            novo_tipo_documento = TipoDocumento(nome=nome)
-            db.session.add(novo_tipo_documento)
+        if not nome:
+            flash("Nome não pode ser vazio.", "error")
+            return redirect(url_for("gerenciar_opcoes"))
 
-        db.session.commit()
+        try:
+            if tipo == "organograma":
+                db.session.add(Organograma(nome=nome))
+            elif tipo == "tipo_documento":
+                db.session.add(TipoDocumento(nome=nome))
+            db.session.commit()
+            flash("Item adicionado com sucesso!", "success")
+        except Exception:
+            db.session.rollback()
+            flash("Erro: item já existe ou dados inválidos.", "error")
         return redirect(url_for("gerenciar_opcoes"))
 
     organogramas = Organograma.query.all()
@@ -1656,13 +1626,13 @@ def gerenciar_opcoes():
 
 @app.route("/miac/remover_opcao/<int:id>/<tipo>")
 def remover_opcao(id, tipo):
-    if "username" not in session:
+    if "username" not in session or session.get("nivel_acesso") != "elevado":
         return redirect(url_for("login"))
 
     if tipo == "organograma":
-        opcao = Organograma.query.get(id)
+        opcao = db.session.get(Organograma, id)
     elif tipo == "tipo_documento":
-        opcao = TipoDocumento.query.get(id)
+        opcao = db.session.get(TipoDocumento, id)
 
     if opcao:
         db.session.delete(opcao)
