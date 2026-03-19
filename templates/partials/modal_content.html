@@ -1,0 +1,73 @@
+<div class="modal-search-bar mb-4">
+    <input type="text" id="search-documentos{{ organograma }}" 
+           placeholder="Buscar documentos..." class="form-control">
+</div>
+<div class="accordion" id="accordionTipos{{ organograma }}">
+    {% for tipo, documentos in documentos_por_tipo.items() %}
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingTipo{{ organograma }}_{{ loop.index }}">
+                <button class="accordion-button" type="button" 
+                        data-bs-toggle="collapse" 
+                        data-bs-target="#collapseTipo{{ organograma }}_{{ loop.index }}" 
+                        aria-expanded="true" 
+                        aria-controls="collapseTipo{{ organograma }}_{{ loop.index }}">
+                    <i class="fas fa-file me-2"></i> {{ tipo }}
+                </button>
+            </h2>
+            <div id="collapseTipo{{ organograma }}_{{ loop.index }}" 
+                 class="accordion-collapse collapse" 
+                 aria-labelledby="headingTipo{{ organograma }}_{{ loop.index }}" 
+                 data-bs-parent="#accordionTipos{{ organograma }}">
+                <div class="accordion-body">
+                    <ul class="document-list">
+                        {% for documento in documentos %}
+                            <li class="{% if documento.atualizado %}documento-atualizado{% else %}documento-desatualizado{% endif %}"
+                                data-abrangencia="{{ documento.abrangencia }}">
+                                <h5>{{ documento.nome }}</h5>
+                                <p>Publicado em: {{ documento.data_publicacao }}</p>
+                                <div class="document-btns">
+                                    <a href="{{ url_for('documento2_detalhes', doc_id=documento.id) }}" class="btn btn-primary">
+                                        <i class="fas fa-eye"></i> Acessar
+                                    </a>
+                                    <a href="/miac/static/uploads2/{{ documento.caminho.split('/')[-1] }}" class="btn btn-secondary" target="_blank">
+                                        <i class="fas fa-file-pdf"></i> Visualizar PDF
+                                    </a>
+									<button class="btn btn-sm btn-outline-warning btn-favorito"
+        data-id="{{ documento.id }}"
+        data-nome="{{ documento.nome }}"
+        data-tipo="{{ documento.tipo }}"
+        data-caminho="{{ documento.caminho }}">
+    <i class="fas fa-star"></i> Favorito
+</button>
+
+									</a>
+					{% if "CH." in documento.nome or "CHUFC." in documento.nome %}
+    <span class="badge-documento-complexo">DOCUMENTO DO COMPLEXO</span>
+{% endif %}
+                                </div>
+                                <span class="status-indicator">
+                                    {% if documento.atualizado %}
+                                        <i class="fas fa-check-circle"></i> Atualizado
+                                    {% else %}
+                                        <i class="fas fa-times-circle"></i> Desatualizado ({{ documento.vencimento | expired_duration }} atrás)
+                                    {% endif %}
+                                </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<script>
+// Filtro de documentos dentro do modal
+$(document).on('input', '#search-documentos{{ organograma }}', function() {
+    let searchTerm = $(this).val().toLowerCase();
+    $('.document-list li').each(function() {
+        let docText = $(this).find('h5').text().toLowerCase();
+        $(this).toggle(docText.includes(searchTerm));
+    });
+});
+</script>

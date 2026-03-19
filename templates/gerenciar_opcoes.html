@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Opções</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Gerenciar Opções</h1>
+
+        <form method="POST" class="mb-4">
+            <div class="mb-3">
+                <label for="tipo" class="form-label">Tipo</label>
+                <select class="form-select" id="tipo" name="tipo" required>
+                    <option value="organograma">Organograma</option>
+                    <option value="tipo_documento">Tipo de Documento</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="nome" class="form-label">Nome</label>
+                <input type="text" class="form-control" id="nome" name="nome" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Adicionar</button>
+        </form>
+
+        <h2>Organogramas</h2>
+        <ul class="list-group mb-4">
+            {% for organograma in organogramas %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ organograma.nome }}
+                    <a href="{{ url_for('remover_opcao', id=organograma.id, tipo='organograma') }}" class="btn btn-danger btn-sm">Remover</a>
+                </li>
+            {% endfor %}
+        </ul>
+
+        <h2>Tipos de Documento</h2>
+        <ul class="list-group">
+            {% for tipo in tipos_documento %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ tipo.nome }}
+                    <a href="{{ url_for('remover_opcao', id=tipo.id, tipo='tipo_documento') }}" class="btn btn-danger btn-sm">Remover</a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

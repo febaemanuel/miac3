@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Documentos Publicados</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+ <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+   <script src="/miac/static/js/jquery-3.6.0.min.js"></script>
+    <style>
+/* Estilos gerais */
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f8f9fa;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Modificações no sidebar */
+.sidebar {
+    width: 280px;
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+    color: #ecf0f1;
+    position: fixed;
+    height: 100vh; /* Ocupa 100% da altura da tela */
+    padding: 20px;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+    overflow-y: auto; /* Adiciona scroll vertical quando necessário */
+}
+
+/* Ajustes para telas pequenas */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        max-height: 70vh; /* Altura máxima com scroll */
+        overflow-y: auto;
+        margin-bottom: 20px;
+    }
+
+    .main-content {
+        margin-left: 0;
+        padding: 15px;
+    }
+
+    /* Garante que os elementos do sidebar sejam visíveis */
+    .sidebar ul {
+        display: flex;
+        flex-direction: column;
+        min-height: min-content;
+    }
+}
+
+/* Ajuste extra para itens do menu */
+.sidebar ul li {
+    margin: 10px 0;
+    flex-shrink: 0; /* Impede que os itens encolham */
+}
+
+/* Garante que a barra de pesquisa não quebre */
+.sidebar .search-bar {
+    flex-shrink: 0;
+}
+
+.sidebar h2 {
+    font-size: 1.6rem;
+    color: #ecf0f1;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(236, 240, 241, 0.3);
+    text-align: center;
+    font-weight: 500;
+}
+
+.sidebar ul {
+    padding: 0;
+    list-style: none;
+    margin: 0;
+}
+
+.sidebar ul li {
+    margin: 10px 0;
+}
+
+.sidebar ul li a {
+    text-decoration: none;
+    color: #ecf0f1;
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    padding: 10px 15px;
+    border-radius: 6px;
+    transition: background-color 0.3s ease;
+}
+
+.sidebar ul li a:hover {
+    background-color: rgba(236, 240, 241, 0.1);
+}
+
+.sidebar ul li a i {
+    margin-right: 10px;
+}
+/* ======== LISTA DE FAVORITOS ======== */
+
+#favoritos-lista {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+#favoritos-lista h5 {
+    font-size: 1.2rem;
+    color: #2c3e50;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 5px;
+    margin-bottom: 15px;
+}
+
+#favoritos-lista .list-group-item {
+    background-color: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    transition: all 0.2s ease-in-out;
+}
+
+#favoritos-lista .list-group-item:hover {
+    background-color: #f1f1f1;
+    transform: scale(1.01);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+#favoritos-lista strong {
+    font-weight: 600;
+    color: #333;
+}
+
+#favoritos-lista a {
+    color: #3498db;
+    text-decoration: none;
+    font-size: 0.95rem;
+}
+
+#favoritos-lista a:hover {
+    text-decoration: underline;
+}
+
+#favoritos-lista .btn-outline-danger {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+}
+
+#favoritos-lista .btn-outline-secondary,
+#favoritos-lista .btn-outline-danger {
+    min-width: 120px;
+}
+
+#favoritos-lista .btn i {
+    margin-right: 5px;
+}
+
+#favoritos-lista .alert-info {
+    background-color: #eef9ff;
+    border: 1px solid #bde5f8;
+    color: #31708f;
+}
+
+/* Botões Voltar e Limpar alinhados */
+#favoritos-lista .mt-4.d-flex {
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Barra de pesquisa e filtros */
+.sidebar .search-bar {
+    background-color: rgba(255, 255, 255, 0.05); 
+    border: 1px solid rgba(255, 255, 255, 0.1); 
+    border-radius: 8px;
+    padding: 10px; /* Reduzi o padding para suavizar a aparência */
+    margin-bottom: 20px;
+}
+
+.sidebar .search-bar .input-group {
+    margin-bottom: 10px;
+    display: flex; 
+    align-items: stretch;
+}
+
+.sidebar .search-bar .input-group-text {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid #ddd;
+    border-right: none;
+    color: #ecf0f1;
+    border-radius: 6px 0 0 6px;
+    padding: 10px; /* Ajuste o padding para centralizar o ícone */
+    display: flex;
+    align-items: center; /* Centraliza o ícone verticalmente */
+    justify-content: center;
+    width: 40px; /* Largura fixa para o ícone */
+    height: 38px; /* Altura fixa para o ícone */
+}
+
+.sidebar .search-bar .form-control {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    color: #333;
+    border-radius: 0 6px 6px 0;
+    padding: 8px; /* Ajuste o padding para alinhar com o ícone */
+    font-size: 0.95rem;
+    flex: 1;
+    height: 38px; /* Altura fixa para o input */
+}
+
+.sidebar .search-bar .form-control::placeholder {
+    color: #999;
+    font-size: 0.85rem; /* Fonte menor para o placeholder */
+}
+
+.sidebar .search-bar .form-control:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+}
+
+.sidebar .search-bar select {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    color: #333;
+    border-radius: 6px;
+    padding: 8px; /* Ajuste o padding para alinhar com o ícone */
+    width: 100%;
+    font-size: 0.95rem;
+    appearance: none;
+    height: 38px; /* Altura fixa para o select */
+}
+
+.sidebar .search-bar select:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+}
+
+.sidebar .search-bar button {
+    background-color: #3498db;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px;
+    width: 100%;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+}
+
+.sidebar .search-bar button:hover {
+    background-color: #2980b9;
+}
+
+/* Botão de limpar filtros */
+.sidebar .search-bar #limpar-filtros {
+    background-color: #e74c3c;
+    margin-top: 10px;
+}
+
+.sidebar .search-bar #limpar-filtros:hover {
+    background-color: #c0392b;
+}
+
+/* Estilos ajustados para os botões HUWC e MEAC na sidebar */
+.sidebar .abrangencia-navigation {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+#btn-huwc {
+    background-color: #007bff; /* Azul para HUWC */
+    border-color: #007bff;
+}
+
+#btn-huwc:hover {
+    background-color: #0056b3; /* Azul mais escuro ao passar o mouse */
+}
+
+#btn-meac {
+    background-color: #28a745; /* Verde para MEAC */
+    border-color: #28a745;
+}
+
+#btn-meac:hover {
+    background-color: #218838; /* Verde mais escuro ao passar o mouse */
+}
+
+.sidebar .abrangencia-navigation .btn {
+    width: 100%;
+    font-size: 1rem;
+    padding: 10px;
+    border-radius: 6px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.sidebar .abrangencia-navigation .btn:hover {
+    transform: translateY(-2px);
+}
+
+.sidebar .abrangencia-navigation .btn.active {
+    background-color: #0056b3; /* Azul mais escuro quando HUWC está ativo */
+    border-color: #0056b3;
+}
+
+#btn-meac.active {
+    background-color: #218838; /* Verde mais escuro quando MEAC está ativo */
+    border-color: #218838;
+}
+/* Estilo para o título quando HUWC está ativo */
+.titulo-huwc {
+    color: #007bff; /* Azul do HUWC */
+    text-shadow: 2px 2px 4px rgba(0, 123, 255, 0.3); /* Sombra azul */
+}
+
+/* Estilo para o título quando MEAC está ativo */
+.titulo-meac {
+    color: #28a745; /* Verde do MEAC */
+    text-shadow: 2px 2px 4px rgba(40, 167, 69, 0.3); /* Sombra verde */
+}
+
+/* Estilo especial pro item do menu "Favoritos" */
+.sidebar ul li a#ver-favoritos {
+    background-color: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+    font-weight: bold;
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.sidebar ul li a#ver-favoritos:hover {
+    background-color: rgba(255, 193, 7, 0.3);
+    color: #fff;
+}
+
+/* Conteúdo principal */
+.main-content {
+    margin-left: 280px;
+    padding: 25px;
+    flex-grow: 1;
+    background-color: #fff;
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.05);
+}
+
+h1 {
+    font-size: 2.5rem;
+    color: #2c3e50;
+    text-align: center;
+    margin-bottom: 30px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 10px;
+    border-bottom: 3px solid;
+}
+
+h1.titulo-huwc {
+    border-color: #007bff;
+    text-shadow: 2px 2px 5px rgba(0, 123, 255, 0.3);
+}
+
+h1.titulo-meac {
+    border-color: #28a745;
+    text-shadow: 2px 2px 5px rgba(40, 167, 69, 0.3);
+}
+
+h1::before {
+    content: '\f570'; /* Ícone de fatura (file-invoice) */
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    margin-right: 10px;
+    font-size: 2.2rem;
+}
+
+h1.titulo-huwc::before {
+    color: #007bff;
+}
+
+h1.titulo-meac::before {
+    color: #28a745;
+}
+
+
+/* Estilos para os botões de filtro */
+.btn-secondary {
+    background-color: #6c757d;
+    border: none;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+}
+
+/* Estilos responsivos para telas menores */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        padding: 20px;
+    }
+
+    .main-content {
+        margin-left: 0;
+        padding: 15px;
+    }
+}
+
+.btn-highlight-novo {
+    animation: pulseHighlight 1.5s infinite, bounce 2s infinite;
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.6);
+    position: relative;
+}
+
+@keyframes pulseHighlight {
+    0% { box-shadow: 0 0 5px rgba(255, 193, 7, 0.4); }
+    50% { box-shadow: 0 0 20px rgba(255, 193, 7, 0.8); }
+    100% { box-shadow: 0 0 5px rgba(255, 193, 7, 0.4); }
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+    40% {transform: translateY(-5px);}
+    60% {transform: translateY(-3px);}
+}
+
+/* Tooltip personalizado */
+.tooltip-novidade {
+    position: absolute;
+    top: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #ffc107;
+    color: #000;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    white-space: nowrap;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    animation: fadeInOut 3s ease-in-out infinite;
+}
+
+.tooltip-novidade:after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #ffc107;
+}
+
+@keyframes fadeInOut {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+}
+
+/* Estilos para a lista de documentos */
+.document-list {
+    list-style: none;
+    padding-left: 0;
+}
+
+.document-list li {
+    margin-bottom: 15px;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.document-list li:hover {
+    background-color: #e9ecef;
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.document-list h5 {
+    font-size: 1.1rem;
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.document-list p {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+
+.document-btns .btn {
+    margin-right: 10px;
+    font-size: 0.9rem;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.document-btns .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Estilos para o accordion */
+.accordion-button {
+    font-size: 1rem;
+    color: #4a4a4a;
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 12px 20px;
+    transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
+}
+
+.accordion-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: #f8f9fa;
+    color: #2c3e50;
+    box-shadow: none;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.accordion-button:focus {
+    box-shadow: none;
+}
+
+.accordion-button::after {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%232c3e50'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
+.accordion-button:not(.collapsed)::after {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%232c3e50'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
+.accordion-item {
+    border: none;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.accordion-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.accordion-body {
+    padding: 15px;
+}
+
+/* Estilos para a barra de pesquisa no modal */
+.modal-search-bar {
+    margin-bottom: 20px;
+}
+
+.modal-search-bar input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        padding: 10px;
+    }
+
+    .main-content {
+        margin-left: 0;
+        padding: 15px;
+    }
+
+    .organograma-card {
+        height: auto;
+        padding: 15px;
+    }
+
+    .modal-dialog {
+        margin: 10px;
+    }
+
+    .modal-content {
+        width: 100%;
+    }
+}
+
+/* Estilos para os botões de abrangência (HUWC e MEAC) */
+.abrangencia-navigation {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.abrangencia-navigation .btn {
+    font-size: 1rem;
+    padding: 10px 20px;
+    border-radius: 8px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.abrangencia-navigation .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.abrangencia-navigation .btn.active {
+    background-color: #2980b9;
+    border-color: #2980b9;
+}
+
+/* Animação de fade-in para os cards */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.organograma-card {
+    animation: fadeIn 0.5s ease-in-out;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.organograma-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Estilos para sinalização de documentos */
+.documento-atualizado {
+    border-left: 5px solid #28a745; /* Verde para documentos atualizados */
+    background-color: #e8f5e9; /* Fundo verde claro */
+}
+
+.documento-desatualizado {
+    border-left: 5px solid #dc3545; /* Vermelho para documentos desatualizados */
+    background-color: #f8d7da; /* Fundo vermelho claro */
+}
+
+.status-indicator {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.status-indicator .fa-check-circle {
+    color: #28a745; /* Verde para ícone de atualizado */
+}
+
+.status-indicator .fa-times-circle {
+    color: #dc3545; /* Vermelho para ícone de desatualizado */
+}
+ </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>DOCUMENTOS INSTITUCIONAIS</h2>
+
+    <!-- Botões HUWC e MEAC -->
+    <div class="abrangencia-navigation mb-4">
+        <button class="btn btn-primary w-100 mb-2" id="btn-huwc" onclick="filterByAbrangencia('HUWC')">HUWC E CH</button>
+        <button class="btn btn-primary w-100" id="btn-meac" onclick="filterByAbrangencia('MEAC')">MEAC</button>
+    </div>
+
+    <ul>
+        <li>
+            <div class="search-bar">
+                <form id="search-form" onsubmit="return false;">
+                    <!-- Buscar por nome -->
+                    <div class="input-group mb-3">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="nome" name="nome" placeholder="Buscar por nome" class="form-control">
+                    </div>
+
+                   <div class="input-group mb-3">
+    <span class="input-group-text"><i class="fas fa-filter"></i></span>
+    <select id="organograma" name="organograma" class="form-control" style="font-size: 0.85rem;">
+        <option value="">Organograma</option>
+        {% for org in organogramas %}
+            <option value="{{ org.sigla }}">
+                {% if org.nome_completo %}
+                    {{ org.nome_completo }} ({{ org.sigla }})
+                {% else %}
+                    {{ org.sigla }}
+                {% endif %}
+            </option>
+        {% endfor %}
+    </select>
+</div>
+
+                    <!-- Filtrar por tipo de documento -->
+                    <div class="input-group mb-3">
+                        <span class="input-group-text"><i class="fas fa-file-alt"></i></span>
+                       <select id="tipo_documento" name="tipo_documento" class="form-control" style="font-size: 0.85rem;">
+                            <option value="">Tipo de documento</option>
+                            {% for tipo in tipos_documento %}
+                                <option value="{{ tipo }}">{{ tipo }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Buscar por organograma (extra) -->
+                    <div class="input-group mb-3">
+                        <span class="input-group-text"><i class="fas fa-sitemap"></i></span>
+                        <input type="text" id="search-organograma" name="search-organograma" placeholder="Buscar por Cartão" class="form-control">
+                    </div>
+<!-- No sidebar, após os outros filtros -->
+<!-- Adicione isso no sidebar, após os outros filtros -->
+<div class="input-group mb-3">
+    <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" id="apenas-complexo">
+        <label class="form-check-label" for="apenas-complexo">Apenas documentos do complexo</label>
+    </div>
+</div>
+                    <!-- Botão Limpar Filtros -->
+                    <button type="button" id="limpar-filtros" class="btn btn-secondary w-100">
+                        <i class="fas fa-times"></i> Limpar Filtros
+                    </button>
+			
+
+                </form>
+            </div>
+        </li>
+		<li>
+    <a href="#" id="ver-favoritos" class="btn-highlight-novo position-relative">
+    <i class="fas fa-star text-warning"></i> Meus Favoritos
+    <span class="tooltip-novidade">Novidade! Clique para ver</span>
+</a>
+
+</li>
+<li>
+    <a href="#" id="abrir-tutorial" class="btn btn-warning w-100 mt-2">
+        <i class="fas fa-play-circle"></i> Tutorial
+    </a>
+</li>
+<script>
+// Abrir o tutorial (pode ser um modal, alerta ou link externo)
+$('#abrir-tutorial').on('click', function () {
+    // Exemplo simples com um link de vídeo
+    window.open('https://www.youtube.com/watch?v=KeUJnHwpl4Q', '_blank');
+});
+</script>
+
+    </ul>
+</div>
+
+  <div class="main-content">
+    <h1>DOCUMENTOS</h1>
+
+
+
+    <!-- Grid de Cards ou Lista (inclusão do template parcial) -->
+    <div class="row" id="organograma-grid">
+      {% include 'partials/document_list2.html' %}
+    </div>
+  </div>
+</body>
+
+
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+ $(document).ready(function () {
+    let currentAbrangencia = 'HUWC'; // Define um valor padrão
+// Evento para o checkbox "Apenas documentos do complexo"
+$('#apenas-complexo').on('change', function() {
+    atualizarResultados();
+});
+
+// Função atualizarResultados (garanta que ela está definida assim)
+function atualizarResultados() {
+    const apenasComplexo = $('#apenas-complexo').is(':checked');
+    const nome = $('#nome').val();
+    const organograma = $('#organograma').val();
+    const tipoDocumento = $('#tipo_documento').val();
+    const searchOrganograma = $('#search-organograma').val();
+
+    // Mostrar loading
+    $('#organograma-grid').html('<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>');
+
+    // Fazer a requisição AJAX
+    $.ajax({
+        url: "{{ url_for('buscar2') }}",
+        type: "GET",
+        data: {
+            nome: nome,
+            organograma: organograma,
+            tipo_documento: tipoDocumento,
+            abrangencia: currentAbrangencia,
+            apenas_complexo: apenasComplexo,
+            search_organograma: searchOrganograma
+        },
+        success: function(response) {
+            $('#organograma-grid').html(response);
+            initializePagination();
+            
+            // Atualizar sessionStorage com novos resultados
+            sessionStorage.setItem("marcadores", $('#organograma-grid').html());
+        },
+        error: function() {
+            $('#organograma-grid').html('<div class="alert alert-danger">Erro ao carregar resultados</div>');
+        }
+    });
+}
+	
+	
+
+    // Função para filtrar os documentos com base na abrangência
+    function filterByAbrangencia(abrangencia) {
+        currentAbrangencia = abrangencia;
+        $('#organograma-grid').html('<p>Carregando...</p>');
+        $.ajax({
+            url: "{{ url_for('buscar2') }}",
+            method: 'GET',
+            data: { abrangencia: abrangencia },
+            success: function (response) {
+                $('#organograma-grid').html(response);
+                // Reaplica a paginação após carregar os documentos
+                initializePagination();
+                // Preservar os marcadores
+                sessionStorage.setItem("marcadores", $('#organograma-grid').html());
+            },
+            error: function () {
+                alert('Erro ao buscar documentos. Tente novamente.');
+            }
+        });
+
+        // Aplicar a classe ao título com base na abrangência
+        // Aplicar a classe ao título com base na abrangência
+	if (abrangencia === 'HUWC') {
+		$('h1').removeClass('titulo-meac').addClass('titulo-huwc');
+		$('h1').text('DOCUMENTOS (HUWC E CH)');
+	} else if (abrangencia === 'MEAC') {
+		$('h1').removeClass('titulo-huwc').addClass('titulo-meac');
+		$('h1').text('DOCUMENTOS (MEAC)');
+	}
+
+    }
+
+    // Evento de clique nos botões HUWC e MEAC
+    $('#btn-huwc').on('click', function () {
+        filterByAbrangencia('HUWC');
+        $(this).addClass('active');
+        $('#btn-meac').removeClass('active');
+    });
+
+    $('#btn-meac').on('click', function () {
+        filterByAbrangencia('MEAC');
+        $(this).addClass('active');
+        $('#btn-huwc').removeClass('active');
+    });
+
+    // Restaurar a abrangência ao carregar a página
+    if (sessionStorage.getItem("lastAbrangencia")) {
+        currentAbrangencia = sessionStorage.getItem("lastAbrangencia");
+        filterByAbrangencia(currentAbrangencia);
+        if (currentAbrangencia === 'HUWC') {
+            $('#btn-huwc').addClass('active');
+            $('#btn-meac').removeClass('active');
+        } else {
+            $('#btn-meac').addClass('active');
+            $('#btn-huwc').removeClass('active');
+        }
+    }
+
+$('#limpar-filtros').on('click', function () {
+    $('#nome').val('');
+    $('#organograma').val('');
+    $('#tipo_documento').val('');
+    
+    filterByAbrangencia(currentAbrangencia);
+});
+
+
+function atualizarFiltros(response) {
+    const organogramas = new Set();
+    const tiposDocumentos = new Set();
+
+    $(response).find('.organograma-card').each(function () {
+        const organograma = $(this).find('h5').text().trim();
+        organogramas.add(organograma);
+    });
+
+    $(response).find('.accordion-button').each(function () {
+    const tipoDocumento = $(this).text().trim();
+    if (tipoDocumento) {
+        tiposDocumentos.add(tipoDocumento);
+    }
+});
+
+
+    $('#organograma').html('<option value="">Filtrar por organograma</option>');
+    organogramas.forEach(organograma => {
+        $('#organograma').append(`<option value="${organograma}">${organograma}</option>`);
+    });
+
+    $('#tipo_documento').html('<option value="">Filtrar por tipo de documento</option>');
+    tiposDocumentos.forEach(tipo => {
+        $('#tipo_documento').append(`<option value="${tipo}">${tipo}</option>`);
+    });
+}
+
+
+    $(document).ready(function () {
+    let currentAbrangencia = 'HUWC'; // Define um valor padrão
+
+    // Função para filtrar os documentos com base na abrangência
+    function filterByAbrangencia(abrangencia) {
+    currentAbrangencia = abrangencia;
+    $('#organograma-grid').html('<p>Carregando...</p>');
+    $.ajax({
+        url: "{{ url_for('buscar2') }}",
+        method: 'GET',
+        data: { abrangencia: abrangencia },
+        success: function (response) {
+            $('#organograma-grid').html(response);
+            // Reaplica a paginação após carregar os documentos
+            initializePagination();
+            // Preservar os marcadores
+            sessionStorage.setItem("marcadores", $('#organograma-grid').html());
+        },
+        error: function () {
+            alert('Erro ao buscar documentos. Tente novamente.');
+        }
+    });
+}
+
+    // Evento de clique nos botões HUWC e MEAC
+    $('#btn-huwc').on('click', function () {
+        filterByAbrangencia('HUWC');
+        $(this).addClass('active');
+        $('#btn-meac').removeClass('active');
+    });
+
+    $('#btn-meac').on('click', function () {
+        filterByAbrangencia('MEAC');
+        $(this).addClass('active');
+        $('#btn-huwc').removeClass('active');
+    });
+
+
+function searchDocuments(page = 1) {
+    let nome = $('#nome').val();
+    let organograma = $('#organograma').val();
+    let tipo_documento = $('#tipo_documento').val();
+    let apenas_complexo = $('#apenas-complexo').is(':checked');
+    
+    $.ajax({
+        url: "{{ url_for('buscar2') }}",
+        method: 'GET',
+        data: { 
+            nome, 
+            organograma, 
+            tipo_documento, 
+            abrangencia: currentAbrangencia, 
+            page: page,
+            apenas_complexo: apenas_complexo
+        },
+        success: function (response) {
+            $('#organograma-grid').html(response);
+        },
+        error: function () {
+            alert('Erro ao buscar documentos. Tente novamente.');
+        }
+    });
+}
+    // Eventos de input para buscar documentos em tempo real
+    $('#nome, #organograma, #tipo_documento').on('input', function () {
+        searchDocuments();
+    });
+
+$('#limpar-filtros').on('click', function () {
+    $('#nome').val('');
+    $('#organograma').val('');
+    $('#tipo_documento').val('');
+    $('#apenas-complexo').prop('checked', false);
+    
+    // Recupera os marcadores salvos
+    const marcadoresSalvos = sessionStorage.getItem("marcadores");
+    if (marcadoresSalvos) {
+        $('#organograma-grid').html(marcadoresSalvos);
+        // Reaplica a paginação após limpar os filtros
+        initializePagination();
+    } else {
+        filterByAbrangencia(currentAbrangencia);
+    }
+});
+
+    // Evento de clique nos botões de paginação
+    $(document).on('click', '.pagination a', function (e) {
+        e.preventDefault();
+        let page = $(this).attr('href').split('page=')[1];
+        searchDocuments(page);
+    });
+});
+
+    // Fechar outros accordions ao abrir um
+    $('.accordion-button').on('click', function () {
+        $('.accordion-collapse').not($(this).attr('data-bs-target')).collapse('hide');
+    });
+
+$('#search-organograma').on('input', function () {
+    let searchTerm = $(this).val().toLowerCase();
+    let hasResults = false;
+
+    $('.organograma-card').each(function () {
+        let cardText = $(this).find('h5').text().toLowerCase();
+        let nomeCompleto = $(this).data('nome-completo'); // Já convertido para lowercase
+        if (cardText.includes(searchTerm) || nomeCompleto.includes(searchTerm)) {
+            $(this).closest('.organograma-card-container').show();
+            hasResults = true;
+        } else {
+            $(this).closest('.organograma-card-container').hide();
+        }
+    });
+
+    // Recalcula a paginação **após** filtrar todos os cartões
+    initializePagination();
+
+    // Feedback visual
+    if (!hasResults) {
+        $('#organograma-grid').append('<p class="text-muted">Nenhum cartão encontrado.</p>');
+    } else {
+        $('#organograma-grid').find('.text-muted').remove();
+    }
+});
+
+
+    // Função para remover acentos e caracteres especiais
+    function normalizarTexto(texto) {
+        return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    }
+
+    // Função para filtrar documentos dentro do modal
+    function filterDocumentsInModal(modalId, searchTerm) {
+        let hasResults = false;
+        let searchNormalized = normalizarTexto(searchTerm);
+
+        // Remove o feedback visual anterior
+        $(`#modal${modalId} .text-muted`).remove();
+
+        // Itera sobre cada tipo de documento (accordion-item)
+        $(`#modal${modalId} .accordion-item`).each(function () {
+            let tipoItem = $(this);
+            let tipoHasResults = false;
+
+            // Itera sobre cada documento dentro do tipo
+            tipoItem.find('.document-list li').each(function () {
+                let docText = normalizarTexto($(this).find('h5').text());
+                if (docText.includes(searchNormalized)) {
+                    $(this).show(); // Mostra o documento se corresponder ao termo de pesquisa
+                    tipoHasResults = true;
+                    hasResults = true;
+                } else {
+                    $(this).hide(); // Oculta o documento se não corresponder
+                }
+            });
+
+            // Mostra ou oculta o accordion com base nos resultados
+            if (tipoHasResults) {
+                tipoItem.show(); // Mostra o accordion se houver documentos visíveis
+                tipoItem.find('.accordion-collapse').collapse('show'); // Expande o accordion
+            } else {
+                tipoItem.hide(); // Oculta o accordion se não houver documentos visíveis
+                tipoItem.find('.accordion-collapse').collapse('hide'); // Recolhe o accordion
+            }
+        });
+
+        // Adiciona feedback visual se nenhum documento for encontrado
+        if (!hasResults) {
+            $(`#modal${modalId} .accordion-body`).append('<p class="text-muted">Nenhum documento encontrado.</p>');
+        }
+    }
+
+    // Evento de input para filtrar documentos dentro do modal
+    $(document).on('input', '[id^="search-documentos"]', function () {
+        let searchTerm = $(this).val();
+        let modalId = $(this).attr('id').replace('search-documentos', '');
+
+        // Filtra os documentos com base no termo de pesquisa
+        filterDocumentsInModal(modalId, searchTerm);
+    });
+
+    // Ajusta a navegação da abrangência ao carregar a página
+    if (sessionStorage.getItem("lastAbrangencia")) {
+        currentAbrangencia = sessionStorage.getItem("lastAbrangencia");
+        filterByAbrangencia(currentAbrangencia);
+        if (currentAbrangencia === 'HUWC') {
+            $('#btn-huwc').addClass('active');
+            $('#btn-meac').removeClass('active');
+        } else {
+            $('#btn-meac').addClass('active');
+            $('#btn-huwc').removeClass('active');
+        }
+    }
+
+// ========== FAVORITOS - LOCALSTORAGE ==========
+
+const STORAGE_KEY = 'favoritos';
+const VIEWED_KEY = 'favoritos_visto';
+
+function getFavoritos() {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+}
+
+function salvarFavoritos(favoritos) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(favoritos));
+}
+
+function mostrarToast(msg, tipo = 'success') {
+    const alert = $(`
+        <div class="toast align-items-center text-white bg-${tipo} border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">${msg}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `);
+    $('.toast-container').append(alert);
+    const bsToast = new bootstrap.Toast(alert[0]);
+    bsToast.show();
+    setTimeout(() => alert.remove(), 4000);
+}
+
+function marcarFavoritosVisiveis() {
+    const favoritos = getFavoritos();
+    $('.btn-favorito').each(function () {
+        const id = $(this).data('id');
+        if (favoritos.find(doc => doc.id === id)) {
+            $(this).removeClass('btn-outline-warning').addClass('btn-warning');
+            $(this).html('<i class="fas fa-star"></i> Favorito');
+        }
+    });
+}
+
+$(document).on('click', '.btn-favorito', function () {
+    const btn = $(this);
+    const id = btn.data('id');
+    const nome = btn.data('nome');
+    const tipo = btn.data('tipo');
+    const caminho = btn.data('caminho');
+    let favoritos = getFavoritos();
+
+    const index = favoritos.findIndex(doc => doc.id === id);
+    if (index >= 0) {
+        favoritos.splice(index, 1);
+        btn.removeClass('btn-warning').addClass('btn-outline-warning');
+        btn.html('<i class="fas fa-star"></i> Favorito');
+        mostrarToast('Removido dos favoritos', 'danger');
+    } else {
+        favoritos.push({ id, nome, tipo, caminho, adicionado_em: new Date().toISOString() });
+        btn.removeClass('btn-outline-warning').addClass('btn-warning');
+        btn.html('<i class="fas fa-star"></i> Favorito');
+        mostrarToast('Adicionado aos favoritos');
+    }
+
+    salvarFavoritos(favoritos);
+});
+
+$(document).on('shown.bs.modal', function () {
+    marcarFavoritosVisiveis();
+});
+
+$('#ver-favoritos').on('click', function () {
+    const favoritos = getFavoritos();
+    const agrupados = {};
+    const container = $('#organograma-grid');
+
+    if (!localStorage.getItem(VIEWED_KEY)) {
+        localStorage.setItem(VIEWED_KEY, 'true');
+        $('#ver-favoritos').removeClass('btn-highlight-novo');
+        $('#ver-favoritos .tooltip-novidade').remove();
+    }
+
+    container.html(`
+        <h2 style="color: #ffc107; font-weight: 600; text-align: center; margin-top: 20px; margin-bottom: 30px; font-size: 2rem;">
+            <i class="fas fa-star"></i> Documentos Favoritos
+            <span class="badge bg-dark">${favoritos.length}</span>
+        </h2>
+        <div id="favoritos-lista"></div>
+    `);
+
+    if (favoritos.length === 0) {
+        $('#favoritos-lista').html(`
+           <div class="text-center p-4" style="max-width: 600px; margin: 0 auto;">
+    <div class="alert alert-info">
+        <h5 class="alert-heading"><i class="fas fa-info-circle"></i> Como adicionar favoritos</h5>
+        <p>Você ainda não tem documentos favoritos. Para adicionar:</p>
+        <ol class="text-start" style="display: inline-block; text-align: left;">
+            <li>Acesse a lista de documentos</li>
+            <li>Localize o botão 
+                <button class="btn btn-sm btn-outline-warning" disabled>
+                    <i class="fas fa-star"></i> Favorito
+                </button> em cada documento
+            </li>
+            <li>Clique para marcar como favorito</li>
+        </ol>
+        <hr>
+        <p class="mb-0">Seus favoritos aparecerão aqui para acesso rápido!</p>
+    </div>
+    <div class="text-center mt-4">
+        <button id="btn-voltar" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </button>
+    </div>
+</div>
+
+        `);
+        return;
+    }
+
+    favoritos.sort((a, b) => new Date(b.adicionado_em) - new Date(a.adicionado_em));
+    favoritos.forEach(doc => {
+        if (!agrupados[doc.tipo]) agrupados[doc.tipo] = [];
+        agrupados[doc.tipo].push(doc);
+    });
+
+    let html = '';
+    for (let tipo in agrupados) {
+        html += `<h5 class="mt-4">${tipo}</h5><ul class="list-group">`;
+        agrupados[tipo].forEach(doc => {
+            html += `
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>${doc.nome}</strong><br>
+                        <a href="/miac/documento2/${doc.id}">Detalhes</a> | 
+                        <a href="/miac/${doc.caminho || ''}" target="_blank">Visualizar PDF</a>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger" data-remover-fav="${doc.id}">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </li>`;
+        });
+        html += '</ul>';
+    }
+
+    html += `
+        <div class="mt-4 d-flex justify-content-between flex-wrap gap-2">
+            <button id="btn-voltar" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </button>
+            <button id="limpar-favoritos" class="btn btn-outline-danger">
+                <i class="fas fa-trash"></i> Limpar todos
+            </button>
+        </div>`;
+
+    $('#favoritos-lista').html(html);
+});
+
+$(document).on('click', '[data-remover-fav]', function () {
+    const id = $(this).data('remover-fav');
+    let favoritos = getFavoritos().filter(doc => doc.id !== id);
+    salvarFavoritos(favoritos);
+    $('#ver-favoritos').click();
+    mostrarToast('Favorito removido', 'danger');
+});
+
+$(document).on('click', '#limpar-favoritos', function () {
+    if (confirm('Tem certeza que deseja remover todos os favoritos?')) {
+        salvarFavoritos([]);
+        $('#ver-favoritos').click();
+    }
+});
+
+$(document).on('click', '#btn-voltar', function () {
+    location.reload();
+});
+
+// Toast container (caso não exista)
+if (!$('.toast-container').length) {
+    $('body').append('<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999;"></div>');
+}
+
+
+// Remover o destaque depois que o usuário clicar
+$('#ver-favoritos').on('click', function() {
+    $(this).removeClass('btn-highlight-novo');
+    $(this).find('.tooltip-novidade').remove();
+    
+    // Salvar no localStorage que o usuário já viu
+    localStorage.setItem('favoritosHighlightVisto', 'true');
+});
+
+// Verificar se já foi visto antes
+$(document).ready(function() {
+    if(localStorage.getItem('favoritosHighlightVisto') === 'true') {
+        $('#ver-favoritos').removeClass('btn-highlight-novo');
+        $('.tooltip-novidade').remove();
+    }
+});
+
+function initializePagination() {
+    document.querySelectorAll('.organograma-pagination-container').forEach(container => {
+        // Seleciona todos os cartões visíveis (que não estão ocultos)
+        const cards = Array.from(container.querySelectorAll('.organograma-card-container:not([style*="display: none"])'));
+        const totalCards = cards.length;
+        const cardsPerPage = 12; // Quantidade de cartões por página
+        let currentPage = 0;
+
+        // Função para resetar a paginação
+        function resetPagination() {
+            currentPage = 0;
+            showPage(currentPage);
+            updateButtons();
+        }
+
+        // Função para exibir os cartões da página atual
+        function showPage(page) {
+            cards.forEach((card, index) => {
+                if (index >= page * cardsPerPage && index < (page + 1) * cardsPerPage) {
+                    card.style.display = 'block'; // Mostra os cartões da página atual
+                } else {
+                    card.style.display = 'none'; // Oculta os cartões que não estão na página atual
+                }
+            });
+        }
+
+        // Função para atualizar os botões de navegação
+        function updateButtons() {
+            const prevButton = container.querySelector('.btn-pagination.prev');
+            const nextButton = container.querySelector('.btn-pagination.next');
+            const paginationButtons = container.querySelector('.pagination-buttons');
+
+            // Desabilita o botão "Voltar" se estiver na primeira página
+            prevButton.disabled = currentPage === 0;
+            // Desabilita o botão "Próximo" se estiver na última página
+            nextButton.disabled = currentPage >= Math.ceil(totalCards / cardsPerPage) - 1;
+
+            // Mostra ou oculta os botões de paginação com base no número de cartões
+            if (totalCards > cardsPerPage) {
+                paginationButtons.style.display = 'flex'; // Ou 'block' conforme seu layout
+            } else {
+                paginationButtons.style.display = 'none';
+            }
+        }
+
+        // Evento para o botão "Voltar"
+        container.querySelector('.btn-pagination.prev').addEventListener('click', () => {
+            if (currentPage > 0) {
+                currentPage--; // Vai para a página anterior
+                showPage(currentPage);
+                updateButtons();
+            }
+        });
+
+        // Evento para o botão "Próximo"
+        container.querySelector('.btn-pagination.next').addEventListener('click', () => {
+            if (currentPage < Math.ceil(totalCards / cardsPerPage) - 1) {
+                currentPage++; // Vai para a próxima página
+                showPage(currentPage);
+                updateButtons();
+            }
+        });
+
+        // Inicializa a exibição da primeira página
+        showPage(currentPage);
+        updateButtons();
+    });
+}
+
+       // Inicializa a paginação ao carregar a página
+    initializePagination();
+
+   $(document).on('show.bs.modal', '.modal', function() {
+    const modal = $(this);
+    const organograma = modal.attr('id').replace('modal', '');
+
+    modal.find('.modal-body').html(`
+        <div class="text-center my-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+            <p>Carregando documentos...</p>
+        </div>
+    `);
+
+    $.get("/miac/carregar_documentos_modal", { 
+        organograma: organograma,
+        abrangencia: currentAbrangencia 
+    }, function(response) {
+        modal.find('.modal-body').html(response);
+    }).fail(function() {
+        modal.find('.modal-body').html(`
+            <div class="alert alert-danger">
+                Erro ao carregar. Recarregue a página.
+            </div>
+        `);
+    });
+});
+
+    // ============= FIM DO NOVO CÓDIGO ============= //
+
+    // Salva a última abrangência selecionada na sessão
+    $('.abrangencia-navigation .btn').on('click', function () {
+        sessionStorage.setItem("lastAbrangencia", currentAbrangencia);
+    });
+
+    // Garantia de abrangência na geração de relatórios
+    window.gerarRelatorio = function (organograma) {
+        if (!currentAbrangencia) {
+            currentAbrangencia = 'HUWC';
+        }
+        window.location.href = `/miac/gerar_relatorio/${currentAbrangencia}/${organograma}`;
+    };
+});
+</script>
+</body>
+</html>

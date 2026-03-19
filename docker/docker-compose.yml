@@ -1,0 +1,34 @@
+services:
+  api:
+    image: hg.huwc.ufc.br:5000/miac-app:latest
+    ports:
+      - 8090:8090
+    networks:
+      - nginx
+    volumes:
+      - miac_database:/app/instance
+      - miac_uploads:/app/static/uploads2
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.role != manager]
+      restart_policy:
+        condition: any
+
+networks:
+  nginx:
+    external:
+      name: nginx_default
+
+volumes:
+  miac_database:
+    driver_opts:
+      type: "nfs"
+      o: "addr=10.28.0.241,rw,vers=4.2"
+      device: ":/docker_worker_volume/apps/external/miac/instance"
+  miac_uploads:
+    driver_opts:
+      type: "nfs"
+      o: "addr=10.28.0.241,rw,vers=4.2"
+      device: ":/docker_worker_volume/apps/external/miac/uploads"
