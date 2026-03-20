@@ -785,7 +785,45 @@ $('#abrir-tutorial').on('click', function () {
   <div class="main-content">
     <h1>DOCUMENTOS</h1>
 
-
+    <!-- Stats Strip -->
+    <div id="stats-strip" class="row g-2 mb-4 w-100" style="max-width:900px;margin:0 auto 20px;">
+        <div class="col-6 col-md-3">
+            <div style="background:#fff;border-radius:10px;padding:12px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-left:4px solid #3498db;display:flex;align-items:center;gap:10px;">
+                <i class="fas fa-file-alt" style="color:#3498db;font-size:1.4rem;"></i>
+                <div>
+                    <div id="stat-total" style="font-size:1.5rem;font-weight:700;color:#2c3e50;line-height:1;">{{ stats_rapidas.total }}</div>
+                    <div style="font-size:0.75rem;color:#6c757d;">Total</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div style="background:#fff;border-radius:10px;padding:12px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-left:4px solid #28a745;display:flex;align-items:center;gap:10px;">
+                <i class="fas fa-check-circle" style="color:#28a745;font-size:1.4rem;"></i>
+                <div>
+                    <div id="stat-atualizados" style="font-size:1.5rem;font-weight:700;color:#2c3e50;line-height:1;">{{ stats_rapidas.atualizados }}</div>
+                    <div style="font-size:0.75rem;color:#6c757d;">Atualizados</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div style="background:#fff;border-radius:10px;padding:12px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-left:4px solid #dc3545;display:flex;align-items:center;gap:10px;">
+                <i class="fas fa-times-circle" style="color:#dc3545;font-size:1.4rem;"></i>
+                <div>
+                    <div id="stat-vencidos" style="font-size:1.5rem;font-weight:700;color:#2c3e50;line-height:1;">{{ stats_rapidas.vencidos }}</div>
+                    <div style="font-size:0.75rem;color:#6c757d;">Vencidos</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div style="background:#fff;border-radius:10px;padding:12px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-left:4px solid #f39c12;display:flex;align-items:center;gap:10px;">
+                <i class="fas fa-exclamation-triangle" style="color:#f39c12;font-size:1.4rem;"></i>
+                <div>
+                    <div id="stat-proximos" style="font-size:1.5rem;font-weight:700;color:#2c3e50;line-height:1;">{{ stats_rapidas.proximos_vencer }}</div>
+                    <div style="font-size:0.75rem;color:#6c757d;">Vencem em 30d</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Grid de Cards ou Lista (inclusão do template parcial) -->
     <div class="row" id="organograma-grid">

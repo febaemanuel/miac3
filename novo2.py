@@ -121,6 +121,34 @@ def _get_organogramas_formatados():
     return result
 
 
+def _calcular_stats_dashboard(abrangencia=None):
+    """Retorna dict com estatísticas rápidas dos documentos."""
+    query = Documento2.query
+    if abrangencia:
+        query = query.filter_by(abrangencia=abrangencia)
+    docs = query.all()
+    total = len(docs)
+    atualizados = sum(1 for d in docs if d.atualizado)
+    vencidos = total - atualizados
+    hoje = datetime.now()
+    proximos = 0
+    for d in docs:
+        if d.atualizado and d.vencimento:
+            try:
+                dt = parse_data(d.vencimento)
+                if 0 <= (dt - hoje).days <= 30:
+                    proximos += 1
+            except ValueError:
+                pass
+    return {
+        "total": total,
+        "atualizados": atualizados,
+        "vencidos": vencidos,
+        "proximos_vencer": proximos,
+        "pct_atualizado": round(atualizados / total * 100) if total else 0,
+    }
+
+
 def _agrupar_documentos(documentos):
     """Agrupa lista de Documento2 em {marcador: {organograma: {tipo: [docs]}}}."""
     agrupados = {}
@@ -947,26 +975,22 @@ def logout():
     return redirect(url_for("login"))
 
 
+@app.route("/miac/api/stats")
+def api_stats():
+    if "username" not in session:
+        return jsonify({"error": "Não autenticado"}), 401
+    abrangencia = request.args.get("abrangencia", "").strip()
+    stats = _calcular_stats_dashboard(abrangencia=abrangencia if abrangencia else None)
+    return jsonify(stats)
+
+
 @app.route("/miac/", methods=["GET", "POST"])
 def index():
     if "username" not in session:
         return redirect(url_for("login"))
-
-    titulo = request.args.get("titulo", "")
-    autor_id = request.args.get("autor", "")
-    data = request.args.get("data", "")
-
-    query = Documento.query
-
-    if titulo:
-        query = query.filter(Documento.titulo.ilike(f"%{titulo}%"))
-    if autor_id:
-        query = query.filter(Documento.elaboradores.ilike(f"%{autor_id}%"))
-    if data:
-        query = query.filter(Documento.data_publicacao == data)
-
-    documentos = query.all()
-    return render_template("index.html", documentos=documentos)
+    stats = _calcular_stats_dashboard()
+    notificacoes = verificar_vencimentos()
+    return render_template("index.html", stats=stats, notificacoes=notificacoes)
 
 
 @app.route("/miac/gerenciar_siglas", methods=["GET", "POST"])
@@ -1335,6 +1359,8 @@ def publicados2():
     documentos_agrupados = _agrupar_documentos(documentos)
     tipos_documento = sorted({doc.tipo_documento for doc in documentos if doc.tipo_documento})
 
+    stats_rapidas = _calcular_stats_dashboard(abrangencia=abrangencia_selecionada)
+
     return render_template(
         "publicados2.html",
         documentos_agrupados=documentos_agrupados,
@@ -1343,6 +1369,7 @@ def publicados2():
         abrangencia_selecionada=abrangencia_selecionada,
         organograma_filtro=organograma_filtro,
         tipo_documento_filtro=tipo_documento_filtro,
+        stats_rapidas=stats_rapidas,
     )
 
 @app.route("/miac/documento2/<int:doc_id>", methods=["GET"])

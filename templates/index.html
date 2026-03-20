@@ -3,288 +3,756 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MIAC - Gestão Inteligente de Documentos</title>
+    <title>MIAC - Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Estilos Globais */
+        /* ── Global ── */
+        *, *::before, *::after { box-sizing: border-box; }
+
         body {
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Poppins', sans-serif;
+            background: #f0f2f5;
+            color: #333;
             margin: 0;
-            background: #f8f9fa;
-            color: #333;
-            display: flex;
-            flex-direction: column;
             min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
         }
 
-        /* Sidebar */
+        /* ── Sidebar ── */
         .sidebar {
-            width: 250px;
-            background-color: #2c3e50;
-            color: white;
-            height: 100vh;
-            padding: 20px;
             position: fixed;
+            top: 0;
+            left: 0;
+            width: 260px;
+            height: 100vh;
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
             display: flex;
             flex-direction: column;
-            align-items: center;
-            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .sidebar h2 {
-            font-size: 1.75rem;
-            margin-bottom: 40px;
-            color: #ecf0f1;
-            font-weight: 500;
-        }
-
-        .sidebar ul {
-            list-style: none;
             padding: 0;
-            width: 100%;
+            z-index: 1000;
+            overflow-y: auto;
+            box-shadow: 3px 0 15px rgba(0,0,0,0.18);
         }
 
-        .sidebar ul li {
-            margin: 15px 0;
-            padding: 12px 18px;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: background 0.3s, transform 0.2s;
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 28px 24px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
         }
 
-        .sidebar ul li:hover {
-            background-color: #34495e;
-            transform: translateX(5px);
+        .sidebar-brand span {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 3px;
         }
 
-        .sidebar ul li a {
+        .sidebar-brand i {
+            font-size: 1.5rem;
+            color: #3498db;
+            margin-right: 10px;
+        }
+
+        .sidebar-nav {
+            list-style: none;
+            padding: 16px 0;
+            margin: 0;
+            flex: 1;
+        }
+
+        .sidebar-nav li {
+            margin: 2px 12px;
+        }
+
+        .sidebar-nav li a {
+            display: flex;
+            align-items: center;
+            padding: 11px 16px;
+            color: rgba(255,255,255,0.82);
             text-decoration: none;
-            color: white;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-        }
-
-        .sidebar ul li a i {
-            margin-right: 12px;
-            font-size: 1.2rem;
-        }
-
-        /* Área de Conteúdo */
-        .main-content {
-            margin-left: 250px;
-            padding: 60px 40px;
-            flex-grow: 1;
-            background: #ffffff;
-            color: #333;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: center;
-            text-align: center;
-        }
-
-        .container {
-            background-color: #ffffff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 800px;
-            text-align: center;
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #2c3e50;
-        }
-
-        p {
-            font-size: 1.1rem;
-            margin-bottom: 30px;
-            color: #555;
-            line-height: 1.6;
-        }
-
-        /* Cards de Botões */
-        .btn-card {
-            border-radius: 10px;
-            background-color: #3498db;
-            color: white;
-            padding: 15px;
+            border-radius: 8px;
             font-size: 0.9rem;
-            transition: background-color 0.3s, transform 0.2s;
-            margin: 5px;
-            width: 120px;
-            height: 120px;
+            font-weight: 400;
+            transition: background 0.22s, color 0.22s, transform 0.18s;
+        }
+
+        .sidebar-nav li a i {
+            width: 20px;
+            margin-right: 12px;
+            font-size: 1rem;
+            text-align: center;
+            color: rgba(255,255,255,0.55);
+            transition: color 0.22s;
+        }
+
+        .sidebar-nav li a:hover,
+        .sidebar-nav li a.active {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            transform: translateX(4px);
+        }
+
+        .sidebar-nav li a:hover i,
+        .sidebar-nav li a.active i {
+            color: #3498db;
+        }
+
+        .sidebar-nav .nav-divider {
+            height: 1px;
+            background: rgba(255,255,255,0.07);
+            margin: 8px 12px;
+        }
+
+        .sidebar-nav .nav-section-label {
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 1.2px;
+            color: rgba(255,255,255,0.35);
+            text-transform: uppercase;
+            padding: 10px 28px 4px;
+        }
+
+        .sidebar-footer {
+            padding: 16px 24px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .sidebar-footer a {
+            display: flex;
+            align-items: center;
+            color: rgba(255,255,255,0.55);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+
+        .sidebar-footer a i {
+            margin-right: 10px;
+        }
+
+        .sidebar-footer a:hover {
+            color: #e74c3c;
+        }
+
+        /* ── Main Content ── */
+        .main-content {
+            margin-left: 260px;
+            min-height: 100vh;
+            padding: 32px 36px 48px;
+            transition: margin-left 0.3s;
+        }
+
+        /* ── Welcome Bar ── */
+        .welcome-bar {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            margin-bottom: 28px;
+        }
+
+        .welcome-bar .greeting {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .welcome-bar .greeting span {
+            color: #3498db;
+        }
+
+        .welcome-bar .date-badge {
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: #6c757d;
+            background: #f0f2f5;
+            border-radius: 20px;
+            padding: 6px 16px;
+            white-space: nowrap;
+        }
+
+        /* ── Stat Cards ── */
+        .stat-card {
+            background: #fff;
+            border-radius: 12px;
             border: none;
-            cursor: pointer;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            padding: 22px 24px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            transition: transform 0.22s, box-shadow 0.22s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            border-radius: 12px 0 0 12px;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+
+        .stat-card.blue::before  { background: #3498db; }
+        .stat-card.green::before { background: #28a745; }
+        .stat-card.red::before   { background: #dc3545; }
+        .stat-card.orange::before{ background: #f39c12; }
+
+        .stat-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+
+        .stat-icon.blue   { background: rgba(52,152,219,0.12); color: #3498db; }
+        .stat-icon.green  { background: rgba(40,167,69,0.12);  color: #28a745; }
+        .stat-icon.red    { background: rgba(220,53,69,0.12);  color: #dc3545; }
+        .stat-icon.orange { background: rgba(243,156,18,0.12); color: #f39c12; }
+
+        .stat-body { flex: 1; min-width: 0; }
+
+        .stat-body .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            line-height: 1.1;
+            color: #2c3e50;
+        }
+
+        .stat-body .stat-label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #6c757d;
+            margin-top: 3px;
+        }
+
+        .stat-body .stat-sub {
+            font-size: 0.72rem;
+            color: #adb5bd;
+            margin-top: 4px;
+        }
+
+        /* ── Progress Section ── */
+        .progress-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 22px 28px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            margin-bottom: 28px;
+        }
+
+        .progress-card .prog-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .progress-card .prog-label span {
+            font-size: 0.78rem;
+            font-weight: 400;
+            color: #6c757d;
+        }
+
+        .progress {
+            height: 12px;
+            border-radius: 100px;
+            background: #e9ecef;
+        }
+
+        .progress-bar {
+            border-radius: 100px;
+            transition: width 1s ease;
+        }
+
+        /* ── Section Title ── */
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e9ecef;
+        }
+
+        /* ── Quick Action Cards ── */
+        .quick-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            height: 160px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            gap: 12px;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.22s, box-shadow 0.22s;
+            border: 1.5px solid transparent;
+            cursor: pointer;
+            padding: 16px;
             text-align: center;
         }
 
-        .btn-card i {
-            margin-bottom: 10px;
-            font-size: 1.5rem;
+        .quick-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 28px rgba(0,0,0,0.13);
+            color: inherit;
         }
 
-        .btn-card:hover {
-            background-color: #2980b9;
-            transform: translateY(-2px);
-        }
-
-        .btn-card-secondary {
-            background-color: #6c757d;
-        }
-
-        .btn-card-secondary:hover {
-            background-color: #5a6268;
-        }
-
-        /* Mensagem de Boas-Vindas */
-        .welcome-message {
-            font-size: 1.5rem;
-            font-weight: 500;
-            margin-bottom: 20px;
-            color: #2c3e50;
-        }
-
-        /* Layout dos Botões */
-        .button-grid {
+        .quick-card .qc-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
             display: flex;
-            flex-wrap: wrap;
+            align-items: center;
             justify-content: center;
+            font-size: 1.4rem;
+        }
+
+        .quick-card .qc-label {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #2c3e50;
+            line-height: 1.3;
+        }
+
+        /* Quick card color variants */
+        .qc-blue   { background: rgba(52,152,219,0.12); color: #3498db; }
+        .qc-green  { background: rgba(40,167,69,0.12);  color: #28a745; }
+        .qc-purple { background: rgba(155,89,182,0.12); color: #9b59b6; }
+        .qc-teal   { background: rgba(32,178,170,0.12); color: #20b2aa; }
+        .qc-gray   { background: rgba(108,117,125,0.12);color: #6c757d; }
+        .qc-orange { background: rgba(243,156,18,0.12); color: #f39c12; }
+
+        /* ── Notifications ── */
+        .notif-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+
+        .notif-card .notif-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 24px;
+            border-bottom: 1px solid #f0f2f5;
+        }
+
+        .notif-card .notif-header h6 {
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .notif-card .notif-header h6 i {
+            color: #f39c12;
+        }
+
+        .notif-card .notif-header a {
+            font-size: 0.8rem;
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .notif-card .notif-header a:hover {
+            text-decoration: underline;
+        }
+
+        .list-group-item {
+            border-left: none;
+            border-right: none;
+            border-color: #f0f2f5;
+            padding: 12px 24px;
+            font-size: 0.85rem;
+            color: #4a4a4a;
+            display: flex;
+            align-items: center;
             gap: 10px;
         }
 
-        /* Rodapé */
-        footer {
-            margin-top: auto;
-            padding: 20px;
-            background-color: #2c3e50;
-            color: white;
-            text-align: center;
+        .list-group-item:first-child { border-top: none; }
+        .list-group-item:last-child  { border-bottom: none; }
+
+        .list-group-item i {
+            color: #f39c12;
             font-size: 0.9rem;
+            flex-shrink: 0;
         }
 
-        /* Responsividade */
+        /* ── Responsive ── */
         @media (max-width: 768px) {
             .sidebar {
                 width: 100%;
                 height: auto;
                 position: relative;
-                padding: 10px;
+                flex-direction: row;
+                flex-wrap: wrap;
+                padding: 0;
             }
 
-            .main-content {
-                margin-left: 0;
-                padding: 20px;
+            .sidebar-brand {
+                padding: 14px 20px;
+                border-bottom: none;
+                border-right: 1px solid rgba(255,255,255,0.08);
             }
 
-            .container {
-                padding: 15px;
+            .sidebar-nav {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                padding: 8px;
             }
 
-            h1 {
-                font-size: 2rem;
-            }
+            .sidebar-nav li { margin: 2px; }
 
-            p {
-                font-size: 1rem;
-            }
-
-            .btn-card {
-                width: 100px;
-                height: 100px;
+            .sidebar-nav li a {
+                padding: 8px 12px;
                 font-size: 0.8rem;
             }
 
-            .btn-card i {
-                font-size: 1.2rem;
+            .sidebar-nav .nav-divider,
+            .sidebar-nav .nav-section-label { display: none; }
+
+            .sidebar-footer { display: none; }
+
+            .main-content {
+                margin-left: 0;
+                padding: 20px 16px 40px;
             }
+
+            .welcome-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .stat-card { padding: 16px; }
         }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
-        <h2>DOC'S-UGQ</h2>
-        <ul>
-            <li><a href="#"><i class="fas fa-home"></i> Página Inicial</a></li>
-            <li><a href="#"><i class="fas fa-file-alt"></i> Documentos</a></li>
-            <li><a href="#"><i class="fas fa-users"></i> Pacientes</a></li>
-            <li><a href="#"><i class="fas fa-cogs"></i> Configurações</a></li>
+<!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <i class="fas fa-shield-halved"></i>
+        <span>MIAC</span>
+    </div>
+
+    <ul class="sidebar-nav">
+        <li class="nav-section-label">Principal</li>
+        <li>
+            <a href="{{ url_for('publicados2') }}">
+                <i class="fas fa-home"></i> Página Inicial
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('relacao_documentos') }}">
+                <i class="fas fa-list-alt"></i> Relação
+            </a>
+        </li>
+
+        {% if session.get('nivel_acesso') == 'elevado' %}
+        <li>
+            <a href="{{ url_for('publicar2_page') }}">
+                <i class="fas fa-upload"></i> Publicar
+            </a>
+        </li>
+        {% endif %}
+
+        <li>
+            <a href="{{ url_for('estatisticas') }}">
+                <i class="fas fa-chart-bar"></i> Estatísticas
+            </a>
+        </li>
+
+        {% if session.get('nivel_acesso') == 'elevado' %}
+        <div class="nav-divider"></div>
+        <li class="nav-section-label">Administração</li>
+        <li>
+            <a href="{{ url_for('gerenciar_opcoes') }}">
+                <i class="fas fa-sliders"></i> Configurações
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('gerenciar_siglas') }}">
+                <i class="fas fa-tags"></i> Siglas
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+
+    <div class="sidebar-footer">
+        <a href="{{ url_for('logout') }}">
+            <i class="fas fa-right-from-bracket"></i> Sair
+        </a>
+    </div>
+</aside>
+
+<!-- ═══════════════════ MAIN CONTENT ═══════════════════ -->
+<main class="main-content">
+
+    <!-- Welcome Bar -->
+    <div class="welcome-bar">
+        <p class="greeting" id="greeting-text">
+            Bom dia, <span>{{ session.get('username', 'Usuário') }}</span>!
+        </p>
+        <div class="date-badge">
+            <i class="fas fa-calendar-day me-1"></i>
+            <span id="current-date"></span>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card blue">
+                <div class="stat-icon blue">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="stat-body">
+                    <div class="stat-value">{{ stats.total }}</div>
+                    <div class="stat-label">Total Documentos</div>
+                    <div class="stat-sub">Todos os registros</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card green">
+                <div class="stat-icon green">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-body">
+                    <div class="stat-value">{{ stats.atualizados }}</div>
+                    <div class="stat-label">Atualizados</div>
+                    <div class="stat-sub">Dentro do prazo</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card red">
+                <div class="stat-icon red">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="stat-body">
+                    <div class="stat-value">{{ stats.vencidos }}</div>
+                    <div class="stat-label">Vencidos</div>
+                    <div class="stat-sub">Requerem atenção</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card orange">
+                <div class="stat-icon orange">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-body">
+                    <div class="stat-value">{{ stats.proximos_vencer }}</div>
+                    <div class="stat-label">Próximos a Vencer</div>
+                    <div class="stat-sub">Nos próximos 30 dias</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-card mb-4">
+        <div class="prog-label">
+            <strong>
+                <i class="fas fa-gauge-high me-2 text-secondary"></i>
+                Conformidade Documental
+            </strong>
+            <span>{{ stats.pct_atualizado }}% dos documentos estão atualizados</span>
+        </div>
+        <div class="progress">
+            {% if stats.pct_atualizado >= 80 %}
+                <div class="progress-bar bg-success"
+                     role="progressbar"
+                     style="width: {{ stats.pct_atualizado }}%"
+                     aria-valuenow="{{ stats.pct_atualizado }}"
+                     aria-valuemin="0"
+                     aria-valuemax="100">
+                </div>
+            {% elif stats.pct_atualizado >= 60 %}
+                <div class="progress-bar bg-warning"
+                     role="progressbar"
+                     style="width: {{ stats.pct_atualizado }}%"
+                     aria-valuenow="{{ stats.pct_atualizado }}"
+                     aria-valuemin="0"
+                     aria-valuemax="100">
+                </div>
+            {% else %}
+                <div class="progress-bar bg-danger"
+                     role="progressbar"
+                     style="width: {{ stats.pct_atualizado }}%"
+                     aria-valuenow="{{ stats.pct_atualizado }}"
+                     aria-valuemin="0"
+                     aria-valuemax="100">
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="section-title">
+        <i class="fas fa-bolt text-warning"></i> Acesso Rápido
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-sm-4 col-lg-2">
+            <a href="{{ url_for('publicados2') }}" class="quick-card">
+                <div class="qc-icon qc-blue">
+                    <i class="fas fa-folder-open"></i>
+                </div>
+                <div class="qc-label">Documentos Publicados</div>
+            </a>
+        </div>
+
+        {% if session.get('nivel_acesso') == 'elevado' %}
+        <div class="col-6 col-sm-4 col-lg-2">
+            <a href="{{ url_for('publicar2_page') }}" class="quick-card">
+                <div class="qc-icon qc-green">
+                    <i class="fas fa-upload"></i>
+                </div>
+                <div class="qc-label">Publicar Documento</div>
+            </a>
+        </div>
+        {% endif %}
+
+        <div class="col-6 col-sm-4 col-lg-2">
+            <a href="{{ url_for('estatisticas') }}" class="quick-card">
+                <div class="qc-icon qc-purple">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <div class="qc-label">Estatísticas</div>
+            </a>
+        </div>
+
+        <div class="col-6 col-sm-4 col-lg-2">
+            <a href="{{ url_for('relacao_documentos') }}" class="quick-card">
+                <div class="qc-icon qc-teal">
+                    <i class="fas fa-list-alt"></i>
+                </div>
+                <div class="qc-label">Relação de Documentos</div>
+            </a>
+        </div>
+
+        {% if session.get('nivel_acesso') == 'elevado' %}
+        <div class="col-6 col-sm-4 col-lg-2">
+            <a href="{{ url_for('gerenciar_marcadores') }}" class="quick-card">
+                <div class="qc-icon qc-gray">
+                    <i class="fas fa-bookmark"></i>
+                </div>
+                <div class="qc-label">Gerenciar Marcadores</div>
+            </a>
+        </div>
+
+        <div class="col-6 col-sm-4 col-lg-2">
+            <a href="{{ url_for('gerenciar_siglas') }}" class="quick-card">
+                <div class="qc-icon qc-orange">
+                    <i class="fas fa-tags"></i>
+                </div>
+                <div class="qc-label">Gerenciar Siglas</div>
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Notifications -->
+    {% if notificacoes %}
+    <div class="section-title">
+        <i class="fas fa-bell text-warning"></i> Alertas
+    </div>
+
+    <div class="notif-card mb-4">
+        <div class="notif-header">
+            <h6>
+                <i class="fas fa-triangle-exclamation"></i>
+                Notificações recentes
+                <span class="badge bg-warning text-dark ms-1" style="font-size:0.7rem;">
+                    {{ notificacoes|length }}
+                </span>
+            </h6>
+            <a href="{{ url_for('estatisticas') }}">Ver todos <i class="fas fa-arrow-right ms-1"></i></a>
+        </div>
+
+        <ul class="list-group list-group-flush">
+            {% for notif in notificacoes[:10] %}
+            <li class="list-group-item">
+                <i class="fas fa-circle-dot"></i>
+                {{ notif }}
+            </li>
+            {% endfor %}
         </ul>
     </div>
+    {% endif %}
 
-    <div class="main-content">
-        <div class="message-box" id="message-box">
-            <span id="message-content">Inicializando módulos de Inteligência Artificial...</span>
-        </div>
+</main>
 
-        <div class="container">
-            <h1>Bem-vindo.</h1>
-            <p>Gestão inteligente de documentos e processos.</p>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Greeting based on time
+    (function () {
+        const hour = new Date().getHours();
+        let greeting = 'Bom dia';
+        if (hour >= 12 && hour < 18) greeting = 'Boa tarde';
+        else if (hour >= 18) greeting = 'Boa noite';
 
-            <!-- Mensagem de Boas-Vindas Personalizada -->
-            <div class="welcome-message">
-                {% if session.get('nivel_acesso') == 'elevado' %}
-                    Bem-vindo, Administração!
-                {% else %}
-                    Bem-vindo, Usuário!
-                {% endif %}
-            </div>
-            
-            <!-- Grid de Botões -->
-            <div class="button-grid">
-                {% if session.get('nivel_acesso') == 'elevado' %}
-                    <button class="btn-card" onclick="window.location.href='publicar2'"><i class="fas fa-upload"></i> Publicar Documento</button>
-                    <button class="btn-card btn-card-secondary" onclick="window.location.href='publicados2'"><i class="fas fa-file-alt"></i> Documentos Publicados</button>
-                    <button class="btn-card" onclick="window.location.href='/ajuda'"><i class="fas fa-question-circle"></i> Ajuda</button>
-                    <button class="btn-card" onclick="window.location.href='/gerenciar_siglas'"><i class="fas fa-list"></i> Lista Mestra</button>
-                    <button class="btn-card btn-card-secondary" onclick="window.location.href='estatisticas'"><i class="fas fa-chart-line"></i> Relatórios</button>
-					
-                    
-                {% else %}
-                    <button class="btn-card btn-card-secondary" onclick="window.location.href='/publicados2'"><i class="fas fa-file-alt"></i> Documentos Publicados</button>
-                    <button class="btn-card" onclick="window.location.href='/relatorios'"><i class="fas fa-chart-line"></i> Relatórios</button>
-                {% endif %}
-            </div>
-        </div>
-    </div>
+        const username = "{{ session.get('username', 'Usuário') }}";
+        document.getElementById('greeting-text').innerHTML =
+            greeting + ', <span>' + username + '</span>!';
+    })();
 
-    <footer>
-        Versão 1.0.0 | Desenvolvido por MIAC | Suporte: suporte@miac.com.br
-    </footer>
-
-    <script>
-        const messages = [
-            "Inicializando módulos de Inteligência Artificial...",
-            "Analisando indicadores de qualidade...",
-            "Processando dados...",
-            "Gerando relatórios...",
-            "Aguardando comando..."
-        ];
-        
-        let currentMessage = 0;
-
-        function changeMessage() {
-            document.getElementById("message-content").textContent = messages[currentMessage];
-            currentMessage = (currentMessage + 1) % messages.length;
-        }
-
-        setInterval(changeMessage, 3000);
-    </script>
-
+    // Current date in Portuguese
+    (function () {
+        const now = new Date();
+        const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const formatted = now.toLocaleDateString('pt-BR', opts);
+        // Capitalize first letter
+        document.getElementById('current-date').textContent =
+            formatted.charAt(0).toUpperCase() + formatted.slice(1);
+    })();
+</script>
 </body>
 </html>
