@@ -981,8 +981,8 @@ def gerenciar_siglas():
     ).group_by(Documento2.organograma).all()
 
     if request.method == "POST":
-        sigla = request.form.get("sigla").strip().upper()
-        nome_completo = request.form.get("nome_completo").strip()
+        sigla = (request.form.get("sigla") or "").strip().upper()
+        nome_completo = (request.form.get("nome_completo") or "").strip()
 
         Documento2.query.filter_by(organograma=sigla).update({
             "nome_completo": nome_completo
@@ -1640,6 +1640,8 @@ def remover_opcao(id, tipo):
         opcao = db.session.get(Organograma, id)
     elif tipo == "tipo_documento":
         opcao = db.session.get(TipoDocumento, id)
+    else:
+        return "Tipo inválido", 400
 
     if opcao:
         db.session.delete(opcao)

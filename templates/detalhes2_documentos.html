@@ -295,8 +295,8 @@
         <p><strong>Organograma:</strong> {{ documento.organograma }}</p>
         <p><strong>Tipo de Documento:</strong> {{ documento.tipo_documento }}</p>
         <p><strong>Data de Publicação:</strong> {{ documento.data_publicacao }}</p>
-        <p><strong>Abrangência:</strong> 
-            {% if "CH." in documento.nome or "CHUFC." in documento.nome %}
+        <p><strong>Abrangência:</strong>
+            {% if documento.nome and ("CH." in documento.nome or "CHUFC." in documento.nome) %}
                 COMPLEXO - CH
             {% else %}
                 {{ documento.abrangencia }}

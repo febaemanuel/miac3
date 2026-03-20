@@ -252,10 +252,11 @@
     <div class="sidebar">
         <h2>MIAC</h2>
         <ul>
-            <li><a href="#"><i class="fas fa-home"></i> Página Inicial</a></li>
-            <li><a href="#"><i class="fas fa-file-alt"></i> Arquivos</a></li>
-            <li><a href="#"><i class="fas fa-cogs"></i> Configurações</a></li>
-            <li><a href="#"><i class="fas fa-question-circle"></i> Ajuda</a></li>
+            <li><a href="{{ url_for('publicados2') }}"><i class="fas fa-home"></i> Página Inicial</a></li>
+            <li><a href="{{ url_for('relacao_documentos') }}"><i class="fas fa-list"></i> Relação</a></li>
+            <li><a href="{{ url_for('estatisticas') }}"><i class="fas fa-chart-bar"></i> Estatísticas</a></li>
+            <li><a href="{{ url_for('gerenciar_opcoes') }}"><i class="fas fa-cogs"></i> Configurações</a></li>
+            <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
         </ul>
     </div>
 
@@ -857,21 +858,23 @@
     }
 
     const formData = new FormData();
-    
+
     // Adiciona todos os arquivos
     for (let i = 0; i < files.length; i++) {
         formData.append('pdf_file', files[i]);
     }
 
-    // Adiciona os dados do formulário (mesmo para todos os arquivos)
-    formData.append('titulo[]', $('#titulo_manual').val());
-    formData.append('organograma[]', $('#organograma_manual').val());
-    formData.append('tipo_documento[]', $('#tipo_documento_manual').val());
-    formData.append('abrangencia[]', $('#abrangencia_manual').val());
-    formData.append('data_elaboracao[]', $('#data_elaboracao_manual').val());
-    formData.append('vencimento[]', $('#vencimento_manual').val());
-    formData.append('numero_sei[]', $('#numero_sei_manual').val());
-    formData.append('elaboradores[]', $('#elaboradores_manual').val());
+    // Replica os campos do formulário para cada arquivo (mesmo metadado para todos)
+    for (let i = 0; i < files.length; i++) {
+        formData.append('titulo[]', $('#titulo_manual').val());
+        formData.append('organograma[]', $('#organograma_manual').val());
+        formData.append('tipo_documento[]', $('#tipo_documento_manual').val());
+        formData.append('abrangencia[]', $('#abrangencia_manual').val());
+        formData.append('data_elaboracao[]', $('#data_elaboracao_manual').val());
+        formData.append('vencimento[]', $('#vencimento_manual').val());
+        formData.append('numero_sei[]', $('#numero_sei_manual').val());
+        formData.append('elaboradores[]', $('#elaboradores_manual').val());
+    }
 
     $('#publicar-loading').show();
 
@@ -883,10 +886,12 @@
         contentType: false,
         success: function(response) {
             alert(`${files.length} documento(s) publicado(s) com sucesso!`);
-            $('#form-manual')[0].reset();
+            window.location.href = "{{ url_for('publicados2') }}";
         },
         error: function(xhr) {
-            alert(`Erro: ${xhr.responseText || 'Falha na publicação'}`);
+            let msg = 'Falha na publicação';
+            try { msg = JSON.parse(xhr.responseText).error || msg; } catch(e) {}
+            alert(`Erro: ${msg}`);
         },
         complete: function() {
             $('#publicar-loading').hide();
