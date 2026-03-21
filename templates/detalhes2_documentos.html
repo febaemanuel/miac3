@@ -3,341 +3,483 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalhes do Documento</title>
+    <title>Detalhes do Documento — MIAC</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        *, *::before, *::after { box-sizing: border-box; }
+
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: #f8f9fa;
-            color: #495057;
+            background: #f0f2f5;
             margin: 0;
+            min-height: 100vh;
             display: flex;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            position: fixed;
+            top: 0; left: 0;
+            width: 260px;
+            height: 100vh;
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+            overflow-y: auto;
+            box-shadow: 3px 0 15px rgba(0,0,0,0.18);
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 28px 24px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .sidebar-brand i { font-size: 1.5rem; color: #3498db; margin-right: 10px; }
+        .sidebar-brand span { font-size: 1.75rem; font-weight: 700; color: #fff; letter-spacing: 3px; }
+
+        .nav-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: rgba(255,255,255,0.35);
+            padding: 18px 20px 6px;
+        }
+
+        .sidebar-nav { list-style: none; padding: 8px 0; margin: 0; flex: 1; }
+        .sidebar-nav li { margin: 2px 12px; }
+        .sidebar-nav li a {
+            display: flex;
+            align-items: center;
+            padding: 11px 16px;
+            color: rgba(255,255,255,0.82);
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            transition: background 0.22s, color 0.22s, transform 0.18s;
+        }
+        .sidebar-nav li a i {
+            width: 20px; margin-right: 12px; font-size: 0.95rem;
+            color: rgba(255,255,255,0.45); transition: color 0.22s;
+        }
+        .sidebar-nav li a:hover, .sidebar-nav li a.active {
+            background: rgba(255,255,255,0.1); color: #fff; transform: translateX(4px);
+        }
+        .sidebar-nav li a:hover i, .sidebar-nav li a.active i { color: #3498db; }
+
+        /* ── Main ── */
+        .main-content {
+            margin-left: 260px;
+            padding: 32px 36px;
+            flex: 1;
             min-height: 100vh;
         }
 
-        .sidebar {
-            width: 260px;
-            background-color: #2c3e50;
-            color: #fff;
-            position: fixed;
-            height: 100%;
-            padding: 10px;
-            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .sidebar h2 {
-            font-size: 1.5rem;
-            color: #ecf0f1;
-            margin-bottom: 20px;
-            font-weight: 600;
-        }
-
-        .sidebar ul {
-            padding: 0;
-            list-style: none;
-        }
-
-        .sidebar ul li {
-            margin: 10px 0;
-            padding: 10px 15px;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
-        }
-		
-
-        .sidebar ul li:hover {
-            background-color: #34495e;
-            transform: translateX(5px);
-            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
-        }
-
-        .sidebar ul li a {
-            text-decoration: none;
-            color: #ecf0f1;
-            display: flex;
-            align-items: center;
-            font-size: 0.9rem;
-        }
-
-        .sidebar ul li a i {
-            margin-right: 10px;
-        }
-
-        .main-content {
-            margin-left: 260px;
-            padding: 20px;
-            flex-grow: 1;
-            background-color: #fff;
-            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
-        }
-		
-		.badge-documento-complexo {
-    background-color: #ffc107; /* Amarelo semelhante ao badge-warning do Bootstrap */
-    color: #000; /* Texto preto para melhor visibilidade */
-    font-weight: bold;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 12px;
-    display: inline-block;
-    margin-left: 5px;
-}
-
-        h1 {
-            font-size: 1.8rem;
-            font-weight: 700;
-            text-align: center;
-            color: #2c3e50;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .card {
-            margin-bottom: 15px;
-            border: none;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            background-color: #ffffff;
-            border: 1px solid #e9ecef;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-        }
-
-        .card-header {
-            background-color: #2c3e50;
-            color: white;
-            font-weight: 600;
-            border-radius: 10px 10px 0 0;
-            padding: 15px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 1rem;
-        }
-
-        .card-body {
-            padding: 15px;
-        }
-
-        .card-body p {
-            margin: 0;
-            font-size: 14px;
-            line-height: 1.6;
-            color: #495057;
-        }
-
-        .card-body p strong {
-            color: #2c3e50;
-            font-weight: 600;
-        }
-
-        .btn {
-            background-color: #2c3e50;
-            color: white;
-            font-size: 14px;
-            padding: 10px 20px;
-            border-radius: 6px;
-            border: none;
-            text-decoration: none;
-            transition: all 0.3s ease;
+        /* ── Status badge ── */
+        .status-pill {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            font-weight: 500;
-        }
-
-        .btn-secondary {
-            background-color: #6c757d;
-        }
-
-        .btn-warning {
-            background-color: #ffc107;
-            color: #000;
-        }
-
-        .btn-pdf {
-            background-color: #d32f2f;
-            color: white;
-            font-size: 16px;
-            padding: 12px 24px;
-            border-radius: 8px;
-            border: none;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.82rem;
             font-weight: 600;
         }
+        .status-pill.atualizado { background: #d4edda; color: #155724; }
+        .status-pill.vencido { background: #f8d7da; color: #721c24; }
+        .status-pill.complexo { background: #fff3cd; color: #856404; }
 
-        .btn-pdf:hover {
-            background-color: #b71c1c;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn:hover {
-            background-color: #34495e;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn-container {
-            margin-top: 10px;
+        /* ── Cards ── */
+        .info-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
             margin-bottom: 20px;
-            text-align: center;
+            overflow: hidden;
+        }
+        .info-card .card-head {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: #fff;
+            padding: 14px 20px;
+            font-size: 0.92rem;
+            font-weight: 600;
             display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .info-card .card-body { padding: 20px; }
+
+        .info-row {
+            display: flex;
+            padding: 9px 0;
+            border-bottom: 1px solid #f0f2f5;
+            font-size: 0.88rem;
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-row .label {
+            width: 180px;
+            flex-shrink: 0;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        .info-row .value { color: #2c3e50; font-weight: 400; }
+
+        /* ── PDF preview ── */
+        .pdf-preview-wrapper {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .pdf-preview-head {
+            background: linear-gradient(135deg, #c0392b, #e74c3c);
+            color: #fff;
+            padding: 14px 20px;
+            font-size: 0.92rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        #pdf-frame {
+            width: 100%;
+            height: 520px;
+            border: none;
+            display: block;
+        }
+        #pdf-placeholder {
+            height: 180px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             justify-content: center;
-            gap: 15px;
-            flex-wrap: wrap;
+            color: #adb5bd;
+            gap: 10px;
         }
+        #pdf-placeholder i { font-size: 2.5rem; }
 
-        .floating-icon {
+        /* ── Timeline ── */
+        .timeline { position: relative; padding-left: 28px; }
+        .timeline::before {
+            content: '';
             position: absolute;
-            top: 15px;
-            right: 15px;
-            background: #2c3e50;
-            color: white;
-            padding: 10px;
-            border-radius: 50%;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            z-index: 10;
-            cursor: pointer;
-            transition: transform 0.3s ease;
+            left: 10px; top: 0; bottom: 0;
+            width: 2px;
+            background: #dee2e6;
         }
+        .tl-item {
+            position: relative;
+            margin-bottom: 18px;
+        }
+        .tl-dot {
+            position: absolute;
+            left: -24px;
+            top: 4px;
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            background: #3498db;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 2px #3498db;
+        }
+        .tl-dot.current { background: #27ae60; box-shadow: 0 0 0 2px #27ae60; }
+        .tl-content {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.83rem;
+        }
+        .tl-content strong { color: #2c3e50; }
+        .tl-content small { color: #6c757d; }
 
-        .floating-icon:hover {
-            transform: scale(1.1);
+        /* ── Action buttons ── */
+        .action-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 24px;
         }
 
         @media (max-width: 768px) {
-            .sidebar {
-                width: 100%;
-                height: auto;
-                position: relative;
-                padding: 10px;
-            }
-
-            .main-content {
-                margin-left: 0;
-                padding: 10px;
-            }
-
-            .btn {
-                font-size: 12px;
-                padding: 8px 16px;
-            }
-
-            h1 {
-                font-size: 1.5rem;
-            }
-
-            .btn-container {
-                gap: 10px;
-            }
-        }
-
-        /* Animação de fade-in */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            .sidebar { width: 100%; height: auto; position: relative; }
+            .main-content { margin-left: 0; padding: 16px; }
+            body { flex-direction: column; }
+            .info-row .label { width: 130px; }
         }
     </style>
 </head>
 <body>
-    <!-- Barra Lateral -->
-    <div class="sidebar">
-        <h2>DOCUMENTOS</h2>
-        <ul>
-            <li><a href="/miac/publicados2"><i class="fas fa-home"></i> Página Inicial</a></li>
-        </ul>
+<!-- ── Sidebar ── -->
+<div class="sidebar">
+    <div class="sidebar-brand">
+        <i class="fas fa-file-medical-alt"></i>
+        <span>MIAC</span>
     </div>
+    <p class="nav-label">Menu</p>
+    <ul class="sidebar-nav">
+        <li><a href="{{ url_for('index') }}"><i class="fas fa-home"></i> Dashboard</a></li>
+        <li><a href="{{ url_for('publicados2') }}" class="active"><i class="fas fa-folder-open"></i> Documentos</a></li>
+        <li><a href="{{ url_for('estatisticas') }}"><i class="fas fa-chart-bar"></i> Estatísticas</a></li>
+        <li><a href="{{ url_for('relacao_documentos') }}"><i class="fas fa-project-diagram"></i> Relação</a></li>
+    </ul>
+    {% if nivel_acesso == 'elevado' %}
+    <p class="nav-label">Administração</p>
+    <ul class="sidebar-nav">
+        <li><a href="{{ url_for('publicar2_page') }}"><i class="fas fa-upload"></i> Publicar</a></li>
+        <li><a href="{{ url_for('gerenciar_opcoes') }}"><i class="fas fa-cogs"></i> Configurações</a></li>
+        <li><a href="{{ url_for('gerenciar_marcadores') }}"><i class="fas fa-bookmark"></i> Marcadores</a></li>
+        <li><a href="{{ url_for('gerenciar_siglas') }}"><i class="fas fa-tag"></i> Siglas</a></li>
+    </ul>
+    {% endif %}
+    <ul class="sidebar-nav" style="margin-top:auto;">
+        <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
+    </ul>
+</div>
 
-    <!-- Conteúdo Principal -->
-    <div class="main-content">
-        <h1>
-            <i class="fas fa-file-alt"></i> Detalhes do Documento
-        </h1>
-        <div class="floating-icon" data-bs-toggle="tooltip" data-bs-placement="left" title="Informações sobre o documento">
-            <i class="fas fa-info-circle"></i>
+<!-- ── Main Content ── -->
+<div class="main-content">
+
+    <!-- Flash messages -->
+    {% for cat, msg in get_flashed_messages(with_categories=true) %}
+    <div class="alert alert-{{ 'danger' if cat == 'error' else cat }} alert-dismissible fade show mb-3" role="alert">
+        {{ msg }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="fw-700 mb-1" style="color:#2c3e50;">
+                <i class="fas fa-file-alt me-2" style="color:#3498db;"></i>
+                {{ documento.nome or 'Documento sem título' }}
+            </h4>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                {% if documento.atualizado %}
+                    <span class="status-pill atualizado"><i class="fas fa-check-circle"></i> Atualizado</span>
+                {% else %}
+                    <span class="status-pill vencido"><i class="fas fa-exclamation-circle"></i> Vencido</span>
+                {% endif %}
+                {% if documento.nome and ("CH." in documento.nome or "CHUFC." in documento.nome) %}
+                    <span class="status-pill complexo"><i class="fas fa-building"></i> Documento do Complexo</span>
+                {% endif %}
+                {% if documento.marcador %}
+                    <span class="badge bg-secondary">{{ documento.marcador }}</span>
+                {% endif %}
+            </div>
         </div>
 
-        <!-- Botões de Ação (movido para cima) -->
-        <div class="btn-container">
-             <a href="/miac/static/uploads2/{{ documento.caminho.split('/')[-1] }}" class="btn btn-secondary" target="_blank">
-
-    <i class="fas fa-file-pdf"></i> Visualizar PDF
+        <!-- Action buttons -->
+        <div class="action-bar">
+            <a href="{{ documento_url }}" class="btn btn-danger btn-sm" target="_blank">
+                <i class="fas fa-file-pdf me-1"></i> Abrir PDF
+            </a>
             {% if nivel_acesso == 'elevado' %}
-                <a href="{{ url_for('editar_documento2', doc_id=documento.id) }}" class="btn btn-warning">
-                    <i class="fas fa-edit"></i> Editar
-                </a>
+            <a href="{{ url_for('editar_documento2', doc_id=documento.id) }}" class="btn btn-warning btn-sm">
+                <i class="fas fa-edit me-1"></i> Editar
+            </a>
+            <button class="btn btn-outline-danger btn-sm" onclick="confirmarExclusao({{ documento.id }})">
+                <i class="fas fa-trash-alt me-1"></i> Excluir
+            </button>
             {% endif %}
-            <a href="{{ url_for('publicados2') }}" class="btn">
-                <i class="fas fa-arrow-left"></i> Voltar
+            <a href="{{ url_for('publicados2') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left me-1"></i> Voltar
             </a>
         </div>
-<!-- Card de Informações Gerais -->
-<div class="card">
-    <div class="card-header">
-        <i class="fas fa-info-circle"></i> Informações Gerais
     </div>
-    <div class="card-body">
-        <p><strong>Nome:</strong> {{ documento.nome }}
-            {% if "CH." in documento.nome or "CHUFC." in documento.nome %}
-                <span class="badge-documento-complexo">DOCUMENTO DO COMPLEXO</span>
+
+    <div class="row g-4">
+        <!-- Left column -->
+        <div class="col-lg-5">
+
+            <!-- Informações Gerais -->
+            <div class="info-card">
+                <div class="card-head"><i class="fas fa-info-circle"></i> Informações Gerais</div>
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="label">Organograma</span>
+                        <span class="value">{{ documento.organograma or '—' }}
+                            {% if documento.nome_completo %}
+                            <br><small class="text-muted">{{ documento.nome_completo }}</small>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Tipo de Documento</span>
+                        <span class="value">{{ documento.tipo_documento or '—' }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Abrangência</span>
+                        <span class="value">
+                            {% if documento.nome and ("CH." in documento.nome or "CHUFC." in documento.nome) %}
+                                COMPLEXO — CH
+                            {% else %}
+                                {{ documento.abrangencia or '—' }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Número SEI</span>
+                        <span class="value">{{ documento.numero_sei or '—' }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Elaboradores</span>
+                        <span class="value">{{ documento.elaboradores or '—' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Datas -->
+            <div class="info-card">
+                <div class="card-head"><i class="fas fa-calendar-alt"></i> Datas</div>
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="label">Data de Elaboração</span>
+                        <span class="value">{{ documento.data_elaboracao or '—' }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Data de Vencimento</span>
+                        <span class="value {% if not documento.atualizado %}text-danger fw-600{% endif %}">
+                            {{ documento.vencimento or '—' }}
+                            {% if not documento.atualizado and documento.vencimento %}
+                            <span class="badge bg-danger ms-1">Vencido</span>
+                            {% elif documento.vencimento %}
+                            <span class="badge bg-success ms-1">Válido</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Data de Publicação</span>
+                        <span class="value">{{ documento.data_publicacao or '—' }}</span>
+                    </div>
+                    {% if documento.data_atualizacao %}
+                    <div class="info-row">
+                        <span class="label">Última Atualização</span>
+                        <span class="value">{{ documento.data_atualizacao.strftime('%d/%m/%Y %H:%M') if documento.data_atualizacao else '—' }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Histórico de Versões -->
+            {% set historico = documento.historico_versoes or [] %}
+            {% if historico %}
+            <div class="info-card">
+                <div class="card-head"><i class="fas fa-history"></i> Histórico de Versões</div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <!-- Versão atual -->
+                        <div class="tl-item">
+                            <div class="tl-dot current"></div>
+                            <div class="tl-content">
+                                <strong>Versão {{ documento.versao_atual or 1 }} — Atual</strong><br>
+                                <small>{{ documento.data_atualizacao.strftime('%d/%m/%Y %H:%M') if documento.data_atualizacao else documento.data_publicacao }}</small>
+                            </div>
+                        </div>
+                        <!-- Versões anteriores -->
+                        {% for v in historico | sort(attribute='versao', reverse=true) %}
+                        <div class="tl-item">
+                            <div class="tl-dot"></div>
+                            <div class="tl-content">
+                                <strong>Versão {{ v.versao }}</strong>
+                                — {{ v.responsavel or 'Sistema' }}<br>
+                                <small>{{ v.data }}</small>
+                                {% if nivel_acesso == 'elevado' %}
+                                <br>
+                                <button class="btn btn-outline-secondary btn-sm mt-1 py-0 px-2"
+                                        style="font-size:0.75rem;"
+                                        onclick="restaurarVersao({{ documento.id }}, {{ v.versao }})">
+                                    <i class="fas fa-undo"></i> Restaurar
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
             {% endif %}
-        </p>
-        <p><strong>Organograma:</strong> {{ documento.organograma }}</p>
-        <p><strong>Tipo de Documento:</strong> {{ documento.tipo_documento }}</p>
-        <p><strong>Data de Publicação:</strong> {{ documento.data_publicacao }}</p>
-        <p><strong>Abrangência:</strong> 
-            {% if "CH." in documento.nome or "CHUFC." in documento.nome %}
-                COMPLEXO - CH
-            {% else %}
-                {{ documento.abrangencia }}
-            {% endif %}
-        </p>
-        <p><strong>Atualizado:</strong> {{ 'Sim' if documento.atualizado else 'Não' }}</p>
+
+        </div>
+
+        <!-- Right column — PDF Preview -->
+        <div class="col-lg-7">
+            <div class="pdf-preview-wrapper">
+                <div class="pdf-preview-head">
+                    <span><i class="fas fa-eye me-2"></i>Visualização do Documento</span>
+                    <a href="{{ documento_url }}" class="btn btn-sm btn-light" target="_blank" style="font-size:0.8rem;">
+                        <i class="fas fa-external-link-alt me-1"></i> Abrir em nova aba
+                    </a>
+                </div>
+                {% set ext = documento.caminho.split('.')[-1].lower() if documento.caminho else '' %}
+                {% if ext == 'pdf' %}
+                <iframe id="pdf-frame" src="{{ documento_url }}#toolbar=1&navpanes=0" title="Documento PDF"></iframe>
+                {% else %}
+                <div id="pdf-placeholder">
+                    <i class="fas fa-file-word" style="color:#2b579a;"></i>
+                    <span>Arquivo Word — não é possível pré-visualizar no navegador.</span>
+                    <a href="{{ documento_url }}" class="btn btn-primary btn-sm mt-2" download>
+                        <i class="fas fa-download me-1"></i> Baixar arquivo
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Delete confirmation modal -->
+<div class="modal fade" id="modalExcluir" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Confirmar exclusão</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Tem certeza que deseja <strong>excluir definitivamente</strong> este documento?
+                Esta ação não pode ser desfeita.
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="form-excluir" method="POST">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt me-1"></i> Excluir
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 
-        <!-- Card de Detalhes Técnicos -->
-        <div class="card">
-            <div class="card-header">
-                <i class="fas fa-calendar-alt"></i> Datas e Elaboração
-            </div>
-            <div class="card-body">
-                <p><strong>Data de Elaboração:</strong> {{ documento.data_elaboracao }}</p>
-                <p><strong>Data de Validade:</strong> {{ documento.vencimento }}</p>
-                <p><strong>Número SEI:</strong> {{ documento.numero_sei }}</p>
-                <p><strong>Elaboradores:</strong> {{ documento.elaboradores }}</p>
-            </div>
-        </div>
-    </div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function confirmarExclusao(docId) {
+    document.getElementById('form-excluir').action = `/miac/excluir_documento2/${docId}`;
+    new bootstrap.Modal(document.getElementById('modalExcluir')).show();
+}
 
-    <!-- Scripts do Bootstrap e Animação -->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
-    <script>
-        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
-    </script>
+function restaurarVersao(docId, versao) {
+    if (!confirm(`Restaurar para a versão ${versao}? A versão atual será arquivada.`)) return;
+    fetch(`/miac/restaurar_versao/${docId}/${versao}`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Erro: ' + data.error);
+            }
+        })
+        .catch(() => alert('Erro de comunicação com o servidor.'));
+}
+</script>
 </body>
 </html>

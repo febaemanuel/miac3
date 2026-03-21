@@ -55,11 +55,11 @@
             font-weight: bold;
             color: #2c3e50;
         }
-        .badge-success {
+        .badge bg-success text-white {
             background-color: #2ecc71;
             color: white;
         }
-        .badge-danger {
+        .badge bg-danger text-white {
             background-color: #e74c3c;
             color: white;
         }
@@ -165,8 +165,8 @@
                     <div class="card-body">
                         <h2 class="card-title">Resumo Geral</h2>
                         <p><strong>Total de Documentos:</strong> {{ stats.total }}</p>
-                        <p><strong>Documentos Atualizados:</strong> <span class="badge badge-success">{{ stats.atualizados }}</span></p>
-                        <p><strong>Documentos Desatualizados:</strong> <span class="badge badge-danger">{{ stats.desatualizados }}</span></p>
+                        <p><strong>Documentos Atualizados:</strong> <span class="badge badge bg-success text-white">{{ stats.atualizados }}</span></p>
+                        <p><strong>Documentos Desatualizados:</strong> <span class="badge badge bg-danger text-white">{{ stats.desatualizados }}</span></p>
                         <canvas id="resumoGeralChart" width="400" height="200"></canvas>
                     </div>
                 </div>
@@ -209,8 +209,8 @@
                                 <tr>
                                     <td>{{ organograma }}</td>
                                     <td>{{ data.total }}</td>
-                                    <td><span class="badge badge-success">{{ data.atualizados }}</span></td>
-                                    <td><span class="badge badge-danger">{{ data.desatualizados }}</span></td>
+                                    <td><span class="badge badge bg-success text-white">{{ data.atualizados }}</span></td>
+                                    <td><span class="badge badge bg-danger text-white">{{ data.desatualizados }}</span></td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -235,8 +235,8 @@
                                 <tr>
                                     <td>{{ marcador }}</td>
                                     <td>{{ data.total }}</td>
-                                    <td><span class="badge badge-success">{{ data.atualizados }}</span></td>
-                                    <td><span class="badge badge-danger">{{ data.desatualizados }}</span></td>
+                                    <td><span class="badge badge bg-success text-white">{{ data.atualizados }}</span></td>
+                                    <td><span class="badge badge bg-danger text-white">{{ data.desatualizados }}</span></td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -280,7 +280,7 @@
                                     <td>{{ doc.documento.nome }}</td>
                                     <td>
                                         {% for erro in doc.erros %}
-                                        <span class="badge badge-danger">{{ erro }}</span><br>
+                                        <span class="badge badge bg-danger text-white">{{ erro }}</span><br>
                                         {% endfor %}
                                     </td>
                                 </tr>

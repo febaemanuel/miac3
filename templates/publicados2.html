@@ -696,8 +696,8 @@ h1.titulo-meac::before {
 
     <!-- Botões HUWC e MEAC -->
     <div class="abrangencia-navigation mb-4">
-        <button class="btn btn-primary w-100 mb-2" id="btn-huwc" onclick="filterByAbrangencia('HUWC')">HUWC E CH</button>
-        <button class="btn btn-primary w-100" id="btn-meac" onclick="filterByAbrangencia('MEAC')">MEAC</button>
+        <button class="btn btn-primary w-100 mb-2" id="btn-huwc">HUWC E CH</button>
+        <button class="btn btn-primary w-100" id="btn-meac">MEAC</button>
     </div>
 
     <ul>
@@ -785,14 +785,59 @@ $('#abrir-tutorial').on('click', function () {
   <div class="main-content">
     <h1>DOCUMENTOS</h1>
 
+    <!-- Stats Strip -->
+    <div id="stats-strip" class="row g-2 mb-4 w-100" style="max-width:900px;margin:0 auto 20px;">
+        <div class="col-6 col-md-3">
+            <div style="background:#fff;border-radius:10px;padding:12px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-left:4px solid #3498db;display:flex;align-items:center;gap:10px;">
+                <i class="fas fa-file-alt" style="color:#3498db;font-size:1.4rem;"></i>
+                <div>
+                    <div id="stat-total" style="font-size:1.5rem;font-weight:700;color:#2c3e50;line-height:1;">{{ stats_rapidas.total }}</div>
+                    <div style="font-size:0.75rem;color:#6c757d;">Total</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div style="background:#fff;border-radius:10px;padding:12px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-left:4px solid #28a745;display:flex;align-items:center;gap:10px;">
+                <i class="fas fa-check-circle" style="color:#28a745;font-size:1.4rem;"></i>
+                <div>
+                    <div id="stat-atualizados" style="font-size:1.5rem;font-weight:700;color:#2c3e50;line-height:1;">{{ stats_rapidas.atualizados }}</div>
+                    <div style="font-size:0.75rem;color:#6c757d;">Atualizados</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div style="background:#fff;border-radius:10px;padding:12px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-left:4px solid #dc3545;display:flex;align-items:center;gap:10px;">
+                <i class="fas fa-times-circle" style="color:#dc3545;font-size:1.4rem;"></i>
+                <div>
+                    <div id="stat-vencidos" style="font-size:1.5rem;font-weight:700;color:#2c3e50;line-height:1;">{{ stats_rapidas.vencidos }}</div>
+                    <div style="font-size:0.75rem;color:#6c757d;">Vencidos</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div style="background:#fff;border-radius:10px;padding:12px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-left:4px solid #f39c12;display:flex;align-items:center;gap:10px;">
+                <i class="fas fa-exclamation-triangle" style="color:#f39c12;font-size:1.4rem;"></i>
+                <div>
+                    <div id="stat-proximos" style="font-size:1.5rem;font-weight:700;color:#2c3e50;line-height:1;">{{ stats_rapidas.proximos_vencer }}</div>
+                    <div style="font-size:0.75rem;color:#6c757d;">Vencem em 30d</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <!-- Barra de ações -->
+    <div class="d-flex justify-content-end mb-3" style="max-width:900px;margin:0 auto;">
+        <a href="{{ url_for('exportar_csv', abrangencia=abrangencia_selecionada) }}"
+           class="btn btn-sm btn-outline-success">
+            <i class="fas fa-file-csv me-1"></i> Exportar CSV
+        </a>
+    </div>
 
     <!-- Grid de Cards ou Lista (inclusão do template parcial) -->
     <div class="row" id="organograma-grid">
       {% include 'partials/document_list2.html' %}
     </div>
   </div>
-</body>
 
 
 
@@ -846,6 +891,7 @@ function atualizarResultados() {
     // Função para filtrar os documentos com base na abrangência
     function filterByAbrangencia(abrangencia) {
         currentAbrangencia = abrangencia;
+        sessionStorage.setItem("lastAbrangencia", abrangencia);
         $('#organograma-grid').html('<p>Carregando...</p>');
         $.ajax({
             url: "{{ url_for('buscar2') }}",
@@ -901,15 +947,6 @@ function atualizarResultados() {
         }
     }
 
-$('#limpar-filtros').on('click', function () {
-    $('#nome').val('');
-    $('#organograma').val('');
-    $('#tipo_documento').val('');
-    
-    filterByAbrangencia(currentAbrangencia);
-});
-
-
 function atualizarFiltros(response) {
     const organogramas = new Set();
     const tiposDocumentos = new Set();
@@ -939,44 +976,6 @@ function atualizarFiltros(response) {
 }
 
 
-    $(document).ready(function () {
-    let currentAbrangencia = 'HUWC'; // Define um valor padrão
-
-    // Função para filtrar os documentos com base na abrangência
-    function filterByAbrangencia(abrangencia) {
-    currentAbrangencia = abrangencia;
-    $('#organograma-grid').html('<p>Carregando...</p>');
-    $.ajax({
-        url: "{{ url_for('buscar2') }}",
-        method: 'GET',
-        data: { abrangencia: abrangencia },
-        success: function (response) {
-            $('#organograma-grid').html(response);
-            // Reaplica a paginação após carregar os documentos
-            initializePagination();
-            // Preservar os marcadores
-            sessionStorage.setItem("marcadores", $('#organograma-grid').html());
-        },
-        error: function () {
-            alert('Erro ao buscar documentos. Tente novamente.');
-        }
-    });
-}
-
-    // Evento de clique nos botões HUWC e MEAC
-    $('#btn-huwc').on('click', function () {
-        filterByAbrangencia('HUWC');
-        $(this).addClass('active');
-        $('#btn-meac').removeClass('active');
-    });
-
-    $('#btn-meac').on('click', function () {
-        filterByAbrangencia('MEAC');
-        $(this).addClass('active');
-        $('#btn-huwc').removeClass('active');
-    });
-
-
 function searchDocuments(page = 1) {
     let nome = $('#nome').val();
     let organograma = $('#organograma').val();
@@ -986,31 +985,38 @@ function searchDocuments(page = 1) {
     $.ajax({
         url: "{{ url_for('buscar2') }}",
         method: 'GET',
-        data: { 
-            nome, 
-            organograma, 
-            tipo_documento, 
-            abrangencia: currentAbrangencia, 
+        data: {
+            nome,
+            organograma,
+            tipo_documento,
+            abrangencia: currentAbrangencia,
             page: page,
-            apenas_complexo: apenas_complexo
+            apenas_complexo: apenas_complexo,
+            search_organograma: $('#search-organograma').val()
         },
         success: function (response) {
             $('#organograma-grid').html(response);
+            initializePagination();
         },
         error: function () {
             alert('Erro ao buscar documentos. Tente novamente.');
         }
     });
 }
-    // Eventos de input para buscar documentos em tempo real
-    $('#nome, #organograma, #tipo_documento').on('input', function () {
-        searchDocuments();
-    });
+    // Eventos de input com debounce para não disparar a cada tecla
+    let debounceTimer = null;
+    function debounceSearch() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function() { searchDocuments(); }, 350);
+    }
+    $('#nome').on('input', debounceSearch);
+    $('#organograma, #tipo_documento').on('change', function () { searchDocuments(); });
 
 $('#limpar-filtros').on('click', function () {
     $('#nome').val('');
     $('#organograma').val('');
     $('#tipo_documento').val('');
+    $('#search-organograma').val('');
     $('#apenas-complexo').prop('checked', false);
     
     // Recupera os marcadores salvos
@@ -1030,7 +1036,6 @@ $('#limpar-filtros').on('click', function () {
         let page = $(this).attr('href').split('page=')[1];
         searchDocuments(page);
     });
-});
 
     // Fechar outros accordions ao abrir um
     $('.accordion-button').on('click', function () {
@@ -1043,7 +1048,7 @@ $('#search-organograma').on('input', function () {
 
     $('.organograma-card').each(function () {
         let cardText = $(this).find('h5').text().toLowerCase();
-        let nomeCompleto = $(this).data('nome-completo'); // Já convertido para lowercase
+        let nomeCompleto = $(this).data('nome-completo') || ''; // Já convertido para lowercase
         if (cardText.includes(searchTerm) || nomeCompleto.includes(searchTerm)) {
             $(this).closest('.organograma-card-container').show();
             hasResults = true;
@@ -1118,19 +1123,6 @@ $('#search-organograma').on('input', function () {
         // Filtra os documentos com base no termo de pesquisa
         filterDocumentsInModal(modalId, searchTerm);
     });
-
-    // Ajusta a navegação da abrangência ao carregar a página
-    if (sessionStorage.getItem("lastAbrangencia")) {
-        currentAbrangencia = sessionStorage.getItem("lastAbrangencia");
-        filterByAbrangencia(currentAbrangencia);
-        if (currentAbrangencia === 'HUWC') {
-            $('#btn-huwc').addClass('active');
-            $('#btn-meac').removeClass('active');
-        } else {
-            $('#btn-meac').addClass('active');
-            $('#btn-huwc').removeClass('active');
-        }
-    }
 
 // ========== FAVORITOS - LOCALSTORAGE ==========
 
@@ -1310,22 +1302,11 @@ if (!$('.toast-container').length) {
 }
 
 
-// Remover o destaque depois que o usuário clicar
-$('#ver-favoritos').on('click', function() {
-    $(this).removeClass('btn-highlight-novo');
-    $(this).find('.tooltip-novidade').remove();
-    
-    // Salvar no localStorage que o usuário já viu
-    localStorage.setItem('favoritosHighlightVisto', 'true');
-});
-
 // Verificar se já foi visto antes
-$(document).ready(function() {
-    if(localStorage.getItem('favoritosHighlightVisto') === 'true') {
-        $('#ver-favoritos').removeClass('btn-highlight-novo');
-        $('.tooltip-novidade').remove();
-    }
-});
+if(localStorage.getItem(VIEWED_KEY) === 'true') {
+    $('#ver-favoritos').removeClass('btn-highlight-novo');
+    $('.tooltip-novidade').remove();
+}
 
 function initializePagination() {
     document.querySelectorAll('.organograma-pagination-container').forEach(container => {
@@ -1372,19 +1353,27 @@ function initializePagination() {
             }
         }
 
+        // Clona os botões para remover listeners anteriores (evita stacking de handlers)
+        const prevOld = container.querySelector('.btn-pagination.prev');
+        const nextOld = container.querySelector('.btn-pagination.next');
+        const prevButton2 = prevOld.cloneNode(true);
+        const nextButton2 = nextOld.cloneNode(true);
+        prevOld.parentNode.replaceChild(prevButton2, prevOld);
+        nextOld.parentNode.replaceChild(nextButton2, nextOld);
+
         // Evento para o botão "Voltar"
-        container.querySelector('.btn-pagination.prev').addEventListener('click', () => {
+        prevButton2.addEventListener('click', () => {
             if (currentPage > 0) {
-                currentPage--; // Vai para a página anterior
+                currentPage--;
                 showPage(currentPage);
                 updateButtons();
             }
         });
 
         // Evento para o botão "Próximo"
-        container.querySelector('.btn-pagination.next').addEventListener('click', () => {
+        nextButton2.addEventListener('click', () => {
             if (currentPage < Math.ceil(totalCards / cardsPerPage) - 1) {
-                currentPage++; // Vai para a próxima página
+                currentPage++;
                 showPage(currentPage);
                 updateButtons();
             }
@@ -1428,19 +1417,72 @@ function initializePagination() {
 
     // ============= FIM DO NOVO CÓDIGO ============= //
 
-    // Salva a última abrangência selecionada na sessão
-    $('.abrangencia-navigation .btn').on('click', function () {
-        sessionStorage.setItem("lastAbrangencia", currentAbrangencia);
+    // Garantia de abrangência na geração de relatórios
+    window.gerarRelatorio = function (organograma, abrangencia) {
+        const ab = abrangencia || currentAbrangencia || 'HUWC';
+        window.location.href = `/miac/gerar_relatorio/${ab}/${organograma}`;
+    };
+
+    // ── Atalho de teclado: / foca a busca por nome ──
+    $(document).on('keydown', function(e) {
+        if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+            $('#nome').focus();
+        }
     });
 
-    // Garantia de abrangência na geração de relatórios
-    window.gerarRelatorio = function (organograma) {
-        if (!currentAbrangencia) {
-            currentAbrangencia = 'HUWC';
+    // ── Contador de resultados ao atualizar a grid ──
+    function updateResultCount() {
+        const items = $('#organograma-grid .doc-list-item');
+        if (items.length) {
+            const total = items.length;
+            // result-count-num is rendered by document_list2.html, nothing extra to do
         }
-        window.location.href = `/miac/gerar_relatorio/${currentAbrangencia}/${organograma}`;
-    };
+    }
+
+    // Back-to-top button visibility
+    $(window).on('scroll', function() {
+        if ($(this).scrollTop() > 300) {
+            $('#btn-back-top').fadeIn(200);
+        } else {
+            $('#btn-back-top').fadeOut(200);
+        }
+    });
+    $('#btn-back-top').on('click', function() {
+        $('html, body').animate({ scrollTop: 0 }, 300);
+    });
 });
+</script>
+
+<!-- Back-to-top button -->
+<button id="btn-back-top" title="Voltar ao topo"
+        style="display:none;position:fixed;bottom:24px;right:24px;z-index:9999;
+               width:42px;height:42px;border-radius:50%;border:none;
+               background:linear-gradient(135deg,#2c3e50,#34495e);color:#fff;
+               box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer;
+               font-size:1.1rem;transition:opacity .2s,transform .2s;"
+        onmouseover="this.style.transform='scale(1.1)'"
+        onmouseout="this.style.transform='scale(1)'">
+    <i class="fas fa-arrow-up"></i>
+</button>
+
+<!-- Keyboard shortcut hint (bottom-left, fades after 4s) -->
+<div id="shortcut-hint"
+     style="position:fixed;bottom:24px;left:290px;z-index:9000;
+            background:rgba(44,62,80,.85);color:#fff;font-size:.75rem;
+            padding:6px 14px;border-radius:20px;pointer-events:none;
+            opacity:0;transition:opacity .4s;">
+    <kbd style="background:rgba(255,255,255,.2);border:none;padding:1px 6px;border-radius:4px;">/</kbd>
+    para pesquisar
+</div>
+<script>
+setTimeout(function() {
+    const hint = document.getElementById('shortcut-hint');
+    if (hint) {
+        hint.style.opacity = '1';
+        setTimeout(function() { hint.style.opacity = '0'; }, 3500);
+    }
+}, 1200);
 </script>
 </body>
 </html>

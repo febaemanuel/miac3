@@ -10,21 +10,28 @@ from flask import (
     send_from_directory,
     send_file,
     flash,
+    Response,
 )
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import or_
+import csv
+import io
+from sqlalchemy import or_, inspect
+from sqlalchemy.ext.mutable import MutableList
 from dotenv import load_dotenv
-import PyPDF2
-import requests
+import json
+import logging
 import os
 import time
-import re
-from sqlalchemy import inspect
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
+from datetime import datetime
 from io import BytesIO
+from werkzeug.utils import secure_filename
+
+import qrcode
 from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.colors import HexColor
+from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import cm
 from reportlab.platypus import (
     SimpleDocTemplate,
     Table,
@@ -33,33 +40,32 @@ from reportlab.platypus import (
     Spacer,
     Image,
 )
-from reportlab.lib.units import cm
-from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib.colors import HexColor
-from datetime import datetime
-from werkzeug.utils import secure_filename
 
-import qrcode
-from reportlab.lib.utils import ImageReader
-from io import BytesIO
-import tempfile
-from sqlalchemy.ext.mutable import MutableList
-from sqlalchemy import JSON
-from datetime import datetime
-import json
-import os
-from flask import flash, redirect, render_template, request, url_for
-import unicodedata
-
-# Configuração do Google Cloud Vision
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "google_credentials.json"
+from extensions import db
+from models import Documento, Documento2, Organograma, TipoDocumento, criar_banco_de_dados
+from utils import (
+    parse_data,
+    calcular_status,
+    converter_data,
+    formatar_data_para_input,
+    verificar_vencimentos,
+    identificar_documentos_com_erro,
+    atualizar_status_documentos,
+    normalizar_texto,
+    add_watermark,
+    read_last_page,
+    send_to_deepseek_with_retry,
+    send_to_gpt_with_retry,
+    expired_duration,
+)
 
 load_dotenv()
 
-app = Flask(__name__)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger(__name__)
 
-app.secret_key = os.urandom(24)
+app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY") or os.urandom(24)
 
 db_host = os.getenv("DB_HOST")
 db_port = os.getenv("DB_PORT")
@@ -67,13 +73,19 @@ db_user = os.getenv("DB_USER")
 db_password = os.getenv("DB_PASSWORD")
 db_name = os.getenv("DB_NAME")
 
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
+CHATGPT_API_KEY = os.getenv("CHATGPT_API_KEY", "")
+
 # Configuração do SQLAlchemy
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-db = SQLAlchemy(app)
+db.init_app(app)
+
+# Registra filtro de template
+app.add_template_filter(expired_duration, "expired_duration")
 
 UPLOAD_FOLDER2 = os.path.join("static", "uploads2")
 os.makedirs(UPLOAD_FOLDER2, exist_ok=True)
@@ -85,94 +97,12 @@ users = {
 }
 
 
-class Documento(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    titulo = db.Column(db.String(400))
-    caminho = db.Column(db.String(200))
-    data_publicacao = db.Column(db.String(50))
-    data_elaboracao = db.Column(db.String(50))
-    vencimento = db.Column(db.String(50), nullable=True)
-    numero_sei = db.Column(db.String(50), nullable=True)
-    elaboradores = db.Column(db.String(200), nullable=True)
-    organograma = db.Column(db.String(100), nullable=True)
-    tipo_documento = db.Column(db.String(100), nullable=True)
-    # Novo campo: HUWC ou MEAC
-    abrangencia = db.Column(db.String(50), nullable=True)
-    # Novo campo: True (Atualizado) ou False (Desatualizado)
-    atualizado = db.Column(db.Boolean, nullable=True)
-
-
-class Documento2(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    nome = db.Column(db.String(400))  # Nome do arquivo PDF
-    organograma = db.Column(db.String(100))  # Escolha do Organograma
-    tipo_documento = db.Column(db.String(100))  # Escolha do Tipo de Documento
-    caminho = db.Column(db.String(200))  # Caminho do arquivo PDF atual
-    pdf_antigo = db.Column(db.String(200), nullable=True)  # Versão anterior imediata
-    data_publicacao = db.Column(db.String(50))  # Data de publicação
-    abrangencia = db.Column(db.String(50), nullable=True)  # HUWC ou MEAC
-    atualizado = db.Column(
-        db.Boolean, nullable=True
-    )  # True (Atualizado) ou False (Desatualizado)
-    data_elaboracao = db.Column(db.String(50), nullable=True)  # Data de Elaboração
-    vencimento = db.Column(db.String(50), nullable=True)  # Data de Validade
-    numero_sei = db.Column(db.String(50), nullable=True)  # Número SEI
-    elaboradores = db.Column(db.String(1000), nullable=True)  # Elaboradores
-    marcador = db.Column(db.String(100), nullable=True)  # Marcador
-    nome_completo = db.Column(db.String(200), nullable=True)  # Adicione esta linha
-
-    # Novos campos para versionamento avançado
-    versao_atual = db.Column(db.Integer, default=1)  # Número da versão atual
-    historico_versoes = db.Column(MutableList.as_mutable(JSON), default=list)
-    data_atualizacao = db.Column(db.DateTime)  # Data da última atualização
-
-    def __repr__(self):
-        return f"<Documento2 {self.nome} (v{self.versao_atual})>"
-
-    @property
-    def versao_efetiva(self):
-        return self.versao_atual if self.versao_atual is not None else 1
-
-    @property
-    def historico_efetivo(self):
-        return self.historico_versoes if self.historico_versoes is not None else []
-
-
-class Organograma(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    nome = db.Column(db.String(100), unique=True)
-
-
-# Modelo para Tipo de Documento
-
-
-class TipoDocumento(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    nome = db.Column(db.String(100), unique=True)
-
-
-# Função para criar o banco de dados e as tabelas
-
-
-def criar_banco_de_dados():
-    with app.app_context():
-        # Verifica se o banco de dados já existe
-        inspector = inspect(db.engine)
-        if not inspector.has_table("documento") or not inspector.has_table(
-            "documento2"
-        ):
-            # Cria todas as tabelas definidas nos modelos
-            db.create_all()
-            print("Banco de dados e tabelas criados com sucesso!")
-        else:
-            print("Banco de dados já existe.")
-
-
 # Executa a função para criar o banco de dados
-criar_banco_de_dados()
+criar_banco_de_dados(app)
 
-# Função de login
-
+# ---------------------------------------------------------------------------
+# Helpers de autenticação
+# ---------------------------------------------------------------------------
 
 def login_user(username, password):
     if username in users and users[username]["senha"] == password:
@@ -182,17 +112,62 @@ def login_user(username, password):
     return False
 
 
-def parse_data(data_str):
-    formatos = ["%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y", "%d.%m.%Y"]
-    for fmt in formatos:
-        try:
-            return datetime.strptime(data_str, fmt)
-        except ValueError:
-            continue
-    raise ValueError(f"Formato de data inválido: {data_str}")
+# ---------------------------------------------------------------------------
+# Helpers de consulta reutilizáveis
+# ---------------------------------------------------------------------------
+
+def _get_organogramas_formatados():
+    """Retorna lista de dicts {sigla, nome_completo} ordenada por nome."""
+    rows = db.session.query(Documento2.organograma, Documento2.nome_completo).distinct().all()
+    result = [{"sigla": r[0], "nome_completo": r[1]} for r in rows]
+    result.sort(key=lambda x: (x["nome_completo"] or x["sigla"] or "").lower())
+    return result
+
+
+def _calcular_stats_dashboard(abrangencia=None):
+    """Retorna dict com estatísticas rápidas dos documentos."""
+    query = Documento2.query
+    if abrangencia:
+        query = query.filter_by(abrangencia=abrangencia)
+    docs = query.all()
+    total = len(docs)
+    atualizados = sum(1 for d in docs if d.atualizado)
+    vencidos = total - atualizados
+    hoje = datetime.now()
+    proximos = 0
+    for d in docs:
+        if d.atualizado and d.vencimento:
+            try:
+                dt = parse_data(d.vencimento)
+                if 0 <= (dt - hoje).days <= 30:
+                    proximos += 1
+            except ValueError:
+                pass
+    return {
+        "total": total,
+        "atualizados": atualizados,
+        "vencidos": vencidos,
+        "proximos_vencer": proximos,
+        "pct_atualizado": round(atualizados / total * 100) if total else 0,
+    }
+
+
+def _agrupar_documentos(documentos):
+    """Agrupa lista de Documento2 em {marcador: {organograma: {tipo: [docs]}}}."""
+    agrupados = {}
+    for doc in documentos:
+        marcador = doc.marcador or "Sem Marcador"
+        agrupados.setdefault(marcador, {})
+        agrupados[marcador].setdefault(doc.organograma, {})
+        agrupados[marcador][doc.organograma].setdefault(doc.tipo_documento, [])
+        agrupados[marcador][doc.organograma][doc.tipo_documento].append(doc)
+    return agrupados
+
 
 @app.route("/miac/gerar_relatorio/<abrangencia>/<organograma>")
 def gerar_relatorio(abrangencia, organograma):
+    if "username" not in session:
+        return redirect(url_for("login"))
     try:
         # Consulta os documentos no banco de dados
         documentos = Documento2.query.filter_by(
@@ -201,73 +176,6 @@ def gerar_relatorio(abrangencia, organograma):
 
         if not documentos:
             return "Nenhum documento encontrado para os critérios especificados", 404
-
-        # Função para calcular o status e o tempo restante/vencido
-        def calcular_status(doc):
-            try:
-                if doc.vencimento:
-                    # Tenta converter a data de vencimento em vários formatos
-                    data_vencimento = None
-                    formatos = ["%d/%m/%Y", "%Y-%m-%d", "%d.%m.%Y", "%d-%m-%Y"]
-
-                    for formato in formatos:
-                        try:
-                            data_vencimento = datetime.strptime(doc.vencimento, formato)
-                            break
-                        except ValueError:
-                            continue
-
-                    if data_vencimento is None:
-                        return {
-                            "status": "Inválido",
-                            "detalhes": "Formato desconhecido",
-                            "cor": "darkorange",
-                            "vencimento": doc.vencimento if doc.vencimento else "N/A",
-                        }
-
-                    hoje = datetime.now()
-
-                    if data_vencimento >= hoje:
-                        dias_restantes = (data_vencimento - hoje).days
-                        return {
-                            "status": "Atualizado",
-                            "detalhes": f"Vence em {dias_restantes} dias",
-                            "cor": "green",
-                            "vencimento": data_vencimento.strftime("%d/%m/%Y"),
-                        }
-                    else:
-                        dias_vencido = (hoje - data_vencimento).days
-
-                        if dias_vencido < 30:
-                            tempo = f"Há {dias_vencido} dias"
-                        elif dias_vencido < 365:
-                            meses = dias_vencido // 30
-                            tempo = f"Há {meses} meses"
-                        else:
-                            anos = dias_vencido // 365
-                            resto_meses = (dias_vencido % 365) // 30
-                            tempo = f"Há {anos} anos e {resto_meses} meses"
-
-                        return {
-                            "status": "Vencido",
-                            "detalhes": tempo,
-                            "cor": "red",
-                            "vencimento": data_vencimento.strftime("%d/%m/%Y"),
-                        }
-                else:
-                    return {
-                        "status": "Sem data",
-                        "detalhes": "Sem data de vencimento",
-                        "cor": "gray",
-                        "vencimento": "N/A",
-                    }
-            except Exception as e:
-                return {
-                    "status": "Inválido",
-                    "detalhes": "Data inválida",
-                    "cor": "darkorange",
-                    "vencimento": doc.vencimento if doc.vencimento else "N/A",
-                }
 
         # Ordenação: primeiro por tipo de documento (A-Z), depois vencidos por último dentro do tipo
         documentos_ordenados = sorted(
@@ -756,47 +664,8 @@ def gerar_relatorio(abrangencia, organograma):
         )
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        logger.exception("Erro ao gerar relatório")
         return f"Erro ao gerar relatório: {str(e)}", 500
-
-
-def add_watermark(canvas, doc):
-    canvas.saveState()
-
-    # Verifique se a imagem de fundo existe
-    marca_fundo_path = os.path.join("static", "marca_fundo.png")
-    if not os.path.exists(marca_fundo_path):
-        print(f"Erro: A imagem {marca_fundo_path} não foi encontrada.")
-    else:
-        canvas.setFillAlpha(0.05)
-        canvas.drawImage(
-            marca_fundo_path,
-            x=0,
-            y=200,
-            width=letter[0],
-            height=letter[1] * 0.75,
-            preserveAspectRatio=True,
-            mask="auto",
-        )
-
-    # Verifique se a imagem do cabeçalho existe
-    marca_cabecalho_path = os.path.join("static", "marca_cabecalho.png")
-    if not os.path.exists(marca_cabecalho_path):
-        print(f"Erro: A imagem {marca_cabecalho_path} não foi encontrada.")
-    else:
-        canvas.setFillAlpha(1.0)
-        canvas.drawImage(
-            marca_cabecalho_path,
-            x=200,
-            y=720,
-            width=400,
-            height=100,
-            preserveAspectRatio=True,
-            mask="auto",
-        )
-
-    canvas.restoreState()
 
 
 @app.route("/miac/login", methods=["GET", "POST"])
@@ -820,9 +689,9 @@ def login():
     return render_template("login.html")
 
 
-@app.route("/miac/excluir_documento/<int:doc_id>/<tipo>", methods=["GET"])
+@app.route("/miac/excluir_documento/<int:doc_id>/<tipo>", methods=["POST"])
 def excluir_documento(doc_id, tipo):
-    if "username" not in session:
+    if "username" not in session or session.get("nivel_acesso") != "elevado":
         return redirect(url_for("login"))
 
     if tipo == "documento":
@@ -855,6 +724,8 @@ def lista():
 # ========== NOVA ROTA PARA CARREGAR MODAL ========== #
 @app.route("/miac/carregar_documentos_modal", methods=["GET"])
 def carregar_documentos_modal():
+    if "username" not in session:
+        return jsonify({"error": "Não autenticado"}), 401
     organograma = request.args.get("organograma", "").strip()
     abrangencia = request.args.get("abrangencia", "HUWC").strip()
 
@@ -1014,27 +885,6 @@ def estatisticas():
         else:
             stats["por_marcador"][marcador]["desatualizados"] += 1
 
-    # Verifica notificações
-    def verificar_vencimentos():
-        documentos = Documento2.query.filter(Documento2.vencimento.isnot(None)).all()
-        notificacoes = []
-        for doc in documentos:
-            try:
-                data_vencimento = parse_data(doc.vencimento).date()
-                hoje = datetime.now().date()
-                dias_restantes = (data_vencimento - hoje).days
-                if dias_restantes <= 30 and dias_restantes >= 0:
-                    notificacoes.append(
-                        f"Documento '{doc.nome}' vence em {dias_restantes} dias."
-                    )
-                elif dias_restantes < 0:
-                    notificacoes.append(
-                        f"Documento '{doc.nome}' está vencido há {-dias_restantes} dias."
-                    )
-            except ValueError:
-                continue
-        return notificacoes
-
     notificacoes = verificar_vencimentos()
 
     # Identifica documentos com erro
@@ -1054,43 +904,10 @@ def estatisticas():
     )
 
 
-def identificar_documentos_com_erro():
-    documentos_com_erro = []
-
-    # Consulta todos os documentos
-    documentos = Documento2.query.all()
-
-    for documento in documentos:
-        erros = []
-
-        # Verifica se a data de vencimento é válida
-        if documento.vencimento:
-            try:
-                converter_data(documento.vencimento)
-            except ValueError:
-                erros.append(f"Data de vencimento inválida: {documento.vencimento}")
-
-        # Verifica campos obrigatórios
-        if not documento.organograma:
-            erros.append("Organograma não informado")
-        if not documento.tipo_documento:
-            erros.append("Tipo de documento não informado")
-        if not documento.abrangencia:
-            erros.append("Abrangência não informada")
-
-        # Se houver erros, adiciona o documento à lista de documentos com erro
-        if erros:
-            documentos_com_erro.append({"documento": documento, "erros": erros})
-
-    return documentos_com_erro
-
-
-import unicodedata
-from flask import request, render_template
-
-
 @app.route("/miac/buscar2", methods=["GET"])
 def buscar2():
+    if "username" not in session:
+        return jsonify({"error": "Não autenticado"}), 401
     # Obter parâmetros de pesquisa
     nome = request.args.get("nome", "").strip()
     organograma = request.args.get("organograma", "").strip()
@@ -1138,54 +955,22 @@ def buscar2():
                (doc.nome_completo and search_organograma in normalizar_texto(doc.nome_completo)))
         ]
 
-    documentos_agrupados = {}
-    if not (nome or organograma or tipo_documento or search_organograma or apenas_complexo):
-        for doc in documentos:
-            marcador = doc.marcador if doc.marcador else "Sem Marcador"
-            if marcador not in documentos_agrupados:
-                documentos_agrupados[marcador] = {}
-            if doc.organograma not in documentos_agrupados[marcador]:
-                documentos_agrupados[marcador][doc.organograma] = {}
-            if doc.tipo_documento not in documentos_agrupados[marcador][doc.organograma]:
-                documentos_agrupados[marcador][doc.organograma][doc.tipo_documento] = []
-            documentos_agrupados[marcador][doc.organograma][doc.tipo_documento].append(doc)
+    tem_filtro = bool(nome or organograma or tipo_documento or search_organograma or apenas_complexo)
+    documentos_agrupados = {} if tem_filtro else _agrupar_documentos(documentos)
 
-    # Buscar organogramas únicos
-    organogramas_completos = db.session.query(
-        Documento2.organograma,
-        Documento2.nome_completo
-    ).distinct().all()
-
-    organogramas_formatados = [
-        {"sigla": org[0], "nome_completo": org[1]} 
-        for org in organogramas_completos
-    ]
-    
-    # Ordenação corrigida
-    organogramas_formatados.sort(key=lambda x: (x["nome_completo"] or x["sigla"]).lower())
-
-    tipos_documento_unicos = set(doc.tipo_documento for doc in documentos if doc.tipo_documento)
-    tipos_documento = sorted(list(tipos_documento_unicos))
+    tipos_documento = sorted({doc.tipo_documento for doc in documentos if doc.tipo_documento})
 
     return render_template(
         "partials/document_list2.html",
         documentos_agrupados=documentos_agrupados,
         documentos=documentos,
-        exibir_lista=bool(nome or organograma or tipo_documento or search_organograma or apenas_complexo),
+        exibir_lista=tem_filtro,
         abrangencia=abrangencia,
-        organogramas=organogramas_formatados,
+        organogramas=_get_organogramas_formatados(),
         tipos_documento=tipos_documento,
         organograma_filtro=organograma,
         tipo_documento_filtro=tipo_documento
     )
-
-def normalizar_texto(texto):
-    """Remove acentos e converte para minúsculas"""
-    if not texto:
-        return ""
-    texto = unicodedata.normalize("NFD", texto)
-    texto = texto.encode("ascii", "ignore").decode("utf-8")
-    return texto.lower()
 
 @app.route("/miac/logout")
 def logout():
@@ -1193,113 +978,23 @@ def logout():
     return redirect(url_for("login"))
 
 
+@app.route("/miac/api/stats")
+def api_stats():
+    if "username" not in session:
+        return jsonify({"error": "Não autenticado"}), 401
+    abrangencia = request.args.get("abrangencia", "").strip()
+    stats = _calcular_stats_dashboard(abrangencia=abrangencia if abrangencia else None)
+    return jsonify(stats)
+
+
 @app.route("/miac/", methods=["GET", "POST"])
 def index():
     if "username" not in session:
         return redirect(url_for("login"))
+    stats = _calcular_stats_dashboard()
+    notificacoes = verificar_vencimentos()
+    return render_template("index.html", stats=stats, notificacoes=notificacoes)
 
-    titulo = request.args.get("titulo", "")
-    autor_id = request.args.get("autor", "")
-    data = request.args.get("data", "")
-
-    query = Documento.query
-
-    if titulo:
-        query = query.filter(Documento.titulo.ilike(f"%{titulo}%"))
-    if autor_id:
-        query = query.filter(Documento.elaboradores.ilike(f"%{autor_id}%"))
-    if data:
-        query = query.filter(Documento.data_publicacao == data)
-
-    documentos = query.all()
-    return render_template("index.html", documentos=documentos)
-
-
-from google.cloud import vision
-import fitz
-
-
-def read_last_page(file_path):
-    """
-    Versão simplificada que:
-    - Extrai apenas o texto da última página
-    - Não usa OCR ou validação por regex
-    """
-    try:
-        doc = fitz.open(file_path)
-        num_pages = len(doc)
-        
-        # Pega apenas a última página
-        page = doc.load_page(-1)
-        text = page.get_text("text")
-        cleaned_text = clean_text(text)
-        
-        return cleaned_text if cleaned_text.strip() else None
-
-    except Exception as e:
-        print(f"Erro crítico: {str(e)}")
-        return None
-    finally:
-        if "doc" in locals():
-            doc.close()
-
-def clean_text(text):
-    """Remove caracteres errados e normaliza espaços"""
-    return re.sub(r"\s+", " ", text).strip()
-
-def send_to_deepseek_with_retry(prompt, api_key, retries=3, delay=2):
-    for i in range(retries):
-        try:
-            url = "https://api.deepseek.com/v1/chat/completions"
-            headers = {
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            }
-            data = {
-                "model": "deepseek-chat",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 150,
-            }
-
-            response = requests.post(url, headers=headers, json=data)
-
-            if response.status_code == 200:
-                return response.json()["choices"][0]["message"]["content"]
-            else:
-                print(
-                    f"Tentativa {i+1} falhou. Erro: {response.status_code}, {response.text}"
-                )
-
-        except Exception as e:
-            print(f"Tentativa {i+1} falhou. Erro ao comunicar com o DeepSeek: {e}")
-
-        time.sleep(delay)
-    return None
-
-def send_to_gpt_with_retry(prompt, api_key, retries=3, delay=2):
-    for i in range(retries):
-        try:
-            url = "https://api.openai.com/v1/chat/completions"
-            headers = {
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            }
-            data = {
-                "model": "gpt-4o-mini",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 150,
-            }
-            response = requests.post(url, headers=headers, json=data)
-            if response.status_code == 200:
-                return response.json()["choices"][0]["message"]["content"]
-            else:
-                print(
-                    f"Tentativa {i+1} falhou. Erro: {response.status_code}, {response.text}"
-                )
-        except Exception as e:
-            print(f"Tentativa {i+1} falhou. Erro ao comunicar com o ChatGPT: {e}")
-        time.sleep(delay)
-    return None
 
 @app.route("/miac/gerenciar_siglas", methods=["GET", "POST"])
 def gerenciar_siglas():
@@ -1313,8 +1008,8 @@ def gerenciar_siglas():
     ).group_by(Documento2.organograma).all()
 
     if request.method == "POST":
-        sigla = request.form.get("sigla").strip().upper()
-        nome_completo = request.form.get("nome_completo").strip()
+        sigla = (request.form.get("sigla") or "").strip().upper()
+        nome_completo = (request.form.get("nome_completo") or "").strip()
 
         Documento2.query.filter_by(organograma=sigla).update({
             "nome_completo": nome_completo
@@ -1380,9 +1075,9 @@ def obter_dados():
                     )
 
                     if modelo_ia == "deepseek":
-                        gpt_response = send_to_deepseek_with_retry(prompt, deepseek_api_key)
+                        gpt_response = send_to_deepseek_with_retry(prompt, DEEPSEEK_API_KEY)
                     elif modelo_ia == "chatgpt":
-                        gpt_response = send_to_gpt_with_retry(prompt, chatgpt_api_key)
+                        gpt_response = send_to_gpt_with_retry(prompt, CHATGPT_API_KEY)
                     else:
                         return jsonify({"error": "Modelo de IA inválido"}), 400
 
@@ -1461,61 +1156,14 @@ def obter_dados():
                         try:
                             os.remove(file_path)
                         except Exception as e:
-                            print(f"Erro ao remover arquivo temporário: {e}")
+                            logger.warning("Erro ao remover arquivo temporário: %s", e)
 
         return jsonify(resultados)
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        logger.exception("Erro ao processar arquivos")
         return jsonify({"error": f"Erro ao processar arquivos: {str(e)}"}), 500
 
-
-
-def converter_data(data):
-    formatos = ["%Y-%m-%d", "%d/%m/%Y"]
-    for formato in formatos:
-        try:
-            return datetime.strptime(data, formato).date()
-        except ValueError:
-            continue
-    raise ValueError(f"Formato de data inválido: {data}")
-
-
-def atualizar_status_documentos():
-    documentos = Documento2.query.all()
-    for documento in documentos:
-        if documento.vencimento:
-            try:
-                data_vencimento = converter_data(documento.vencimento)
-                documento.atualizado = data_vencimento >= datetime.now().date()
-            except ValueError as e:
-                print(f"Erro ao converter data: {e}")
-
-    db.session.commit()
-
-
-@app.template_filter("expired_duration")
-def expired_duration(vencimento):
-    try:
-        # Supondo que a data esteja no formato 'dd/mm/yyyy'
-        exp_date = datetime.strptime(vencimento, "%d/%m/%Y")
-    except ValueError:
-        try:
-            # Caso esteja no formato 'yyyy-mm-dd'
-            exp_date = datetime.strptime(vencimento, "%Y-%m-%d")
-        except Exception:
-            return ""
-    diff = datetime.now() - exp_date
-    days = diff.days
-    if days < 30:
-        return f"{days} dia{'s' if days != 1 else ''}"
-    elif days < 365:
-        months = days // 30
-        return f"{months} mês{'es' if months != 1 else ''}"
-    else:
-        years = days // 365
-        return f"{years} ano{'s' if years != 1 else ''}"
 
 
 @app.route("/miac/publicar2", methods=["POST"])
@@ -1539,9 +1187,7 @@ def publicar2():
 
         # Verifica se o número de títulos corresponde ao número de arquivos
         if len(titulos) != len(files):
-            print(
-                f"Erro: Número de títulos ({len(titulos)}) não corresponde ao número de arquivos ({len(files)})"
-            )
+            logger.warning("Número de títulos (%d) não corresponde ao número de arquivos (%d)", len(titulos), len(files))
             return (
                 jsonify(
                     {
@@ -1569,17 +1215,25 @@ def publicar2():
                 400,
             )
 
+        MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
         log_detalhado = []
 
         # Processa cada arquivo e salva no banco de dados
         for index, file in enumerate(files):
             filename_lower = file.filename.lower()
-            
+
             # Verifica se é um arquivo permitido (PDF, DOC ou DOCX)
-            if not (filename_lower.endswith('.pdf') or 
-                   filename_lower.endswith('.doc') or 
+            if not (filename_lower.endswith('.pdf') or
+                   filename_lower.endswith('.doc') or
                    filename_lower.endswith('.docx')):
                 continue
+
+            # Verifica tamanho do arquivo
+            file.seek(0, 2)  # seek to end
+            file_size = file.tell()
+            file.seek(0)
+            if file_size > MAX_FILE_SIZE:
+                return jsonify({"error": f"Arquivo '{file.filename}' excede o limite de 50 MB."}), 400
 
             # Gera um nome seguro e adiciona identificador único
             base_nome = secure_filename(titulos[index].replace(" ", "_"))
@@ -1642,18 +1296,13 @@ def publicar2():
         # Salva as alterações no banco de dados
         db.session.commit()
 
-        print("\n=== LOG DE PUBLICAÇÃO ===")
         for log in log_detalhado:
-            print(log)
-        print("=========================\n")
+            logger.info("Publicação: %s", log)
 
         return jsonify({"message": "Documentos publicados com sucesso!"})
 
     except Exception as e:
-        import traceback
-
-        erro_detalhado = traceback.format_exc()
-        print(f"Erro ao publicar documentos:\n{erro_detalhado}")
+        logger.exception("Erro ao publicar documentos")
         return (
             jsonify({"error": f"Erro ao publicar documentos. Detalhes: {str(e)}"}),
             500,
@@ -1676,6 +1325,8 @@ def static_files(filename):
 
 @app.route("/miac/documento/<int:doc_id>", methods=["GET"])
 def documento_detalhes(doc_id):
+    if "username" not in session:
+        return redirect(url_for("login"))
 
     documento = db.session.get(Documento, doc_id)
     if documento:
@@ -1694,6 +1345,8 @@ def documento_detalhes(doc_id):
 
 @app.route("/miac/publicados2", methods=["GET"])
 def publicados2():
+    if "username" not in session:
+        return redirect(url_for("login"))
     # Atualiza o status dos documentos antes de exibi-los
     atualizar_status_documentos()
 
@@ -1714,63 +1367,26 @@ def publicados2():
     # Executar a query
     documentos = query.all()
 
-    # Agrupar documentos por marcador, organograma e tipo de documento
-    documentos_agrupados = {}
-    tipos_documento_unicos = set()
+    documentos_agrupados = _agrupar_documentos(documentos)
+    tipos_documento = sorted({doc.tipo_documento for doc in documentos if doc.tipo_documento})
 
-    for documento in documentos:
-        # Verifica se o marcador existe; caso contrário, usa "Sem Marcador"
-        marcador = documento.marcador if documento.marcador else "Sem Marcador"
-
-        # Estrutura de agrupamento: {marcador: {organograma: {tipo_documento: [documentos]}}}
-        if marcador not in documentos_agrupados:
-            documentos_agrupados[marcador] = {}
-        if documento.organograma not in documentos_agrupados[marcador]:
-            documentos_agrupados[marcador][documento.organograma] = {}
-        if (
-            documento.tipo_documento
-            not in documentos_agrupados[marcador][documento.organograma]
-        ):
-            documentos_agrupados[marcador][documento.organograma][
-                documento.tipo_documento
-            ] = []
-        documentos_agrupados[marcador][documento.organograma][
-            documento.tipo_documento
-        ].append(documento)
-
-        # Adiciona valores únicos para tipos de documento
-        if documento.tipo_documento:
-            tipos_documento_unicos.add(documento.tipo_documento)
-
-    # Busca organogramas únicos COM nome_completo
-    organogramas_completos = db.session.query(
-        Documento2.organograma,
-        Documento2.nome_completo
-    ).distinct().all()
-
-    # Organiza em uma lista de dicionários e ordena por nome_completo ou sigla
-    organogramas_formatados = [
-        {"sigla": org[0], "nome_completo": org[1]} 
-        for org in organogramas_completos
-    ]
-    organogramas_formatados.sort(key=lambda x: (x["nome_completo"] or "").lower() or x["sigla"].lower())
-
-    # Converter conjunto de tipos de documento para lista ordenada
-    tipos_documento = sorted(list(tipos_documento_unicos))
+    stats_rapidas = _calcular_stats_dashboard(abrangencia=abrangencia_selecionada)
 
     return render_template(
         "publicados2.html",
         documentos_agrupados=documentos_agrupados,
-        organogramas=organogramas_formatados,
+        organogramas=_get_organogramas_formatados(),
         tipos_documento=tipos_documento,
         abrangencia_selecionada=abrangencia_selecionada,
         organograma_filtro=organograma_filtro,
         tipo_documento_filtro=tipo_documento_filtro,
+        stats_rapidas=stats_rapidas,
     )
 
 @app.route("/miac/documento2/<int:doc_id>", methods=["GET"])
 def documento2_detalhes(doc_id):
-
+    if "username" not in session:
+        return redirect(url_for("login"))
     documento = db.session.get(Documento2, doc_id)
     if documento:
         documento_url = url_for(
@@ -1834,22 +1450,16 @@ def gerenciar_marcadores():
 
 @app.route("/miac/editar_documento2/<int:doc_id>", methods=["GET", "POST"])
 def editar_documento2(doc_id):
-    print(f"\n=== INÍCIO editar_documento2 para doc_id={doc_id} ===")
-
     # Verificação de autenticação e autorização
     if "username" not in session or session.get("nivel_acesso") != "elevado":
-        print("Acesso negado - usuário não autenticado ou sem privilégios")
         return redirect(url_for("login"))
 
     documento = db.session.get(Documento2, doc_id)
     if not documento:
-        print(f"Documento {doc_id} não encontrado")
         return "Documento não encontrado", 404
 
     if request.method == "POST":
         try:
-            print("\nProcessando POST...")
-            print(f"Dados do formulário: {request.form}")
 
             # Atualização dos campos básicos
             documento.nome = request.form.get("nome", documento.nome)
@@ -1875,90 +1485,54 @@ def editar_documento2(doc_id):
             # Processamento de novo arquivo PDF
             if "novo_pdf" in request.files and request.files["novo_pdf"].filename != "":
                 novo_pdf = request.files["novo_pdf"]
-                print(f"\nNovo PDF recebido: {novo_pdf.filename}")
 
                 if novo_pdf.filename.lower().endswith(".pdf"):
                     # Inicialização do histórico
                     if documento.historico_versoes is None:
-                        print("Inicializando histórico como MutableList vazio")
                         documento.historico_versoes = MutableList()
                     elif not isinstance(documento.historico_versoes, MutableList):
-                        print("Convertendo histórico para MutableList")
                         documento.historico_versoes = MutableList(
                             documento.historico_versoes
                         )
 
                     # Criação da nova entrada no histórico
                     historico_entry = {
-                        "versao": (
-                            documento.versao_atual
-                            if documento.versao_atual is not None
-                            else 1
-                        ),
+                        "versao": documento.versao_atual if documento.versao_atual is not None else 1,
                         "caminho": documento.caminho,
                         "data": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
                         "responsavel": session["username"],
-                        "nome_arquivo": (
-                            os.path.basename(documento.caminho)
-                            if documento.caminho
-                            else None
-                        ),
+                        "nome_arquivo": os.path.basename(documento.caminho) if documento.caminho else None,
                     }
-                    print(f"Nova entrada de histórico: {historico_entry}")
 
-                    # Adição ao histórico
+                    # Adição ao histórico e atualização da versão
                     documento.historico_versoes.append(historico_entry)
-                    print(f"Histórico após adição: {documento.historico_versoes}")
-
-                    # Atualização da versão
-                    versao_anterior = documento.versao_atual
-                    documento.versao_atual = (
-                        documento.versao_atual
-                        if documento.versao_atual is not None
-                        else 1
-                    ) + 1
-                    print(
-                        f"Versão atualizada: {versao_anterior} -> {documento.versao_atual}"
-                    )
+                    documento.versao_atual = (documento.versao_atual or 1) + 1
 
                     # Salvamento do novo arquivo
-                    file_name = (
-                        f"doc_{doc_id}_v{documento.versao_atual}_{int(time.time())}.pdf"
-                    )
+                    file_name = f"doc_{doc_id}_v{documento.versao_atual}_{int(time.time())}.pdf"
                     file_path = os.path.join(UPLOAD_FOLDER2, file_name)
                     novo_pdf.save(file_path)
-                    print(f"Arquivo salvo em: {file_path}")
+                    logger.info("Novo PDF do documento %d salvo em %s", doc_id, file_path)
 
                     # Atualização dos caminhos
                     documento.pdf_antigo = documento.caminho
                     documento.caminho = file_path.replace("\\", "/")
                     documento.data_atualizacao = datetime.now()
-                    print(f"Caminhos atualizados. Novo caminho: {documento.caminho}")
 
             # Commit das alterações
             db.session.commit()
-            print("Commit no banco de dados realizado com sucesso")
             flash("Documento atualizado com sucesso!", "success")
             return redirect(url_for("documento2_detalhes", doc_id=doc_id))
 
         except Exception as e:
             db.session.rollback()
-            print(f"\nERRO durante a atualização: {str(e)}")
-            import traceback
-
-            traceback.print_exc()
+            logger.exception("Erro ao atualizar documento %d", doc_id)
             flash(f"Erro ao atualizar documento: {str(e)}", "error")
             return redirect(url_for("editar_documento2", doc_id=doc_id))
 
     # Preparação dos dados para o template (GET)
-    print("\nPreparando dados para visualização (GET)")
-
-    # Tratamento do histórico para exibição
     historico = []
     if documento.historico_versoes:
-        print(f"Tipo do histórico: {type(documento.historico_versoes)}")
-
-        # Conversão para lista comum se necessário
         if isinstance(documento.historico_versoes, (MutableList, list)):
             historico = list(documento.historico_versoes)
         elif isinstance(documento.historico_versoes, str):
@@ -1967,52 +1541,25 @@ def editar_documento2(doc_id):
             except json.JSONDecodeError:
                 historico = []
 
-    # Ordenação do histórico
     try:
-        print("Ordenando histórico...")
         historico_ordenado = sorted(
             [h for h in historico if isinstance(h, dict) and "versao" in h],
             key=lambda x: x["versao"],
             reverse=True,
         )
-        print(f"Histórico ordenado: {len(historico_ordenado)} entradas")
     except Exception as e:
-        print(f"Erro ao ordenar histórico: {str(e)}")
+        logger.warning("Erro ao ordenar histórico do documento %d: %s", doc_id, e)
         historico_ordenado = []
 
-    # Preparação dos dados para o template
     dados_template = {
         "documento": documento,
-        "versao_efetiva": (
-            documento.versao_atual if documento.versao_atual is not None else 1
-        ),
+        "versao_efetiva": documento.versao_atual if documento.versao_atual is not None else 1,
         "historico_efetivo": historico_ordenado,
         "data_elaboracao": formatar_data_para_input(documento.data_elaboracao),
         "vencimento": formatar_data_para_input(documento.vencimento),
     }
 
-    print(f"\nDados enviados para o template:")
-    print(f"Versão efetiva: {dados_template['versao_efetiva']}")
-    print(f"Quantidade de entradas no histórico: {len(historico_ordenado)}")
-    print("=== FIM editar_documento2 ===")
-
     return render_template("editar_documento2.html", **dados_template)
-
-
-def formatar_data_para_input(data_str):
-    """Converte datas no formato dd/mm/yyyy para yyyy-mm-dd (input type='date')"""
-    if not data_str:
-        return ""
-
-    try:
-        if "/" in data_str:
-            return datetime.strptime(data_str, "%d/%m/%Y").strftime("%Y-%m-%d")
-        elif "-" in data_str:
-            return data_str.split()[0]  # Assume formato yyyy-mm-dd
-    except ValueError:
-        return ""
-
-    return data_str
 
 
 @app.route("/miac/restaurar_versao/<int:doc_id>/<int:versao>", methods=["POST"])
@@ -2089,21 +1636,27 @@ def publicar2_page():
 
 @app.route("/miac/gerenciar_opcoes", methods=["GET", "POST"])
 def gerenciar_opcoes():
-    if "username" not in session:
+    if "username" not in session or session.get("nivel_acesso") != "elevado":
         return redirect(url_for("login"))
 
     if request.method == "POST":
         tipo = request.form.get("tipo")
-        nome = request.form.get("nome")
+        nome = request.form.get("nome", "").strip()
 
-        if tipo == "organograma":
-            novo_organograma = Organograma(nome=nome)
-            db.session.add(novo_organograma)
-        elif tipo == "tipo_documento":
-            novo_tipo_documento = TipoDocumento(nome=nome)
-            db.session.add(novo_tipo_documento)
+        if not nome:
+            flash("Nome não pode ser vazio.", "error")
+            return redirect(url_for("gerenciar_opcoes"))
 
-        db.session.commit()
+        try:
+            if tipo == "organograma":
+                db.session.add(Organograma(nome=nome))
+            elif tipo == "tipo_documento":
+                db.session.add(TipoDocumento(nome=nome))
+            db.session.commit()
+            flash("Item adicionado com sucesso!", "success")
+        except Exception:
+            db.session.rollback()
+            flash("Erro: item já existe ou dados inválidos.", "error")
         return redirect(url_for("gerenciar_opcoes"))
 
     organogramas = Organograma.query.all()
@@ -2118,13 +1671,15 @@ def gerenciar_opcoes():
 
 @app.route("/miac/remover_opcao/<int:id>/<tipo>")
 def remover_opcao(id, tipo):
-    if "username" not in session:
+    if "username" not in session or session.get("nivel_acesso") != "elevado":
         return redirect(url_for("login"))
 
     if tipo == "organograma":
-        opcao = Organograma.query.get(id)
+        opcao = db.session.get(Organograma, id)
     elif tipo == "tipo_documento":
-        opcao = TipoDocumento.query.get(id)
+        opcao = db.session.get(TipoDocumento, id)
+    else:
+        return "Tipo inválido", 400
 
     if opcao:
         db.session.delete(opcao)
@@ -2133,11 +1688,137 @@ def remover_opcao(id, tipo):
     return redirect(url_for("gerenciar_opcoes"))
 
 
+@app.route("/miac/exportar_csv")
+def exportar_csv():
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    abrangencia = request.args.get("abrangencia", "").strip()
+    organograma = request.args.get("organograma", "").strip()
+    tipo_documento = request.args.get("tipo_documento", "").strip()
+    status = request.args.get("status", "").strip()
+
+    query = Documento2.query
+    if abrangencia:
+        query = query.filter_by(abrangencia=abrangencia)
+    if organograma:
+        query = query.filter_by(organograma=organograma)
+    if tipo_documento:
+        query = query.filter_by(tipo_documento=tipo_documento)
+    if status == "atualizado":
+        query = query.filter_by(atualizado=True)
+    elif status == "vencido":
+        query = query.filter_by(atualizado=False)
+
+    documentos = query.order_by(Documento2.organograma, Documento2.nome).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "ID", "Nome", "Organograma", "Tipo de Documento", "Abrangência",
+        "Data de Elaboração", "Vencimento", "Número SEI", "Elaboradores",
+        "Atualizado", "Marcador", "Data de Publicação", "Versão Atual"
+    ])
+
+    hoje = datetime.now()
+    for doc in documentos:
+        status_doc = "Atualizado" if doc.atualizado else "Vencido"
+        writer.writerow([
+            doc.id,
+            doc.nome or "",
+            doc.organograma or "",
+            doc.tipo_documento or "",
+            doc.abrangencia or "",
+            doc.data_elaboracao or "",
+            doc.vencimento or "",
+            doc.numero_sei or "",
+            doc.elaboradores or "",
+            status_doc,
+            doc.marcador or "",
+            doc.data_publicacao or "",
+            doc.versao_atual or 1,
+        ])
+
+    output.seek(0)
+    filename = f"documentos_miac_{hoje.strftime('%Y%m%d_%H%M%S')}.csv"
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@app.route("/miac/api/vencendo")
+def api_vencendo():
+    """Retorna documentos que vencem nos próximos N dias."""
+    if "username" not in session:
+        return jsonify({"error": "Não autenticado"}), 401
+
+    dias = int(request.args.get("dias", 30))
+    abrangencia = request.args.get("abrangencia", "").strip()
+    hoje = datetime.now()
+
+    query = Documento2.query.filter_by(atualizado=True)
+    if abrangencia:
+        query = query.filter_by(abrangencia=abrangencia)
+
+    docs = query.all()
+    resultado = []
+    for doc in docs:
+        if doc.vencimento:
+            try:
+                dt = parse_data(doc.vencimento)
+                diff = (dt - hoje).days
+                if 0 <= diff <= dias:
+                    resultado.append({
+                        "id": doc.id,
+                        "nome": doc.nome,
+                        "organograma": doc.organograma,
+                        "abrangencia": doc.abrangencia,
+                        "vencimento": doc.vencimento,
+                        "dias_restantes": diff,
+                    })
+            except ValueError:
+                pass
+
+    resultado.sort(key=lambda x: x["dias_restantes"])
+    return jsonify(resultado)
+
+
+@app.route("/miac/excluir_documento2/<int:doc_id>", methods=["POST"])
+def excluir_documento2(doc_id):
+    if "username" not in session or session.get("nivel_acesso") != "elevado":
+        return jsonify({"error": "Acesso negado"}), 403
+
+    documento = db.session.get(Documento2, doc_id)
+    if not documento:
+        return jsonify({"error": "Documento não encontrado"}), 404
+
+    try:
+        # Remove arquivos físicos
+        for caminho in [documento.caminho, documento.pdf_antigo]:
+            if caminho and os.path.exists(caminho):
+                try:
+                    os.remove(caminho)
+                except Exception:
+                    pass
+
+        db.session.delete(documento)
+        db.session.commit()
+        flash("Documento excluído com sucesso!", "success")
+        return redirect(url_for("publicados2"))
+    except Exception as e:
+        db.session.rollback()
+        logger.exception("Erro ao excluir documento %d", doc_id)
+        flash(f"Erro ao excluir: {str(e)}", "error")
+        return redirect(url_for("documento2_detalhes", doc_id=doc_id))
+
+
 if __name__ == "__main__":
     with app.app_context():
         inspector = inspect(db.engine)
         if not inspector.has_table("documento2"):
             db.create_all()
 
-    print("Rodando")
+    logger.info("Iniciando servidor na porta 8090")
     serve(app, host="0.0.0.0", port=8090)
