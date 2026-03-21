@@ -1,67 +1,113 @@
 {% if documentos_agrupados %}
     {% for marcador, organogramas in documentos_agrupados.items() %}
-        <!-- Marcador com design moderno e minimalista -->
-        <div class="marcador animate__animated animate__fadeInDown">
-            <i class="fas fa-bookmark" style="margin-right: 10px;"></i> {{ marcador }}
+
+        <div class="marcador">
+            <i class="fas fa-bookmark me-2"></i>{{ marcador }}
         </div>
 
-        <!-- Contêiner para os organogramas com botões de navegação -->
         <div class="organograma-pagination-container">
             <div class="row organograma-row">
                 {% for organograma, tipos in organogramas.items() %}
+                    {# Calcula totais para este organograma #}
+                    {% set ns = namespace(total=0, atualizados=0) %}
+                    {% for tipo, docs in tipos.items() %}
+                        {% set ns.total = ns.total + docs|length %}
+                        {% for doc in docs %}
+                            {% if doc.atualizado %}{% set ns.atualizados = ns.atualizados + 1 %}{% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                    {% set pct = ((ns.atualizados / ns.total) * 100)|round|int if ns.total > 0 else 0 %}
                     {% set primeiro_tipo = tipos.values()|list|first or [] %}
                     {% set primeiro_doc = primeiro_tipo[0] if primeiro_tipo else None %}
+
                     <div class="col-md-3 mb-4 organograma-card-container">
-    <div class="card organograma-card animate__animated animate__fadeInUp" 
-         data-bs-toggle="modal" 
-         data-bs-target="#modal{{ organograma|replace(' ', '') }}" 
-         data-abrangencia="{{ abrangencia }}"
-         data-organograma="{{ organograma|lower }}"
-         data-nome-completo="{{ (primeiro_doc.nome_completo if primeiro_doc else '')|lower }}"
-         {% if primeiro_doc and primeiro_doc.nome_completo %}title="{{ primeiro_doc.nome_completo }}"{% endif %}>
-        <div class="card-body text-center">
-            <i class="fas fa-sitemap icon-animate"></i>
-            <h5 class="card-title">{{ organograma }}</h5>
-            <i class="fas fa-search icon-animate" style="font-size: 1.2rem; color: #6c757d;"></i>
-        </div>
-    </div>
-</div>
+                        <div class="card organograma-card animate__animated animate__fadeInUp"
+                             data-bs-toggle="modal"
+                             data-bs-target="#modal{{ organograma|replace(' ', '') }}"
+                             data-abrangencia="{{ abrangencia }}"
+                             data-organograma="{{ organograma|lower }}"
+                             data-nome-completo="{{ (primeiro_doc.nome_completo if primeiro_doc else '')|lower }}"
+                             {% if primeiro_doc and primeiro_doc.nome_completo %}title="{{ primeiro_doc.nome_completo }}"{% endif %}>
+                            <div class="card-body text-center px-3 py-3">
+                                <div class="org-icon-wrap mb-2">
+                                    <i class="fas fa-sitemap"></i>
+                                </div>
+                                <h5 class="card-title mb-1">{{ organograma }}</h5>
+                                {% if primeiro_doc and primeiro_doc.nome_completo %}
+                                <p class="org-nome-completo mb-2">{{ primeiro_doc.nome_completo }}</p>
+                                {% endif %}
+
+                                <!-- Contagem de docs -->
+                                <div class="org-stats d-flex justify-content-center gap-2 mb-2">
+                                    <span class="org-stat-badge total">
+                                        <i class="fas fa-file-alt"></i> {{ ns.total }}
+                                    </span>
+                                    <span class="org-stat-badge ok">
+                                        <i class="fas fa-check"></i> {{ ns.atualizados }}
+                                    </span>
+                                    {% if ns.total - ns.atualizados > 0 %}
+                                    <span class="org-stat-badge bad">
+                                        <i class="fas fa-times"></i> {{ ns.total - ns.atualizados }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Mini barra de progresso -->
+                                <div class="org-progress-wrap">
+                                    <div class="org-progress-bar"
+                                         style="width:{{ pct }}%;background:{% if pct >= 80 %}#27ae60{% elif pct >= 50 %}#f39c12{% else %}#e74c3c{% endif %};">
+                                    </div>
+                                </div>
+                                <p class="org-pct-label">{{ pct }}% atualizado</p>
+                            </div>
+                        </div>
+                    </div>
                 {% endfor %}
             </div>
 
-            <!-- Botões de navegação -->
             <div class="pagination-buttons">
-                <button class="btn-pagination prev">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-                <button class="btn-pagination next">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
+                <button class="btn-pagination prev"><i class="fas fa-chevron-left"></i></button>
+                <button class="btn-pagination next"><i class="fas fa-chevron-right"></i></button>
             </div>
         </div>
 
-        <!-- Modal simplificado para cada Organograma -->
+        {# Modais #}
         {% for organograma, tipos in organogramas.items() %}
-            <div class="modal fade" id="modal{{ organograma|replace(' ', '') }}" tabindex="-1" 
-                 aria-labelledby="modalLabel{{ organograma|replace(' ', '') }}" aria-hidden="true">
+            {% set ns2 = namespace(total=0, atualizados=0) %}
+            {% for tipo, docs in tipos.items() %}
+                {% set ns2.total = ns2.total + docs|length %}
+                {% for doc in docs %}{% if doc.atualizado %}{% set ns2.atualizados = ns2.atualizados + 1 %}{% endif %}{% endfor %}
+            {% endfor %}
+            <div class="modal fade" id="modal{{ organograma|replace(' ', '') }}" tabindex="-1">
                 <div class="modal-dialog modal-dialog-centered modal-xl">
                     <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="modalLabel{{ organograma|replace(' ', '') }}">{{ organograma }}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <div class="modal-header" style="background:linear-gradient(135deg,#2c3e50,#34495e);color:#fff;">
+                            <div>
+                                <h5 class="modal-title mb-0">
+                                    <i class="fas fa-sitemap me-2"></i>{{ organograma }}
+                                </h5>
+                                <small style="opacity:.75;">
+                                    {{ ns2.total }} documento{{ 's' if ns2.total != 1 else '' }} &mdash;
+                                    <span style="color:#2ecc71;">{{ ns2.atualizados }} atualizado{{ 's' if ns2.atualizados != 1 else '' }}</span>
+                                    {% if ns2.total - ns2.atualizados > 0 %}
+                                    &mdash; <span style="color:#e74c3c;">{{ ns2.total - ns2.atualizados }} vencido{{ 's' if ns2.total - ns2.atualizados != 1 else '' }}</span>
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body" id="modalContent{{ organograma|replace(' ', '') }}">
                             <div class="text-center my-5">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Carregando...</span>
-                                </div>
+                                <div class="spinner-border text-primary" role="status"></div>
                                 <p class="mt-2">Carregando documentos...</p>
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                            <button type="button" class="btn btn-success" onclick="gerarRelatorio('{{ organograma }}', '{{ abrangencia }}')">
-                                <i class="fas fa-file-pdf"></i> GERAR RELATÓRIO
+                        <div class="modal-footer justify-content-between">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-1"></i> Fechar
+                            </button>
+                            <button type="button" class="btn btn-danger" onclick="gerarRelatorio('{{ organograma }}', '{{ abrangencia }}')">
+                                <i class="fas fa-file-pdf me-1"></i> Gerar Relatório
                             </button>
                         </div>
                     </div>
@@ -69,494 +115,367 @@
             </div>
         {% endfor %}
     {% endfor %}
+
 {% elif exibir_lista %}
-    <!-- Exibir os documentos em lista -->
-    <ul class="document-list">
-        {% for documento in documentos %}
-            <li class="{% if documento.atualizado %}documento-atualizado{% else %}documento-desatualizado{% endif %}">
-                <h5>{{ documento.nome }}</h5>
-                <p>Publicado em: {{ documento.data_publicacao }}</p>
-                {% if documento.nome_completo %}
-                    <p class="text-muted small">{{ documento.nome_completo }}</p>
-                {% endif %}
-                <div class="document-btns">
-                    <a href="{{ url_for('documento2_detalhes', doc_id=documento.id) }}" class="btn btn-primary">
-                        <i class="fas fa-eye"></i> Acessar
+    <!-- ── Vista de lista (resultado de busca) ── -->
+    <div class="w-100 px-2">
+        <!-- Barra de controles da lista -->
+        <div class="list-control-bar d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <span class="result-count">
+                <i class="fas fa-list-ul me-1 text-secondary"></i>
+                <strong id="result-count-num">{{ documentos|length }}</strong>
+                documento{{ 's' if documentos|length != 1 else '' }} encontrado{{ 's' if documentos|length != 1 else '' }}
+            </span>
+            <div class="d-flex gap-2 flex-wrap align-items-center">
+                <!-- Filtros de status rápidos -->
+                <div class="status-filters" role="group">
+                    <button class="sf-btn active" data-filter="all">Todos</button>
+                    <button class="sf-btn" data-filter="atualizado">
+                        <i class="fas fa-check-circle text-success me-1"></i>Atualizados
+                    </button>
+                    <button class="sf-btn" data-filter="vencido">
+                        <i class="fas fa-times-circle text-danger me-1"></i>Vencidos
+                    </button>
+                </div>
+                <!-- Ordenação -->
+                <select id="sort-select" class="form-select form-select-sm" style="width:auto;font-size:.82rem;">
+                    <option value="nome">A–Z</option>
+                    <option value="nome-desc">Z–A</option>
+                    <option value="vencimento">Vencimento ↑</option>
+                    <option value="publicacao">Mais recente</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Lista de documentos -->
+        <div id="doc-list-container">
+            {% for documento in documentos %}
+            <div class="doc-list-item {{ 'item-atualizado' if documento.atualizado else 'item-vencido' }}"
+                 data-status="{{ 'atualizado' if documento.atualizado else 'vencido' }}"
+                 data-nome="{{ documento.nome|lower }}"
+                 data-vencimento="{{ documento.vencimento or '' }}"
+                 data-publicacao="{{ documento.data_publicacao or '' }}">
+                <div class="doc-item-left">
+                    <div class="doc-status-dot {{ 'dot-ok' if documento.atualizado else 'dot-bad' }}"></div>
+                </div>
+                <div class="doc-item-body">
+                    <div class="doc-item-top">
+                        <a href="{{ url_for('documento2_detalhes', doc_id=documento.id) }}" class="doc-title">
+                            {{ documento.nome }}
+                        </a>
+                        <div class="doc-badges">
+                            {% if documento.tipo_documento %}
+                            <span class="doc-badge tipo">{{ documento.tipo_documento }}</span>
+                            {% endif %}
+                            {% if documento.atualizado %}
+                            <span class="doc-badge status-ok"><i class="fas fa-check-circle"></i> Atualizado</span>
+                            {% else %}
+                            <span class="doc-badge status-bad"><i class="fas fa-times-circle"></i> Vencido</span>
+                            {% endif %}
+                            {% if documento.nome and ("CH." in documento.nome or "CHUFC." in documento.nome) %}
+                            <span class="doc-badge complexo"><i class="fas fa-building"></i> Complexo</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="doc-item-meta">
+                        <span><i class="fas fa-sitemap me-1"></i>{{ documento.organograma }}</span>
+                        {% if documento.nome_completo %}
+                        <span class="text-muted">{{ documento.nome_completo }}</span>
+                        {% endif %}
+                        {% if documento.vencimento %}
+                        <span>
+                            <i class="fas fa-calendar-times me-1"></i>
+                            Vence: <strong>{{ documento.vencimento }}</strong>
+                            {% if not documento.atualizado %}
+                            <span class="ms-1 text-danger small">({{ documento.vencimento | expired_duration }} atrás)</span>
+                            {% endif %}
+                        </span>
+                        {% endif %}
+                        {% if documento.elaboradores %}
+                        <span><i class="fas fa-user me-1"></i>{{ documento.elaboradores }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="doc-item-actions">
+                    <a href="{{ url_for('documento2_detalhes', doc_id=documento.id) }}"
+                       class="btn btn-sm btn-primary" title="Ver detalhes">
+                        <i class="fas fa-eye"></i>
                     </a>
-                    <a href="/miac/static/uploads2/{{ documento.caminho.split('/')[-1] }}" class="btn btn-secondary" target="_blank">
-                        <i class="fas fa-file-pdf"></i> Visualizar PDF
+                    <a href="/miac/static/uploads2/{{ documento.caminho.split('/')[-1] }}"
+                       class="btn btn-sm btn-outline-danger" target="_blank" title="Abrir PDF">
+                        <i class="fas fa-file-pdf"></i>
                     </a>
                     <button class="btn btn-sm btn-outline-warning btn-favorito"
-        data-id="{{ documento.id }}"
-        data-nome="{{ documento.nome }}"
-        data-tipo="{{ documento.tipo_documento }}"
-        data-caminho="{{ documento.caminho }}">
-    <i class="fas fa-star"></i> Favorito
-</button>
-
-
-                    {% if documento.nome and ("CH." in documento.nome or "CHUFC." in documento.nome) %}
-                        <span class="badge-documento-complexo">DOCUMENTO DO COMPLEXO</span>
-                    {% endif %}
+                            data-id="{{ documento.id }}"
+                            data-nome="{{ documento.nome }}"
+                            data-tipo="{{ documento.tipo_documento }}"
+                            data-caminho="{{ documento.caminho }}"
+                            title="Favoritar">
+                        <i class="fas fa-star"></i>
+                    </button>
                 </div>
-                <span class="status-indicator">
-                    {% if documento.atualizado %}
-                        <i class="fas fa-check-circle"></i> Atualizado
-                    {% else %}
-                        <i class="fas fa-times-circle"></i> Desatualizado ({{ documento.vencimento | expired_duration }} atrás)
-                    {% endif %}
-                </span>
-            </li>
-        {% endfor %}
-    </ul>
+            </div>
+            {% endfor %}
+            <!-- Empty state (hidden by default, shown by JS filter) -->
+            <div id="list-empty-state" class="text-center py-5 d-none">
+                <i class="fas fa-search fa-2x text-muted mb-3"></i>
+                <p class="text-muted">Nenhum documento corresponde ao filtro selecionado.</p>
+                <button class="btn btn-sm btn-outline-secondary mt-1" data-filter="all" onclick="applyStatusFilter('all')">
+                    Mostrar todos
+                </button>
+            </div>
+        </div>
+    </div>
 {% else %}
-    <p class="text-center text-muted py-4">Nenhum documento encontrado.</p>
+    <div class="text-center py-5 text-muted w-100">
+        <i class="fas fa-folder-open fa-3x mb-3 d-block" style="opacity:.3;"></i>
+        Nenhum documento encontrado.
+    </div>
 {% endif %}
+
 <style>
-   /* Estilos para o container do marcador */
-.marcador-container {
-    text-align: center;
-    margin: 30px 0; /* Reduzi a margem para ficar mais compacto */
-}
-
-.badge-documento-complexo {
-    background-color: #ffc107; /* Amarelo semelhante ao badge-warning do Bootstrap */
-    color: #000; /* Texto preto para melhor visibilidade */
-    font-weight: bold;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 12px;
-    display: inline-block;
-    margin-left: 5px;
-}
-
-
-/* Estilos para o marcador */
-.marcador {
-    display: inline-block;
-    font-size: 1.2rem; /* Tamanho menor para ficar mais discreto */
-    font-weight: 400; /* Fonte mais fina (não tão grossa) */
-    color: #2c3e50; /* Cor escura para contraste */
-    background-color: transparent;
-    padding: 10px 20px; /* Padding menor para um visual mais compacto */
-    border-radius: 8px; /* Bordas arredondadas */
-    border: 1px solid #2c3e50; /* Borda mais fina */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Sombra mais suave */
-    transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-/* Efeito de hover no marcador */
-.marcador:hover {
-    transform: translateY(-3px); /* Levanta o marcador de forma mais sutil */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* Sombra um pouco mais pronunciada */
-    background-color: rgba(44, 62, 80, 0.05); /* Fundo sutil ao passar o mouse */
-}
-
-/* Efeito de brilho ao passar o mouse */
-.marcador::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 300%;
-    height: 300%;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0));
-    transform: translate(-50%, -50%) scale(0);
-    transition: transform 0.5s ease;
-    pointer-events: none;
-}
-
-.marcador:hover::after {
-    transform: translate(-50%, -50%) scale(1); /* Efeito de brilho ao passar o mouse */
-}
-
+/* ── Organogram card improvements ── */
 .organograma-card {
-    position: relative;
-}
-
-.organograma-card::after {
-    content: attr(title);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    white-space: nowrap;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-    z-index: 10;
-    pointer-events: none;
-}
-
-.organograma-card:hover::after {
-    opacity: 1;
-    visibility: visible;
-}
-
-/* Remova qualquer margem ou padding extra que possa interferir */
-.organograma-card .card-body {
-    padding: 15px;
-}
-
-/* Animação de entrada */
-@keyframes fadeInDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px); /* Animação mais suave */
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.marcador {
-    animation: fadeInDown 0.8s ease-in-out; /* Aplica a animação de entrada */
-}
-
-/* Estilos para os cards de organograma */
-/* Estilos para os cards de organograma */
-.organograma-card-container {
-    flex: 0 0 16.666%; /* Cada card ocupa 1/6 da largura total */
-    max-width: 16.666%; /* Garante que não ultrapasse o limite */
-    padding: 0 10px; /* Espaçamento entre os cards */
-    box-sizing: border-box; /* Garante que o padding não afete a largura total */
-}
-
-.organograma-card {
-    height: 180px; /* Aumentei a altura para dar mais espaço */
+    height: auto;
+    min-height: 160px;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: center;
-    text-align: center;
     border-radius: 12px;
     border: 2px solid #e0e0e0;
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef); /* Gradiente sutil */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-    padding: 20px; /* Mais espaço interno */
-}
-
-.organograma-card:hover {
-    transform: translateY(-10px) scale(1.05);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-    border-color: #2c3e50;
-    background: linear-gradient(135deg, #e9ecef, #f8f9fa); /* Gradiente invertido no hover */
-}
-
-.organograma-card .card-body {
-    padding: 15px; /* Reduz o padding para economizar espaço */
-}
-
-.organograma-card h5 {
-    font-size: 1.2rem; /* Aumentei o tamanho do título */
-    margin-bottom: 10px;
-    color: #2c3e50;
-    font-weight: 600; /* Título mais destacado */
-}
-
-.organograma-card .text-muted {
-    font-size: 0.9rem; /* Tamanho um pouco maior para o texto secundário */
-    color: #6c757d; /* Cor mais suave */
-    margin-top: 5px; /* Espaçamento entre o título e a descrição */
-}
-
-/* Estilos para o ícone */
-.icon-animate {
-    font-size: 3rem; /* Ícone maior */
-    color: #2c3e50; /* Cor do ícone */
-    margin-bottom: 15px; /* Mais espaço abaixo do ícone */
-    transition: transform 0.3s ease, color 0.3s ease;
-}
-
-.organograma-card:hover .icon-animate {
-    transform: scale(1.1); /* Efeito de escala no hover */
-    color: #28a745; /* Mudança de cor no hover */
-}
-
-.organograma-pagination-container {
-    position: relative;
-    overflow: visible; /* Alterado para visible para evitar cortes */
-    padding-bottom: 60px;
-    padding-top: 20px; /* Adicionado espaço acima dos cards */
-    margin-bottom: 20px; /* Adicionado espaço abaixo dos cards */
-}
-
-.organograma-row {
-    display: flex;
-    flex-wrap: wrap;
-    margin-left: -10px;
-    margin-right: -10px;
-    overflow: visible; /* Garante que o conteúdo não seja cortado */
-}
-
-.pagination-buttons {
-    display: none; /* Esconde inicialmente os botões */
-    justify-content: center; /* Centraliza os botões horizontalmente */
-    margin-top: 20px; /* Adiciona espaço acima dos botões */
-    pointer-events: all; /* Permite clicar nos botões */
-}
-
-.pagination-buttons.visible {
-    display: flex; /* Mostra apenas quando necessário */
-}
-
-.btn-pagination {
-    background-color: rgba(44, 62, 80, 0.8);
-    border: none;
-    color: white;
-    padding: 10px;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    box-shadow: 0 4px 8px rgba(0,0,0,.08);
+    transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease;
     cursor: pointer;
-    transition: background-color 0.3s ease;
-    margin: 0 10px; /* Adiciona espaço entre os botões */
+}
+.organograma-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 10px 20px rgba(0,0,0,.15);
+    border-color: #2c3e50;
+}
+.org-icon-wrap { font-size: 2rem; color: #2c3e50; }
+.organograma-card:hover .org-icon-wrap { color: #3498db; }
+.organograma-card h5 { font-size: 1.05rem; font-weight: 700; color: #2c3e50; }
+.org-nome-completo { font-size: .72rem; color: #6c757d; line-height: 1.3; margin-bottom: 0; }
+
+.org-stat-badge {
+    font-size: .72rem; font-weight: 600;
+    padding: 2px 8px; border-radius: 20px;
+    display: inline-flex; align-items: center; gap: 4px;
+}
+.org-stat-badge.total { background:#e9ecef; color:#495057; }
+.org-stat-badge.ok    { background:#d4edda; color:#155724; }
+.org-stat-badge.bad   { background:#f8d7da; color:#721c24; }
+
+.org-progress-wrap {
+    height: 5px; background: #dee2e6; border-radius: 3px; overflow: hidden; margin: 0 4px 2px;
+}
+.org-progress-bar { height: 100%; border-radius: 3px; transition: width .5s ease; }
+.org-pct-label { font-size: .68rem; color: #6c757d; margin: 0; }
+
+/* ── Existing card/pagination styles ── */
+.organograma-card-container {
+    flex: 0 0 16.666%; max-width: 16.666%; padding: 0 10px; box-sizing: border-box;
+}
+.organograma-card .card-body { padding: 15px; }
+.organograma-pagination-container {
+    position: relative; overflow: visible;
+    padding-bottom: 60px; padding-top: 20px; margin-bottom: 20px;
+}
+.organograma-row { display: flex; flex-wrap: wrap; margin: 0 -10px; overflow: visible; }
+
+.pagination-buttons { display:none; justify-content:center; margin-top:20px; pointer-events:all; }
+.btn-pagination {
+    background-color: rgba(44,62,80,.8); border: none; color: #fff;
+    padding: 10px; border-radius: 50%; width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    transition: background-color .3s; margin: 0 10px;
+}
+.btn-pagination:hover { background-color: rgba(44,62,80,1); }
+
+/* ── Marcador ── */
+.marcador {
+    display: inline-block; font-size: 1.1rem; font-weight: 500; color: #2c3e50;
+    background: transparent; padding: 8px 18px; border-radius: 8px; border: 1px solid #2c3e50;
+    box-shadow: 0 2px 4px rgba(0,0,0,.08); margin: 20px 0 8px;
+    animation: fadeInDown .6s ease-in-out;
 }
 
-.btn-pagination:hover {
-    background-color: rgba(44, 62, 80, 1);
+/* ── Modal header ── */
+.modal-content { border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.18); }
+.modal-title { font-size: 1.15rem; font-weight: 600; }
+
+/* ── Accordion ── */
+.accordion-button { font-size:.95rem; color:#4a4a4a; background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:12px 20px; transition:.3s; }
+.accordion-button:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,.1); }
+.accordion-button:not(.collapsed) { background:#f8f9fa; color:#2c3e50; box-shadow:none; }
+.accordion-button:focus { box-shadow: none; }
+.accordion-item { border:none; margin-bottom:10px; border-radius:8px; overflow:hidden; box-shadow:0 4px 10px rgba(0,0,0,.08); }
+.accordion-body { padding: 15px; }
+
+/* ── Document list (card layout) ── */
+.document-list { list-style:none; padding-left:0; }
+.document-list li { margin-bottom:12px; padding:14px; border-radius:8px; background:#f8f9fa; transition:.3s; }
+.document-list li:hover { background:#e9ecef; transform:translateY(-3px); box-shadow:0 6px 12px rgba(0,0,0,.12); }
+.document-list h5 { font-size:1rem; color:#2c3e50; font-weight:600; margin-bottom:4px; }
+.document-list p { color:#7f8c8d; font-size:.88rem; margin-bottom:8px; }
+.document-btns .btn { margin-right:8px; font-size:.85rem; padding:6px 10px; border-radius:6px; }
+.documento-atualizado { border-left:4px solid #28a745; background:#f0faf3; }
+.documento-desatualizado { border-left:4px solid #dc3545; background:#fdf3f4; }
+.status-indicator { font-size:.85rem; font-weight:500; margin-top:8px; display:flex; align-items:center; gap:5px; }
+.fa-check-circle { color:#28a745; }
+.fa-times-circle { color:#dc3545; }
+
+/* ── List view (search results) ── */
+.list-control-bar { padding: 0 4px; }
+.result-count { font-size:.88rem; color:#495057; }
+
+.status-filters { display:inline-flex; gap:4px; }
+.sf-btn {
+    font-size:.78rem; padding:4px 12px; border-radius:20px; border:1px solid #dee2e6;
+    background:#fff; color:#495057; cursor:pointer; transition:.2s; white-space:nowrap;
+}
+.sf-btn:hover { background:#f0f2f5; }
+.sf-btn.active { background:#2c3e50; color:#fff; border-color:#2c3e50; }
+
+.doc-list-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    background: #fff; border-radius: 10px; padding: 14px 16px;
+    margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    border-left: 4px solid transparent;
+    transition: box-shadow .2s, transform .2s;
+}
+.doc-list-item:hover { box-shadow: 0 6px 18px rgba(0,0,0,.1); transform: translateX(2px); }
+.item-atualizado { border-left-color: #27ae60; }
+.item-vencido   { border-left-color: #e74c3c; }
+
+.doc-item-left { padding-top: 3px; }
+.doc-status-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.dot-ok  { background:#27ae60; box-shadow:0 0 0 3px rgba(39,174,96,.18); }
+.dot-bad { background:#e74c3c; box-shadow:0 0 0 3px rgba(231,76,60,.18); }
+
+.doc-item-body { flex:1; min-width:0; }
+.doc-item-top { display:flex; align-items:flex-start; gap:8px; flex-wrap:wrap; margin-bottom:6px; }
+.doc-title {
+    font-size:.92rem; font-weight:600; color:#2c3e50; text-decoration:none;
+    flex:1; min-width:180px; line-height:1.3;
+}
+.doc-title:hover { color:#3498db; text-decoration:underline; }
+
+.doc-badges { display:flex; flex-wrap:wrap; gap:5px; }
+.doc-badge {
+    font-size:.7rem; padding:2px 8px; border-radius:12px; font-weight:600;
+    display:inline-flex; align-items:center; gap:3px; white-space:nowrap;
+}
+.doc-badge.tipo     { background:#e3f2fd; color:#1565c0; }
+.doc-badge.status-ok  { background:#d4edda; color:#155724; }
+.doc-badge.status-bad { background:#f8d7da; color:#721c24; }
+.doc-badge.complexo   { background:#fff3cd; color:#856404; }
+
+.doc-item-meta {
+    display:flex; flex-wrap:wrap; gap:12px; font-size:.78rem; color:#6c757d;
+}
+.doc-item-meta span { display:flex; align-items:center; gap:3px; }
+.doc-item-meta strong { color:#2c3e50; }
+
+.doc-item-actions { display:flex; flex-direction:column; gap:5px; flex-shrink:0; }
+.doc-item-actions .btn { padding:5px 9px; font-size:.8rem; }
+
+/* Favorito active */
+.btn-favorito.favoritado { background:#ffc107; border-color:#ffc107; color:#000; }
+
+/* Badge complexo list */
+.badge-documento-complexo {
+    background:#ffc107; color:#000; font-weight:700;
+    padding:3px 8px; border-radius:5px; font-size:.75rem; display:inline-block;
 }
 
-.icon-animate {
-    animation: pulse 2s infinite;
+/* Animations */
+@keyframes fadeInDown {
+    from { opacity:0; transform:translateY(-10px); }
+    to   { opacity:1; transform:translateY(0); }
 }
-
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
-}
-
-/* Estilos para os modais */
-.modal-content {
-    border-radius: 12px;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-}
-
-.modal-header {
-    background-color: #f8f9fa;
-    border-bottom: 1px solid #e0e0e0;
-}
-
-.modal-title {
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: #2c3e50;
-}
-
-.btn-favorito {
-    transition: all 0.3s ease;
-}
-
-.btn-favorito.btn-warning {
-    background-color: #ffc107;
-    border-color: #ffc107;
-    color: #000;
-}
-
-.btn-favorito.btn-outline-warning {
-    background-color: transparent;
-    border-color: #ffc107;
-    color: #ffc107;
-}
-
-.btn-favorito:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Estilos para o accordion */
-.accordion-button {
-    font-size: 1rem;
-    color: #4a4a4a;
-    background-color: #ffffff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 12px 20px;
-    transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
-}
-
-.accordion-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.accordion-button:not(.collapsed) {
-    background-color: #f8f9fa;
-    color: #2c3e50;
-    box-shadow: none;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-}
-
-.accordion-button:focus {
-    box-shadow: none;
-}
-
-.accordion-item {
-    border: none;
-    margin-bottom: 10px;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.accordion-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
-
-.accordion-body {
-    padding: 15px;
-}
-
-/* Estilos para a lista de documentos */
-.document-list {
-    list-style: none;
-    padding-left: 0;
-}
-
-.document-list li {
-    margin-bottom: 15px;
-    padding: 15px;
-    border-radius: 8px;
-    background-color: #f8f9fa;
-    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.document-list li:hover {
-    background-color: #e9ecef;
-    transform: translateY(-5px) scale(1.02);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
-
-.document-list h5 {
-    font-size: 1.1rem;
-    color: #2c3e50;
-    font-weight: 600;
-    margin-bottom: 5px;
-}
-
-.document-list p {
-    color: #7f8c8d;
-    font-size: 0.9rem;
-    margin-bottom: 10px;
-}
-
-/* Estilos para os botões de documentos */
-.document-btns .btn {
-    margin-right: 10px;
-    font-size: 0.9rem;
-    padding: 8px 12px;
-    border-radius: 6px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.document-btns .btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-/* Estilos para documentos atualizados e desatualizados */
-.documento-atualizado {
-    border-left: 5px solid #28a745; /* Verde para documentos atualizados */
-    background-color: #e8f5e9; /* Fundo verde claro */
-}
-
-.documento-desatualizado {
-    border-left: 5px solid #dc3545; /* Vermelho para documentos desatualizados */
-    background-color: #f8d7da; /* Fundo vermelho claro */
-}
-
-.status-indicator {
-    font-size: 0.9rem;
-    font-weight: 500;
-    margin-top: 10px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.status-indicator .fa-check-circle {
-    color: #28a745; /* Verde para ícone de atualizado */
-}
-
-.status-indicator .fa-times-circle {
-    color: #dc3545; /* Vermelho para ícone de desatualizado */
-}
-
-/* Animações */
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from { opacity:0; } to { opacity:1; }
 }
-
+.icon-animate { animation: pulse 2s infinite; }
+@keyframes pulse {
+    0%,100% { transform:scale(1); }
+    50%      { transform:scale(1.1); }
+}
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Função para inicializar a paginação para cada marcador
-   
+/* ── List view: status filter + sort ── */
+(function () {
+    let currentFilter = 'all';
 
-    // Função para filtrar documentos dentro do modal
+    window.applyStatusFilter = function (filter) {
+        currentFilter = filter;
+        document.querySelectorAll('.sf-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === filter));
+        const items = document.querySelectorAll('.doc-list-item');
+        let visible = 0;
+        items.forEach(item => {
+            const match = filter === 'all' || item.dataset.status === filter;
+            item.style.display = match ? '' : 'none';
+            if (match) visible++;
+        });
+        const empty = document.getElementById('list-empty-state');
+        if (empty) empty.classList.toggle('d-none', visible > 0);
+        const cnt = document.getElementById('result-count-num');
+        if (cnt) cnt.textContent = visible;
+    };
+
+    document.querySelectorAll('.sf-btn').forEach(btn => {
+        btn.addEventListener('click', () => applyStatusFilter(btn.dataset.filter));
+    });
+
+    /* ── Sort ── */
+    const sortSel = document.getElementById('sort-select');
+    if (sortSel) {
+        sortSel.addEventListener('change', function () {
+            const container = document.getElementById('doc-list-container');
+            if (!container) return;
+            const items = Array.from(container.querySelectorAll('.doc-list-item'));
+            items.sort((a, b) => {
+                if (this.value === 'nome')
+                    return a.dataset.nome.localeCompare(b.dataset.nome, 'pt');
+                if (this.value === 'nome-desc')
+                    return b.dataset.nome.localeCompare(a.dataset.nome, 'pt');
+                if (this.value === 'vencimento')
+                    return (a.dataset.vencimento || '').localeCompare(b.dataset.vencimento || '');
+                if (this.value === 'publicacao')
+                    return (b.dataset.publicacao || '').localeCompare(a.dataset.publicacao || '');
+                return 0;
+            });
+            items.forEach(item => container.appendChild(item));
+        });
+    }
+})();
+
+/* ── Modal filter in document_list2 ── */
+document.addEventListener('DOMContentLoaded', function () {
+    function normalizarTexto(t) {
+        return t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    }
     function filterDocumentsInModal(modalId, searchTerm) {
         let hasResults = false;
-        let searchNormalized = normalizarTexto(searchTerm);
-        // Remove o feedback visual anterior (mensagem de "Nenhum documento encontrado")
-        const modalBody = document.querySelector(`#modal${modalId} .accordion-body`);
-        if (modalBody) {
-            modalBody.querySelectorAll('.text-muted').forEach(element => element.remove());
-        }
-        // Itera sobre cada tipo de documento (accordion-item)
+        const norm = normalizarTexto(searchTerm);
         document.querySelectorAll(`#modal${modalId} .accordion-item`).forEach(tipoItem => {
-            let tipoHasResults = false;
-            // Itera sobre cada documento dentro do tipo
-            tipoItem.querySelectorAll('.document-list li').forEach(documento => {
-                let docText = normalizarTexto(documento.querySelector('h5').textContent);
-                if (docText.includes(searchNormalized)) {
-                    documento.style.display = 'block'; // Mostra o documento se corresponder à busca
-                    tipoHasResults = true;
-                    hasResults = true;
-                } else {
-                    documento.style.display = 'none'; // Oculta o documento se não corresponder
-                }
+            let tipoHas = false;
+            tipoItem.querySelectorAll('.document-list li').forEach(li => {
+                const match = normalizarTexto(li.querySelector('h5').textContent).includes(norm);
+                li.style.display = match ? '' : 'none';
+                if (match) { tipoHas = true; hasResults = true; }
             });
-            // Mostra ou oculta o accordion com base nos resultados
-            tipoItem.style.display = tipoHasResults ? 'block' : 'none';
+            tipoItem.style.display = tipoHas ? '' : 'none';
         });
-        // Adiciona feedback visual se nenhum documento for encontrado
-        if (!hasResults && modalBody) {
-            const noResultsMessage = document.createElement('p');
-            noResultsMessage.className = 'text-muted';
-            noResultsMessage.textContent = 'Nenhum documento encontrado.';
-            modalBody.appendChild(noResultsMessage);
-        }
+        const msg = document.querySelector(`#modal${modalId} .no-results-msg`);
+        if (msg) msg.style.display = hasResults ? 'none' : '';
     }
-
-    // Função para remover acentos e caracteres especiais
-    function normalizarTexto(texto) {
-        return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-    }
-
-    // Evento de input para filtrar documentos dentro do modal
     document.querySelectorAll('[id^="search-documentos"]').forEach(input => {
         input.addEventListener('input', function () {
-            const searchTerm = input.value;
-            const modalId = input.id.replace('search-documentos', '');
-            filterDocumentsInModal(modalId, searchTerm);
+            filterDocumentsInModal(this.id.replace('search-documentos', ''), this.value);
         });
     });
 });
