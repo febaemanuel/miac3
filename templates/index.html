@@ -697,6 +697,39 @@
             </a>
         </div>
         {% endif %}
+
+        <div class="col-6 col-sm-4 col-lg-2">
+            <a href="{{ url_for('exportar_csv') }}" class="quick-card">
+                <div class="qc-icon" style="background:rgba(39,174,96,.12);color:#27ae60;">
+                    <i class="fas fa-file-csv"></i>
+                </div>
+                <div class="qc-label">Exportar CSV</div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Vencendo em Breve -->
+    <div class="section-title mt-2 d-flex align-items-center gap-3 flex-wrap">
+        <span><i class="fas fa-clock text-danger"></i> Vencendo em Breve</span>
+        <select id="dias-select" class="form-select form-select-sm d-inline-block" style="width:auto;">
+            <option value="7">7 dias</option>
+            <option value="15">15 dias</option>
+            <option value="30" selected>30 dias</option>
+            <option value="60">60 dias</option>
+        </select>
+    </div>
+
+    <div class="notif-card mb-4">
+        <div class="notif-header">
+            <h6><i class="fas fa-hourglass-half"></i> Documentos próximos ao vencimento</h6>
+            <a href="{{ url_for('estatisticas') }}">Ver estatísticas <i class="fas fa-arrow-right ms-1"></i></a>
+        </div>
+        <div id="vencendo-body" class="px-3 py-2">
+            <div class="text-center text-muted py-3">
+                <div class="spinner-border spinner-border-sm" role="status"></div>
+                <span class="ms-2">Carregando...</span>
+            </div>
+        </div>
     </div>
 
     <!-- Notifications -->
@@ -749,10 +782,53 @@
         const now = new Date();
         const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         const formatted = now.toLocaleDateString('pt-BR', opts);
-        // Capitalize first letter
         document.getElementById('current-date').textContent =
             formatted.charAt(0).toUpperCase() + formatted.slice(1);
     })();
+
+    // Vencendo em Breve — live loader
+    function carregarVencendo(dias) {
+        const body = document.getElementById('vencendo-body');
+        body.innerHTML = `<div class="text-center text-muted py-3">
+            <div class="spinner-border spinner-border-sm" role="status"></div>
+            <span class="ms-2">Carregando...</span></div>`;
+        fetch(`/miac/api/vencendo?dias=${dias}`)
+            .then(r => r.json())
+            .then(docs => {
+                if (!docs.length) {
+                    body.innerHTML = `<p class="text-muted text-center py-3 mb-0">
+                        <i class="fas fa-check-circle text-success me-1"></i>
+                        Nenhum documento vencendo nos próximos ${dias} dias.</p>`;
+                    return;
+                }
+                let html = `<div class="table-responsive"><table class="table table-sm table-hover mb-0" style="font-size:.84rem;">
+                    <thead class="table-light"><tr>
+                        <th>Documento</th><th>Organograma</th><th>Abrangência</th>
+                        <th class="text-center">Dias restantes</th>
+                    </tr></thead><tbody>`;
+                docs.forEach(d => {
+                    const urgente = d.dias_restantes <= 7;
+                    const aviso = d.dias_restantes <= 15;
+                    const cor = urgente ? 'text-danger fw-600' : (aviso ? 'text-warning fw-600' : 'text-success');
+                    html += `<tr>
+                        <td><a href="/miac/documento2/${d.id}" class="text-decoration-none text-dark">${d.nome}</a></td>
+                        <td>${d.organograma}</td>
+                        <td><span class="badge ${d.abrangencia === 'HUWC' ? 'bg-primary' : 'bg-purple'}" style="background:${d.abrangencia==='MEAC'?'#6f42c1':''};">${d.abrangencia}</span></td>
+                        <td class="text-center ${cor}">${d.dias_restantes}d — ${d.vencimento}</td>
+                    </tr>`;
+                });
+                html += `</tbody></table></div>`;
+                body.innerHTML = html;
+            })
+            .catch(() => {
+                body.innerHTML = `<p class="text-danger text-center py-2">Erro ao carregar dados.</p>`;
+            });
+    }
+
+    carregarVencendo(30);
+    document.getElementById('dias-select').addEventListener('change', function() {
+        carregarVencendo(parseInt(this.value));
+    });
 </script>
 </body>
 </html>

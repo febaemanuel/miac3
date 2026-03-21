@@ -10,7 +10,10 @@ from flask import (
     send_from_directory,
     send_file,
     flash,
+    Response,
 )
+import csv
+import io
 from sqlalchemy import or_, inspect
 from sqlalchemy.ext.mutable import MutableList
 from dotenv import load_dotenv
@@ -1212,17 +1215,25 @@ def publicar2():
                 400,
             )
 
+        MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
         log_detalhado = []
 
         # Processa cada arquivo e salva no banco de dados
         for index, file in enumerate(files):
             filename_lower = file.filename.lower()
-            
+
             # Verifica se é um arquivo permitido (PDF, DOC ou DOCX)
-            if not (filename_lower.endswith('.pdf') or 
-                   filename_lower.endswith('.doc') or 
+            if not (filename_lower.endswith('.pdf') or
+                   filename_lower.endswith('.doc') or
                    filename_lower.endswith('.docx')):
                 continue
+
+            # Verifica tamanho do arquivo
+            file.seek(0, 2)  # seek to end
+            file_size = file.tell()
+            file.seek(0)
+            if file_size > MAX_FILE_SIZE:
+                return jsonify({"error": f"Arquivo '{file.filename}' excede o limite de 50 MB."}), 400
 
             # Gera um nome seguro e adiciona identificador único
             base_nome = secure_filename(titulos[index].replace(" ", "_"))
@@ -1675,6 +1686,132 @@ def remover_opcao(id, tipo):
         db.session.commit()
 
     return redirect(url_for("gerenciar_opcoes"))
+
+
+@app.route("/miac/exportar_csv")
+def exportar_csv():
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    abrangencia = request.args.get("abrangencia", "").strip()
+    organograma = request.args.get("organograma", "").strip()
+    tipo_documento = request.args.get("tipo_documento", "").strip()
+    status = request.args.get("status", "").strip()
+
+    query = Documento2.query
+    if abrangencia:
+        query = query.filter_by(abrangencia=abrangencia)
+    if organograma:
+        query = query.filter_by(organograma=organograma)
+    if tipo_documento:
+        query = query.filter_by(tipo_documento=tipo_documento)
+    if status == "atualizado":
+        query = query.filter_by(atualizado=True)
+    elif status == "vencido":
+        query = query.filter_by(atualizado=False)
+
+    documentos = query.order_by(Documento2.organograma, Documento2.nome).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "ID", "Nome", "Organograma", "Tipo de Documento", "Abrangência",
+        "Data de Elaboração", "Vencimento", "Número SEI", "Elaboradores",
+        "Atualizado", "Marcador", "Data de Publicação", "Versão Atual"
+    ])
+
+    hoje = datetime.now()
+    for doc in documentos:
+        status_doc = "Atualizado" if doc.atualizado else "Vencido"
+        writer.writerow([
+            doc.id,
+            doc.nome or "",
+            doc.organograma or "",
+            doc.tipo_documento or "",
+            doc.abrangencia or "",
+            doc.data_elaboracao or "",
+            doc.vencimento or "",
+            doc.numero_sei or "",
+            doc.elaboradores or "",
+            status_doc,
+            doc.marcador or "",
+            doc.data_publicacao or "",
+            doc.versao_atual or 1,
+        ])
+
+    output.seek(0)
+    filename = f"documentos_miac_{hoje.strftime('%Y%m%d_%H%M%S')}.csv"
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@app.route("/miac/api/vencendo")
+def api_vencendo():
+    """Retorna documentos que vencem nos próximos N dias."""
+    if "username" not in session:
+        return jsonify({"error": "Não autenticado"}), 401
+
+    dias = int(request.args.get("dias", 30))
+    abrangencia = request.args.get("abrangencia", "").strip()
+    hoje = datetime.now()
+
+    query = Documento2.query.filter_by(atualizado=True)
+    if abrangencia:
+        query = query.filter_by(abrangencia=abrangencia)
+
+    docs = query.all()
+    resultado = []
+    for doc in docs:
+        if doc.vencimento:
+            try:
+                dt = parse_data(doc.vencimento)
+                diff = (dt - hoje).days
+                if 0 <= diff <= dias:
+                    resultado.append({
+                        "id": doc.id,
+                        "nome": doc.nome,
+                        "organograma": doc.organograma,
+                        "abrangencia": doc.abrangencia,
+                        "vencimento": doc.vencimento,
+                        "dias_restantes": diff,
+                    })
+            except ValueError:
+                pass
+
+    resultado.sort(key=lambda x: x["dias_restantes"])
+    return jsonify(resultado)
+
+
+@app.route("/miac/excluir_documento2/<int:doc_id>", methods=["POST"])
+def excluir_documento2(doc_id):
+    if "username" not in session or session.get("nivel_acesso") != "elevado":
+        return jsonify({"error": "Acesso negado"}), 403
+
+    documento = db.session.get(Documento2, doc_id)
+    if not documento:
+        return jsonify({"error": "Documento não encontrado"}), 404
+
+    try:
+        # Remove arquivos físicos
+        for caminho in [documento.caminho, documento.pdf_antigo]:
+            if caminho and os.path.exists(caminho):
+                try:
+                    os.remove(caminho)
+                except Exception:
+                    pass
+
+        db.session.delete(documento)
+        db.session.commit()
+        flash("Documento excluído com sucesso!", "success")
+        return redirect(url_for("publicados2"))
+    except Exception as e:
+        db.session.rollback()
+        logger.exception("Erro ao excluir documento %d", doc_id)
+        flash(f"Erro ao excluir: {str(e)}", "error")
+        return redirect(url_for("documento2_detalhes", doc_id=doc_id))
 
 
 if __name__ == "__main__":
