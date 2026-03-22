@@ -25,4 +25,4 @@ EXPOSE 8090
 # configure the container to run in an executed manner
 ENTRYPOINT [ "python" ]
 
-CMD ["novo2.py" ]
+CMD ["run.py" ]

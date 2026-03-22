@@ -480,26 +480,26 @@
     <ul class="sidebar-nav">
         <li class="nav-section-label">Principal</li>
         <li>
-            <a href="{{ url_for('publicados2') }}">
+            <a href="{{ url_for('documents.publicados2') }}">
                 <i class="fas fa-home"></i> Página Inicial
             </a>
         </li>
         <li>
-            <a href="{{ url_for('relacao_documentos') }}">
+            <a href="{{ url_for('documents.relacao_documentos') }}">
                 <i class="fas fa-list-alt"></i> Relação
             </a>
         </li>
 
         {% if session.get('nivel_acesso') == 'elevado' %}
         <li>
-            <a href="{{ url_for('publicar2_page') }}">
+            <a href="{{ url_for('documents.publicar2_page') }}">
                 <i class="fas fa-upload"></i> Publicar
             </a>
         </li>
         {% endif %}
 
         <li>
-            <a href="{{ url_for('estatisticas') }}">
+            <a href="{{ url_for('reports.estatisticas') }}">
                 <i class="fas fa-chart-bar"></i> Estatísticas
             </a>
         </li>
@@ -508,12 +508,12 @@
         <div class="nav-divider"></div>
         <li class="nav-section-label">Administração</li>
         <li>
-            <a href="{{ url_for('gerenciar_opcoes') }}">
+            <a href="{{ url_for('admin.gerenciar_opcoes') }}">
                 <i class="fas fa-sliders"></i> Configurações
             </a>
         </li>
         <li>
-            <a href="{{ url_for('gerenciar_siglas') }}">
+            <a href="{{ url_for('admin.gerenciar_siglas') }}">
                 <i class="fas fa-tags"></i> Siglas
             </a>
         </li>
@@ -521,7 +521,7 @@
     </ul>
 
     <div class="sidebar-footer">
-        <a href="{{ url_for('logout') }}">
+        <a href="{{ url_for('auth.logout') }}">
             <i class="fas fa-right-from-bracket"></i> Sair
         </a>
     </div>
@@ -641,7 +641,7 @@
 
     <div class="row g-3 mb-4">
         <div class="col-6 col-sm-4 col-lg-2">
-            <a href="{{ url_for('publicados2') }}" class="quick-card">
+            <a href="{{ url_for('documents.publicados2') }}" class="quick-card">
                 <div class="qc-icon qc-blue">
                     <i class="fas fa-folder-open"></i>
                 </div>
@@ -651,7 +651,7 @@
 
         {% if session.get('nivel_acesso') == 'elevado' %}
         <div class="col-6 col-sm-4 col-lg-2">
-            <a href="{{ url_for('publicar2_page') }}" class="quick-card">
+            <a href="{{ url_for('documents.publicar2_page') }}" class="quick-card">
                 <div class="qc-icon qc-green">
                     <i class="fas fa-upload"></i>
                 </div>
@@ -661,7 +661,7 @@
         {% endif %}
 
         <div class="col-6 col-sm-4 col-lg-2">
-            <a href="{{ url_for('estatisticas') }}" class="quick-card">
+            <a href="{{ url_for('reports.estatisticas') }}" class="quick-card">
                 <div class="qc-icon qc-purple">
                     <i class="fas fa-chart-bar"></i>
                 </div>
@@ -670,7 +670,7 @@
         </div>
 
         <div class="col-6 col-sm-4 col-lg-2">
-            <a href="{{ url_for('relacao_documentos') }}" class="quick-card">
+            <a href="{{ url_for('documents.relacao_documentos') }}" class="quick-card">
                 <div class="qc-icon qc-teal">
                     <i class="fas fa-list-alt"></i>
                 </div>
@@ -680,7 +680,7 @@
 
         {% if session.get('nivel_acesso') == 'elevado' %}
         <div class="col-6 col-sm-4 col-lg-2">
-            <a href="{{ url_for('gerenciar_marcadores') }}" class="quick-card">
+            <a href="{{ url_for('admin.gerenciar_marcadores') }}" class="quick-card">
                 <div class="qc-icon qc-gray">
                     <i class="fas fa-bookmark"></i>
                 </div>
@@ -689,7 +689,7 @@
         </div>
 
         <div class="col-6 col-sm-4 col-lg-2">
-            <a href="{{ url_for('gerenciar_siglas') }}" class="quick-card">
+            <a href="{{ url_for('admin.gerenciar_siglas') }}" class="quick-card">
                 <div class="qc-icon qc-orange">
                     <i class="fas fa-tags"></i>
                 </div>
@@ -699,7 +699,7 @@
         {% endif %}
 
         <div class="col-6 col-sm-4 col-lg-2">
-            <a href="{{ url_for('exportar_csv') }}" class="quick-card">
+            <a href="{{ url_for('api.exportar_csv') }}" class="quick-card">
                 <div class="qc-icon" style="background:rgba(39,174,96,.12);color:#27ae60;">
                     <i class="fas fa-file-csv"></i>
                 </div>
@@ -722,7 +722,7 @@
     <div class="notif-card mb-4">
         <div class="notif-header">
             <h6><i class="fas fa-hourglass-half"></i> Documentos próximos ao vencimento</h6>
-            <a href="{{ url_for('estatisticas') }}">Ver estatísticas <i class="fas fa-arrow-right ms-1"></i></a>
+            <a href="{{ url_for('reports.estatisticas') }}">Ver estatísticas <i class="fas fa-arrow-right ms-1"></i></a>
         </div>
         <div id="vencendo-body" class="px-3 py-2">
             <div class="text-center text-muted py-3">
@@ -747,7 +747,7 @@
                     {{ notificacoes|length }}
                 </span>
             </h6>
-            <a href="{{ url_for('estatisticas') }}">Ver todos <i class="fas fa-arrow-right ms-1"></i></a>
+            <a href="{{ url_for('reports.estatisticas') }}">Ver todos <i class="fas fa-arrow-right ms-1"></i></a>
         </div>
 
         <ul class="list-group list-group-flush">

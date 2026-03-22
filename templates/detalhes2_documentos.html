@@ -223,22 +223,22 @@
     </div>
     <p class="nav-label">Menu</p>
     <ul class="sidebar-nav">
-        <li><a href="{{ url_for('index') }}"><i class="fas fa-home"></i> Dashboard</a></li>
-        <li><a href="{{ url_for('publicados2') }}" class="active"><i class="fas fa-folder-open"></i> Documentos</a></li>
-        <li><a href="{{ url_for('estatisticas') }}"><i class="fas fa-chart-bar"></i> Estatísticas</a></li>
-        <li><a href="{{ url_for('relacao_documentos') }}"><i class="fas fa-project-diagram"></i> Relação</a></li>
+        <li><a href="{{ url_for('documents.index') }}"><i class="fas fa-home"></i> Dashboard</a></li>
+        <li><a href="{{ url_for('documents.publicados2') }}" class="active"><i class="fas fa-folder-open"></i> Documentos</a></li>
+        <li><a href="{{ url_for('reports.estatisticas') }}"><i class="fas fa-chart-bar"></i> Estatísticas</a></li>
+        <li><a href="{{ url_for('documents.relacao_documentos') }}"><i class="fas fa-project-diagram"></i> Relação</a></li>
     </ul>
     {% if nivel_acesso == 'elevado' %}
     <p class="nav-label">Administração</p>
     <ul class="sidebar-nav">
-        <li><a href="{{ url_for('publicar2_page') }}"><i class="fas fa-upload"></i> Publicar</a></li>
-        <li><a href="{{ url_for('gerenciar_opcoes') }}"><i class="fas fa-cogs"></i> Configurações</a></li>
-        <li><a href="{{ url_for('gerenciar_marcadores') }}"><i class="fas fa-bookmark"></i> Marcadores</a></li>
-        <li><a href="{{ url_for('gerenciar_siglas') }}"><i class="fas fa-tag"></i> Siglas</a></li>
+        <li><a href="{{ url_for('documents.publicar2_page') }}"><i class="fas fa-upload"></i> Publicar</a></li>
+        <li><a href="{{ url_for('admin.gerenciar_opcoes') }}"><i class="fas fa-cogs"></i> Configurações</a></li>
+        <li><a href="{{ url_for('admin.gerenciar_marcadores') }}"><i class="fas fa-bookmark"></i> Marcadores</a></li>
+        <li><a href="{{ url_for('admin.gerenciar_siglas') }}"><i class="fas fa-tag"></i> Siglas</a></li>
     </ul>
     {% endif %}
     <ul class="sidebar-nav" style="margin-top:auto;">
-        <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
+        <li><a href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
     </ul>
 </div>
 
@@ -281,14 +281,14 @@
                 <i class="fas fa-file-pdf me-1"></i> Abrir PDF
             </a>
             {% if nivel_acesso == 'elevado' %}
-            <a href="{{ url_for('editar_documento2', doc_id=documento.id) }}" class="btn btn-warning btn-sm">
+            <a href="{{ url_for('documents.editar_documento2', doc_id=documento.id) }}" class="btn btn-warning btn-sm">
                 <i class="fas fa-edit me-1"></i> Editar
             </a>
             <button class="btn btn-outline-danger btn-sm" onclick="confirmarExclusao({{ documento.id }})">
                 <i class="fas fa-trash-alt me-1"></i> Excluir
             </button>
             {% endif %}
-            <a href="{{ url_for('publicados2') }}" class="btn btn-outline-secondary btn-sm">
+            <a href="{{ url_for('documents.publicados2') }}" class="btn btn-outline-secondary btn-sm">
                 <i class="fas fa-arrow-left me-1"></i> Voltar
             </a>
         </div>

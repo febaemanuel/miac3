@@ -458,30 +458,30 @@
 
     <nav class="sidebar-nav">
         <div class="nav-label">Menu</div>
-        <a href="{{ url_for('publicados2') }}" class="nav-link">
+        <a href="{{ url_for('documents.publicados2') }}" class="nav-link">
             <i class="fa-solid fa-house"></i> Início
         </a>
-        <a href="{{ url_for('relacao_documentos') }}" class="nav-link">
+        <a href="{{ url_for('documents.relacao_documentos') }}" class="nav-link">
             <i class="fa-solid fa-file-lines"></i> Relação
         </a>
-        <a href="{{ url_for('estatisticas') }}" class="nav-link">
+        <a href="{{ url_for('reports.estatisticas') }}" class="nav-link">
             <i class="fa-solid fa-chart-bar"></i> Estatísticas
         </a>
 
         <div class="nav-label" style="margin-top: 1rem;">Administração</div>
-        <a href="{{ url_for('gerenciar_marcadores') }}" class="nav-link active">
+        <a href="{{ url_for('admin.gerenciar_marcadores') }}" class="nav-link active">
             <i class="fa-solid fa-bookmark"></i> Marcadores
         </a>
-        <a href="{{ url_for('gerenciar_siglas') }}" class="nav-link">
+        <a href="{{ url_for('admin.gerenciar_siglas') }}" class="nav-link">
             <i class="fa-solid fa-tag"></i> Siglas
         </a>
-        <a href="{{ url_for('gerenciar_opcoes') }}" class="nav-link">
+        <a href="{{ url_for('admin.gerenciar_opcoes') }}" class="nav-link">
             <i class="fa-solid fa-cogs"></i> Configurações
         </a>
     </nav>
 
     <div class="sidebar-footer">
-        <a href="{{ url_for('logout') }}" class="nav-link">
+        <a href="{{ url_for('auth.logout') }}" class="nav-link">
             <i class="fa-solid fa-right-from-bracket"></i> Sair
         </a>
     </div>

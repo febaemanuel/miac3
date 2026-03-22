@@ -160,11 +160,11 @@
     <div class="sidebar">
         <h2>MIAC</h2>
         <ul>
-            <li><a href="{{ url_for('publicados2') }}"><i class="fas fa-home"></i> Página Inicial</a></li>
-            <li><a href="{{ url_for('publicar2_page') }}"><i class="fas fa-upload"></i> Publicar</a></li>
-            <li><a href="{{ url_for('estatisticas') }}"><i class="fas fa-chart-bar"></i> Estatísticas</a></li>
-            <li><a href="{{ url_for('gerenciar_opcoes') }}"><i class="fas fa-cogs"></i> Configurações</a></li>
-            <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
+            <li><a href="{{ url_for('documents.publicados2') }}"><i class="fas fa-home"></i> Página Inicial</a></li>
+            <li><a href="{{ url_for('documents.publicar2_page') }}"><i class="fas fa-upload"></i> Publicar</a></li>
+            <li><a href="{{ url_for('reports.estatisticas') }}"><i class="fas fa-chart-bar"></i> Estatísticas</a></li>
+            <li><a href="{{ url_for('admin.gerenciar_opcoes') }}"><i class="fas fa-cogs"></i> Configurações</a></li>
+            <li><a href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
         </ul>
     </div>
 
@@ -177,13 +177,13 @@
                     <h5>{{ documento.nome }}</h5>
                     <p>Publicado em: {{ documento.data_publicacao }}</p>
                     <div class="document-btns">
-                        <a href="{{ url_for('documento2_detalhes', doc_id=documento.id) }}" class="btn btn-primary">
+                        <a href="{{ url_for('documents.documento2_detalhes', doc_id=documento.id) }}" class="btn btn-primary">
                             <i class="fas fa-eye"></i> Acessar
                         </a>
                         <a href="{{ url_for('static', filename='uploads2/' + documento.caminho.split('/')[-1]) }}" class="btn btn-secondary" target="_blank">
                             <i class="fas fa-file-pdf"></i> Visualizar PDF
                         </a>
-                        <form method="POST" action="{{ url_for('excluir_documento', doc_id=documento.id, tipo='documento2') }}" style="display:inline" onsubmit="return confirm('Confirma exclusão?')">
+                        <form method="POST" action="{{ url_for('documents.excluir_documento', doc_id=documento.id, tipo='documento2') }}" style="display:inline" onsubmit="return confirm('Confirma exclusão?')">
                             <button type="submit" class="btn btn-danger btn-sm">
                                 <i class="fas fa-trash"></i> Excluir
                             </button>

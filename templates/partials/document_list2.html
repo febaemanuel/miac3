@@ -160,7 +160,7 @@
                 </div>
                 <div class="doc-item-body">
                     <div class="doc-item-top">
-                        <a href="{{ url_for('documento2_detalhes', doc_id=documento.id) }}" class="doc-title">
+                        <a href="{{ url_for('documents.documento2_detalhes', doc_id=documento.id) }}" class="doc-title">
                             {{ documento.nome }}
                         </a>
                         <div class="doc-badges">
@@ -197,7 +197,7 @@
                     </div>
                 </div>
                 <div class="doc-item-actions">
-                    <a href="{{ url_for('documento2_detalhes', doc_id=documento.id) }}"
+                    <a href="{{ url_for('documents.documento2_detalhes', doc_id=documento.id) }}"
                        class="btn btn-sm btn-primary" title="Ver detalhes">
                         <i class="fas fa-eye"></i>
                     </a>
