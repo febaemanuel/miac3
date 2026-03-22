@@ -1,258 +1,142 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalhes do Documento — MIAC</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        *, *::before, *::after { box-sizing: border-box; }
+{% extends "base.html" %}
+{% set active_page = 'publicados' %}
 
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: #f0f2f5;
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-        }
+{% block title %}Detalhes do Documento{% endblock %}
 
-        /* ── Sidebar ── */
-        .sidebar {
-            position: fixed;
-            top: 0; left: 0;
-            width: 260px;
-            height: 100vh;
-            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
-            display: flex;
-            flex-direction: column;
-            z-index: 1000;
-            overflow-y: auto;
-            box-shadow: 3px 0 15px rgba(0,0,0,0.18);
-        }
+{% block extra_css %}
+<style>
+    /* ── Status badge ── */
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 14px;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 600;
+    }
+    .status-pill.atualizado { background: #d4edda; color: #155724; }
+    .status-pill.vencido { background: #f8d7da; color: #721c24; }
+    .status-pill.complexo { background: #fff3cd; color: #856404; }
 
-        .sidebar-brand {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 28px 24px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
+    /* ── Cards ── */
+    .info-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+    .info-card .card-head {
+        background: linear-gradient(135deg, #2c3e50, #34495e);
+        color: #fff;
+        padding: 14px 20px;
+        font-size: 0.92rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .info-card .card-body { padding: 20px; }
 
-        .sidebar-brand i { font-size: 1.5rem; color: #3498db; margin-right: 10px; }
-        .sidebar-brand span { font-size: 1.75rem; font-weight: 700; color: #fff; letter-spacing: 3px; }
+    .info-row {
+        display: flex;
+        padding: 9px 0;
+        border-bottom: 1px solid #f0f2f5;
+        font-size: 0.88rem;
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-row .label {
+        width: 180px;
+        flex-shrink: 0;
+        color: #6c757d;
+        font-weight: 500;
+    }
+    .info-row .value { color: #2c3e50; font-weight: 400; }
 
-        .nav-label {
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: rgba(255,255,255,0.35);
-            padding: 18px 20px 6px;
-        }
+    /* ── PDF preview ── */
+    .pdf-preview-wrapper {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+    .pdf-preview-head {
+        background: linear-gradient(135deg, #c0392b, #e74c3c);
+        color: #fff;
+        padding: 14px 20px;
+        font-size: 0.92rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    #pdf-frame {
+        width: 100%;
+        height: 520px;
+        border: none;
+        display: block;
+    }
+    #pdf-placeholder {
+        height: 180px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #adb5bd;
+        gap: 10px;
+    }
+    #pdf-placeholder i { font-size: 2.5rem; }
 
-        .sidebar-nav { list-style: none; padding: 8px 0; margin: 0; flex: 1; }
-        .sidebar-nav li { margin: 2px 12px; }
-        .sidebar-nav li a {
-            display: flex;
-            align-items: center;
-            padding: 11px 16px;
-            color: rgba(255,255,255,0.82);
-            text-decoration: none;
-            border-radius: 8px;
-            font-size: 0.88rem;
-            transition: background 0.22s, color 0.22s, transform 0.18s;
-        }
-        .sidebar-nav li a i {
-            width: 20px; margin-right: 12px; font-size: 0.95rem;
-            color: rgba(255,255,255,0.45); transition: color 0.22s;
-        }
-        .sidebar-nav li a:hover, .sidebar-nav li a.active {
-            background: rgba(255,255,255,0.1); color: #fff; transform: translateX(4px);
-        }
-        .sidebar-nav li a:hover i, .sidebar-nav li a.active i { color: #3498db; }
+    /* ── Timeline ── */
+    .timeline { position: relative; padding-left: 28px; }
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 10px; top: 0; bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+    }
+    .tl-item {
+        position: relative;
+        margin-bottom: 18px;
+    }
+    .tl-dot {
+        position: absolute;
+        left: -24px;
+        top: 4px;
+        width: 14px; height: 14px;
+        border-radius: 50%;
+        background: #3498db;
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 2px #3498db;
+    }
+    .tl-dot.current { background: #27ae60; box-shadow: 0 0 0 2px #27ae60; }
+    .tl-content {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 0.83rem;
+    }
+    .tl-content strong { color: #2c3e50; }
+    .tl-content small { color: #6c757d; }
 
-        /* ── Main ── */
-        .main-content {
-            margin-left: 260px;
-            padding: 32px 36px;
-            flex: 1;
-            min-height: 100vh;
-        }
+    /* ── Action buttons ── */
+    .action-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 24px;
+    }
 
-        /* ── Status badge ── */
-        .status-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 5px 14px;
-            border-radius: 20px;
-            font-size: 0.82rem;
-            font-weight: 600;
-        }
-        .status-pill.atualizado { background: #d4edda; color: #155724; }
-        .status-pill.vencido { background: #f8d7da; color: #721c24; }
-        .status-pill.complexo { background: #fff3cd; color: #856404; }
+    @media (max-width: 768px) {
+        .info-row .label { width: 130px; }
+    }
+</style>
+{% endblock %}
 
-        /* ── Cards ── */
-        .info-card {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-            margin-bottom: 20px;
-            overflow: hidden;
-        }
-        .info-card .card-head {
-            background: linear-gradient(135deg, #2c3e50, #34495e);
-            color: #fff;
-            padding: 14px 20px;
-            font-size: 0.92rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .info-card .card-body { padding: 20px; }
-
-        .info-row {
-            display: flex;
-            padding: 9px 0;
-            border-bottom: 1px solid #f0f2f5;
-            font-size: 0.88rem;
-        }
-        .info-row:last-child { border-bottom: none; }
-        .info-row .label {
-            width: 180px;
-            flex-shrink: 0;
-            color: #6c757d;
-            font-weight: 500;
-        }
-        .info-row .value { color: #2c3e50; font-weight: 400; }
-
-        /* ── PDF preview ── */
-        .pdf-preview-wrapper {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-        .pdf-preview-head {
-            background: linear-gradient(135deg, #c0392b, #e74c3c);
-            color: #fff;
-            padding: 14px 20px;
-            font-size: 0.92rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        #pdf-frame {
-            width: 100%;
-            height: 520px;
-            border: none;
-            display: block;
-        }
-        #pdf-placeholder {
-            height: 180px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #adb5bd;
-            gap: 10px;
-        }
-        #pdf-placeholder i { font-size: 2.5rem; }
-
-        /* ── Timeline ── */
-        .timeline { position: relative; padding-left: 28px; }
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 10px; top: 0; bottom: 0;
-            width: 2px;
-            background: #dee2e6;
-        }
-        .tl-item {
-            position: relative;
-            margin-bottom: 18px;
-        }
-        .tl-dot {
-            position: absolute;
-            left: -24px;
-            top: 4px;
-            width: 14px; height: 14px;
-            border-radius: 50%;
-            background: #3498db;
-            border: 2px solid #fff;
-            box-shadow: 0 0 0 2px #3498db;
-        }
-        .tl-dot.current { background: #27ae60; box-shadow: 0 0 0 2px #27ae60; }
-        .tl-content {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 10px 14px;
-            font-size: 0.83rem;
-        }
-        .tl-content strong { color: #2c3e50; }
-        .tl-content small { color: #6c757d; }
-
-        /* ── Action buttons ── */
-        .action-bar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 24px;
-        }
-
-        @media (max-width: 768px) {
-            .sidebar { width: 100%; height: auto; position: relative; }
-            .main-content { margin-left: 0; padding: 16px; }
-            body { flex-direction: column; }
-            .info-row .label { width: 130px; }
-        }
-    </style>
-</head>
-<body>
-<!-- ── Sidebar ── -->
-<div class="sidebar">
-    <div class="sidebar-brand">
-        <i class="fas fa-file-medical-alt"></i>
-        <span>MIAC</span>
-    </div>
-    <p class="nav-label">Menu</p>
-    <ul class="sidebar-nav">
-        <li><a href="{{ url_for('documents.index') }}"><i class="fas fa-home"></i> Dashboard</a></li>
-        <li><a href="{{ url_for('documents.publicados2') }}" class="active"><i class="fas fa-folder-open"></i> Documentos</a></li>
-        <li><a href="{{ url_for('reports.estatisticas') }}"><i class="fas fa-chart-bar"></i> Estatísticas</a></li>
-        <li><a href="{{ url_for('documents.relacao_documentos') }}"><i class="fas fa-project-diagram"></i> Relação</a></li>
-    </ul>
-    {% if nivel_acesso == 'elevado' %}
-    <p class="nav-label">Administração</p>
-    <ul class="sidebar-nav">
-        <li><a href="{{ url_for('documents.publicar2_page') }}"><i class="fas fa-upload"></i> Publicar</a></li>
-        <li><a href="{{ url_for('admin.gerenciar_opcoes') }}"><i class="fas fa-cogs"></i> Configurações</a></li>
-        <li><a href="{{ url_for('admin.gerenciar_marcadores') }}"><i class="fas fa-bookmark"></i> Marcadores</a></li>
-        <li><a href="{{ url_for('admin.gerenciar_siglas') }}"><i class="fas fa-tag"></i> Siglas</a></li>
-    </ul>
-    {% endif %}
-    <ul class="sidebar-nav" style="margin-top:auto;">
-        <li><a href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
-    </ul>
-</div>
-
-<!-- ── Main Content ── -->
-<div class="main-content">
-
-    <!-- Flash messages -->
-    {% for cat, msg in get_flashed_messages(with_categories=true) %}
-    <div class="alert alert-{{ 'danger' if cat == 'error' else cat }} alert-dismissible fade show mb-3" role="alert">
-        {{ msg }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    {% endfor %}
-
+{% block content %}
     <!-- Header -->
     <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
         <div>
@@ -433,33 +317,32 @@
         </div>
     </div>
 
-</div>
-
-<!-- Delete confirmation modal -->
-<div class="modal fade" id="modalExcluir" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Confirmar exclusão</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                Tem certeza que deseja <strong>excluir definitivamente</strong> este documento?
-                Esta ação não pode ser desfeita.
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <form id="form-excluir" method="POST">
-                    <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-trash-alt me-1"></i> Excluir
-                    </button>
-                </form>
+    <!-- Delete confirmation modal -->
+    <div class="modal fade" id="modalExcluir" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Confirmar exclusão</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    Tem certeza que deseja <strong>excluir definitivamente</strong> este documento?
+                    Esta ação não pode ser desfeita.
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <form id="form-excluir" method="POST">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash-alt me-1"></i> Excluir
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
+{% endblock %}
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}
 <script>
 function confirmarExclusao(docId) {
     document.getElementById('form-excluir').action = `/miac/excluir_documento2/${docId}`;
@@ -481,5 +364,4 @@ function restaurarVersao(docId, versao) {
         .catch(() => alert('Erro de comunicação com o servidor.'));
 }
 </script>
-</body>
-</html>
+{% endblock %}
