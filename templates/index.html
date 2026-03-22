@@ -1,537 +1,196 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MIAC - Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        /* ── Global ── */
-        *, *::before, *::after { box-sizing: border-box; }
+{% extends "base.html" %}
+{% set active_page = 'dashboard' %}
 
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: #f0f2f5;
-            color: #333;
-            margin: 0;
-            min-height: 100vh;
-        }
+{% block title %}Dashboard{% endblock %}
 
-        /* ── Sidebar ── */
-        .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 260px;
-            height: 100vh;
-            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
-            display: flex;
-            flex-direction: column;
-            padding: 0;
-            z-index: 1000;
-            overflow-y: auto;
-            box-shadow: 3px 0 15px rgba(0,0,0,0.18);
-        }
+{% block extra_css %}
+<style>
+    /* ── Welcome Bar ── */
+    .welcome-bar {
+        background: #fff;
+        border-radius: var(--border-radius);
+        padding: 20px 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 28px;
+    }
 
-        .sidebar-brand {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 28px 24px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
+    .welcome-bar .greeting {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--secondary);
+        margin: 0;
+    }
 
-        .sidebar-brand span {
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: #fff;
-            letter-spacing: 3px;
-        }
+    .welcome-bar .greeting span {
+        color: var(--primary);
+    }
 
-        .sidebar-brand i {
-            font-size: 1.5rem;
-            color: #3498db;
-            margin-right: 10px;
-        }
+    .welcome-bar .date-badge {
+        font-size: 0.82rem;
+        font-weight: 500;
+        color: var(--gray-500);
+        background: var(--light);
+        border-radius: 20px;
+        padding: 6px 16px;
+        white-space: nowrap;
+    }
 
-        .sidebar-nav {
-            list-style: none;
-            padding: 16px 0;
-            margin: 0;
-            flex: 1;
-        }
+    /* ── Stat Cards (Dashboard) ── */
+    .stat-card { cursor: pointer; }
+    .stat-card.blue { border-left-color: var(--primary); }
+    .stat-card.green { border-left-color: var(--success); }
+    .stat-card.red { border-left-color: var(--danger); }
+    .stat-card.orange { border-left-color: var(--warning); }
 
-        .sidebar-nav li {
-            margin: 2px 12px;
-        }
+    .stat-icon {
+        width: 50px; height: 50px;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.3rem; flex-shrink: 0;
+    }
 
-        .sidebar-nav li a {
-            display: flex;
-            align-items: center;
-            padding: 11px 16px;
-            color: rgba(255,255,255,0.82);
-            text-decoration: none;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 400;
-            transition: background 0.22s, color 0.22s, transform 0.18s;
-        }
+    .stat-icon.blue { background: rgba(52,152,219,0.12); color: var(--primary); }
+    .stat-icon.green { background: rgba(39,174,96,0.12); color: var(--success); }
+    .stat-icon.red { background: rgba(231,76,60,0.12); color: var(--danger); }
+    .stat-icon.orange { background: rgba(243,156,18,0.12); color: var(--warning); }
 
-        .sidebar-nav li a i {
-            width: 20px;
-            margin-right: 12px;
-            font-size: 1rem;
-            text-align: center;
-            color: rgba(255,255,255,0.55);
-            transition: color 0.22s;
-        }
+    .stat-body { flex: 1; }
+    .stat-value { font-size: 1.6rem; font-weight: 700; line-height: 1.1; }
+    .stat-label { font-size: 0.82rem; font-weight: 500; color: var(--gray-700); margin-top: 2px; }
+    .stat-sub { font-size: 0.72rem; color: var(--gray-500); margin-top: 2px; }
 
-        .sidebar-nav li a:hover,
-        .sidebar-nav li a.active {
-            background: rgba(255,255,255,0.1);
-            color: #fff;
-            transform: translateX(4px);
-        }
+    /* ── Progress Card ── */
+    .progress-card {
+        background: #fff;
+        border-radius: var(--border-radius);
+        padding: 18px 24px;
+        box-shadow: var(--shadow-sm);
+    }
 
-        .sidebar-nav li a:hover i,
-        .sidebar-nav li a.active i {
-            color: #3498db;
-        }
+    .prog-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        font-size: 0.88rem;
+    }
 
-        .sidebar-nav .nav-divider {
-            height: 1px;
-            background: rgba(255,255,255,0.07);
-            margin: 8px 12px;
-        }
+    .prog-label span {
+        font-size: 0.82rem;
+        color: var(--gray-500);
+    }
 
-        .sidebar-nav .nav-section-label {
-            font-size: 0.68rem;
-            font-weight: 600;
-            letter-spacing: 1.2px;
-            color: rgba(255,255,255,0.35);
-            text-transform: uppercase;
-            padding: 10px 28px 4px;
-        }
+    .progress {
+        height: 12px;
+        border-radius: 6px;
+    }
 
-        .sidebar-footer {
-            padding: 16px 24px;
-            border-top: 1px solid rgba(255,255,255,0.08);
-        }
+    /* ── Section Title ── */
+    .section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--secondary);
+        margin-bottom: 16px;
+    }
 
-        .sidebar-footer a {
-            display: flex;
-            align-items: center;
-            color: rgba(255,255,255,0.55);
-            text-decoration: none;
-            font-size: 0.85rem;
-            transition: color 0.2s;
-        }
+    /* ── Quick Cards (Dashboard) ── */
+    .qc-icon {
+        width: 48px; height: 48px;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+    }
 
-        .sidebar-footer a i {
-            margin-right: 10px;
-        }
+    .qc-blue { background: rgba(52,152,219,0.12); color: var(--primary); }
+    .qc-green { background: rgba(39,174,96,0.12); color: var(--success); }
+    .qc-purple { background: rgba(111,66,193,0.12); color: #6f42c1; }
+    .qc-teal { background: rgba(23,162,184,0.12); color: var(--info); }
+    .qc-gray { background: rgba(108,117,125,0.12); color: var(--gray-500); }
+    .qc-orange { background: rgba(243,156,18,0.12); color: var(--warning); }
 
-        .sidebar-footer a:hover {
-            color: #e74c3c;
-        }
+    .qc-label { font-size: 0.78rem; font-weight: 500; }
 
-        /* ── Main Content ── */
-        .main-content {
-            margin-left: 260px;
-            min-height: 100vh;
-            padding: 32px 36px 48px;
-            transition: margin-left 0.3s;
-        }
+    /* ── Notification Card ── */
+    .notif-card {
+        background: #fff;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
 
-        /* ── Welcome Bar ── */
+    .notif-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .notif-header h6 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 0.88rem;
+        color: var(--secondary);
+    }
+
+    .notif-header a {
+        font-size: 0.78rem;
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .notif-header a:hover { text-decoration: underline; }
+
+    .list-group-item {
+        font-size: 0.84rem;
+        border-color: var(--gray-200);
+        padding: 10px 20px;
+    }
+
+    .list-group-item i {
+        color: var(--warning);
+        margin-right: 8px;
+        font-size: 0.6rem;
+    }
+
+    /* ── Health Score ── */
+    .health-score {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        background: #fff;
+        border-radius: var(--border-radius);
+        padding: 20px 24px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .health-circle {
+        width: 80px; height: 80px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.5rem; font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
         .welcome-bar {
-            background: #fff;
-            border-radius: 12px;
-            padding: 20px 28px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-            margin-bottom: 28px;
-        }
-
-        .welcome-bar .greeting {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #2c3e50;
-            margin: 0;
-        }
-
-        .welcome-bar .greeting span {
-            color: #3498db;
-        }
-
-        .welcome-bar .date-badge {
-            font-size: 0.82rem;
-            font-weight: 500;
-            color: #6c757d;
-            background: #f0f2f5;
-            border-radius: 20px;
-            padding: 6px 16px;
-            white-space: nowrap;
-        }
-
-        /* ── Stat Cards ── */
-        .stat-card {
-            background: #fff;
-            border-radius: 12px;
-            border: none;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-            padding: 22px 24px;
-            display: flex;
-            align-items: center;
-            gap: 18px;
-            transition: transform 0.22s, box-shadow 0.22s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 5px;
-            border-radius: 12px 0 0 12px;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-        }
-
-        .stat-card.blue::before  { background: #3498db; }
-        .stat-card.green::before { background: #28a745; }
-        .stat-card.red::before   { background: #dc3545; }
-        .stat-card.orange::before{ background: #f39c12; }
-
-        .stat-icon {
-            width: 52px;
-            height: 52px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
-            flex-shrink: 0;
-        }
-
-        .stat-icon.blue   { background: rgba(52,152,219,0.12); color: #3498db; }
-        .stat-icon.green  { background: rgba(40,167,69,0.12);  color: #28a745; }
-        .stat-icon.red    { background: rgba(220,53,69,0.12);  color: #dc3545; }
-        .stat-icon.orange { background: rgba(243,156,18,0.12); color: #f39c12; }
-
-        .stat-body { flex: 1; min-width: 0; }
-
-        .stat-body .stat-value {
-            font-size: 1.75rem;
-            font-weight: 700;
-            line-height: 1.1;
-            color: #2c3e50;
-        }
-
-        .stat-body .stat-label {
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: #6c757d;
-            margin-top: 3px;
-        }
-
-        .stat-body .stat-sub {
-            font-size: 0.72rem;
-            color: #adb5bd;
-            margin-top: 4px;
-        }
-
-        /* ── Progress Section ── */
-        .progress-card {
-            background: #fff;
-            border-radius: 12px;
-            padding: 22px 28px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-            margin-bottom: 28px;
-        }
-
-        .progress-card .prog-label {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .progress-card .prog-label span {
-            font-size: 0.78rem;
-            font-weight: 400;
-            color: #6c757d;
-        }
-
-        .progress {
-            height: 12px;
-            border-radius: 100px;
-            background: #e9ecef;
-        }
-
-        .progress-bar {
-            border-radius: 100px;
-            transition: width 1s ease;
-        }
-
-        /* ── Section Title ── */
-        .section-title {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 18px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .section-title::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: #e9ecef;
-        }
-
-        /* ── Quick Action Cards ── */
-        .quick-card {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-            height: 160px;
-            display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            text-decoration: none;
-            color: inherit;
-            transition: transform 0.22s, box-shadow 0.22s;
-            border: 1.5px solid transparent;
-            cursor: pointer;
-            padding: 16px;
-            text-align: center;
-        }
-
-        .quick-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 28px rgba(0,0,0,0.13);
-            color: inherit;
-        }
-
-        .quick-card .qc-icon {
-            width: 52px;
-            height: 52px;
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
-        }
-
-        .quick-card .qc-label {
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: #2c3e50;
-            line-height: 1.3;
-        }
-
-        /* Quick card color variants */
-        .qc-blue   { background: rgba(52,152,219,0.12); color: #3498db; }
-        .qc-green  { background: rgba(40,167,69,0.12);  color: #28a745; }
-        .qc-purple { background: rgba(155,89,182,0.12); color: #9b59b6; }
-        .qc-teal   { background: rgba(32,178,170,0.12); color: #20b2aa; }
-        .qc-gray   { background: rgba(108,117,125,0.12);color: #6c757d; }
-        .qc-orange { background: rgba(243,156,18,0.12); color: #f39c12; }
-
-        /* ── Notifications ── */
-        .notif-card {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-            overflow: hidden;
-        }
-
-        .notif-card .notif-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 18px 24px;
-            border-bottom: 1px solid #f0f2f5;
-        }
-
-        .notif-card .notif-header h6 {
-            font-weight: 600;
-            color: #2c3e50;
-            margin: 0;
-            display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 8px;
         }
+        .stat-card { padding: 16px; }
+    }
+</style>
+{% endblock %}
 
-        .notif-card .notif-header h6 i {
-            color: #f39c12;
-        }
-
-        .notif-card .notif-header a {
-            font-size: 0.8rem;
-            color: #3498db;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .notif-card .notif-header a:hover {
-            text-decoration: underline;
-        }
-
-        .list-group-item {
-            border-left: none;
-            border-right: none;
-            border-color: #f0f2f5;
-            padding: 12px 24px;
-            font-size: 0.85rem;
-            color: #4a4a4a;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .list-group-item:first-child { border-top: none; }
-        .list-group-item:last-child  { border-bottom: none; }
-
-        .list-group-item i {
-            color: #f39c12;
-            font-size: 0.9rem;
-            flex-shrink: 0;
-        }
-
-        /* ── Responsive ── */
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 100%;
-                height: auto;
-                position: relative;
-                flex-direction: row;
-                flex-wrap: wrap;
-                padding: 0;
-            }
-
-            .sidebar-brand {
-                padding: 14px 20px;
-                border-bottom: none;
-                border-right: 1px solid rgba(255,255,255,0.08);
-            }
-
-            .sidebar-nav {
-                display: flex;
-                flex-direction: row;
-                flex-wrap: wrap;
-                padding: 8px;
-            }
-
-            .sidebar-nav li { margin: 2px; }
-
-            .sidebar-nav li a {
-                padding: 8px 12px;
-                font-size: 0.8rem;
-            }
-
-            .sidebar-nav .nav-divider,
-            .sidebar-nav .nav-section-label { display: none; }
-
-            .sidebar-footer { display: none; }
-
-            .main-content {
-                margin-left: 0;
-                padding: 20px 16px 40px;
-            }
-
-            .welcome-bar {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 8px;
-            }
-
-            .stat-card { padding: 16px; }
-        }
-    </style>
-</head>
-<body>
-
-<!-- ═══════════════════ SIDEBAR ═══════════════════ -->
-<aside class="sidebar">
-    <div class="sidebar-brand">
-        <i class="fas fa-shield-halved"></i>
-        <span>MIAC</span>
-    </div>
-
-    <ul class="sidebar-nav">
-        <li class="nav-section-label">Principal</li>
-        <li>
-            <a href="{{ url_for('publicados2') }}">
-                <i class="fas fa-home"></i> Página Inicial
-            </a>
-        </li>
-        <li>
-            <a href="{{ url_for('relacao_documentos') }}">
-                <i class="fas fa-list-alt"></i> Relação
-            </a>
-        </li>
-
-        {% if session.get('nivel_acesso') == 'elevado' %}
-        <li>
-            <a href="{{ url_for('publicar2_page') }}">
-                <i class="fas fa-upload"></i> Publicar
-            </a>
-        </li>
-        {% endif %}
-
-        <li>
-            <a href="{{ url_for('estatisticas') }}">
-                <i class="fas fa-chart-bar"></i> Estatísticas
-            </a>
-        </li>
-
-        {% if session.get('nivel_acesso') == 'elevado' %}
-        <div class="nav-divider"></div>
-        <li class="nav-section-label">Administração</li>
-        <li>
-            <a href="{{ url_for('gerenciar_opcoes') }}">
-                <i class="fas fa-sliders"></i> Configurações
-            </a>
-        </li>
-        <li>
-            <a href="{{ url_for('gerenciar_siglas') }}">
-                <i class="fas fa-tags"></i> Siglas
-            </a>
-        </li>
-        {% endif %}
-    </ul>
-
-    <div class="sidebar-footer">
-        <a href="{{ url_for('logout') }}">
-            <i class="fas fa-right-from-bracket"></i> Sair
-        </a>
-    </div>
-</aside>
-
-<!-- ═══════════════════ MAIN CONTENT ═══════════════════ -->
-<main class="main-content">
-
+{% block content %}
     <!-- Welcome Bar -->
-    <div class="welcome-bar">
+    <div class="welcome-bar fade-in">
         <p class="greeting" id="greeting-text">
             Bom dia, <span>{{ session.get('username', 'Usuário') }}</span>!
         </p>
@@ -541,52 +200,47 @@
         </div>
     </div>
 
-    <!-- Stats Cards -->
+    <!-- Stats Cards (clickable) -->
     <div class="row g-3 mb-4">
         <div class="col-md-3 col-sm-6">
-            <div class="stat-card blue">
-                <div class="stat-icon blue">
-                    <i class="fas fa-file-alt"></i>
+            <a href="{{ url_for('documents.publicados2') }}" class="text-decoration-none">
+                <div class="stat-card blue fade-in">
+                    <div class="stat-icon blue"><i class="fas fa-file-alt"></i></div>
+                    <div class="stat-body">
+                        <div class="stat-value">{{ stats.total }}</div>
+                        <div class="stat-label">Total Documentos</div>
+                        <div class="stat-sub">Todos os registros</div>
+                    </div>
                 </div>
-                <div class="stat-body">
-                    <div class="stat-value">{{ stats.total }}</div>
-                    <div class="stat-label">Total Documentos</div>
-                    <div class="stat-sub">Todos os registros</div>
-                </div>
-            </div>
+            </a>
         </div>
-
         <div class="col-md-3 col-sm-6">
-            <div class="stat-card green">
-                <div class="stat-icon green">
-                    <i class="fas fa-check-circle"></i>
+            <a href="{{ url_for('documents.publicados2') }}?status=atualizado" class="text-decoration-none">
+                <div class="stat-card green fade-in">
+                    <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+                    <div class="stat-body">
+                        <div class="stat-value">{{ stats.atualizados }}</div>
+                        <div class="stat-label">Atualizados</div>
+                        <div class="stat-sub">Dentro do prazo</div>
+                    </div>
                 </div>
-                <div class="stat-body">
-                    <div class="stat-value">{{ stats.atualizados }}</div>
-                    <div class="stat-label">Atualizados</div>
-                    <div class="stat-sub">Dentro do prazo</div>
-                </div>
-            </div>
+            </a>
         </div>
-
         <div class="col-md-3 col-sm-6">
-            <div class="stat-card red">
-                <div class="stat-icon red">
-                    <i class="fas fa-times-circle"></i>
+            <a href="{{ url_for('documents.publicados2') }}?status=vencido" class="text-decoration-none">
+                <div class="stat-card red fade-in">
+                    <div class="stat-icon red"><i class="fas fa-times-circle"></i></div>
+                    <div class="stat-body">
+                        <div class="stat-value">{{ stats.vencidos }}</div>
+                        <div class="stat-label">Vencidos</div>
+                        <div class="stat-sub">Requerem atenção</div>
+                    </div>
                 </div>
-                <div class="stat-body">
-                    <div class="stat-value">{{ stats.vencidos }}</div>
-                    <div class="stat-label">Vencidos</div>
-                    <div class="stat-sub">Requerem atenção</div>
-                </div>
-            </div>
+            </a>
         </div>
-
         <div class="col-md-3 col-sm-6">
-            <div class="stat-card orange">
-                <div class="stat-icon orange">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
+            <div class="stat-card orange fade-in">
+                <div class="stat-icon orange"><i class="fas fa-exclamation-triangle"></i></div>
                 <div class="stat-body">
                     <div class="stat-value">{{ stats.proximos_vencer }}</div>
                     <div class="stat-label">Próximos a Vencer</div>
@@ -596,41 +250,47 @@
         </div>
     </div>
 
-    <!-- Progress Bar -->
-    <div class="progress-card mb-4">
-        <div class="prog-label">
-            <strong>
-                <i class="fas fa-gauge-high me-2 text-secondary"></i>
-                Conformidade Documental
-            </strong>
-            <span>{{ stats.pct_atualizado }}% dos documentos estão atualizados</span>
+    <!-- Health Score + Progress -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="health-score fade-in">
+                <div class="health-circle" style="background: {{ 'rgba(39,174,96,0.15);color:#27ae60' if stats.pct_atualizado >= 80 else ('rgba(243,156,18,0.15);color:#f39c12' if stats.pct_atualizado >= 50 else 'rgba(231,76,60,0.15);color:#e74c3c') }};">
+                    {{ stats.pct_atualizado }}%
+                </div>
+                <div>
+                    <div style="font-weight:600;font-size:0.95rem;color:var(--secondary);">
+                        Saúde Documental
+                    </div>
+                    <div style="font-size:0.8rem;color:var(--gray-500);margin-top:4px;">
+                        {% if stats.pct_atualizado >= 80 %}
+                            Excelente! Documentação em dia.
+                        {% elif stats.pct_atualizado >= 50 %}
+                            Atenção: revisões pendentes.
+                        {% else %}
+                            Crítico: ação imediata necessária.
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="progress">
-            {% if stats.pct_atualizado >= 80 %}
-                <div class="progress-bar bg-success"
-                     role="progressbar"
-                     style="width: {{ stats.pct_atualizado }}%"
-                     aria-valuenow="{{ stats.pct_atualizado }}"
-                     aria-valuemin="0"
-                     aria-valuemax="100">
+        <div class="col-md-8">
+            <div class="progress-card fade-in">
+                <div class="prog-label">
+                    <strong><i class="fas fa-gauge-high me-2 text-secondary"></i>Conformidade Documental</strong>
+                    <span>{{ stats.pct_atualizado }}% atualizados</span>
                 </div>
-            {% elif stats.pct_atualizado >= 60 %}
-                <div class="progress-bar bg-warning"
-                     role="progressbar"
-                     style="width: {{ stats.pct_atualizado }}%"
-                     aria-valuenow="{{ stats.pct_atualizado }}"
-                     aria-valuemin="0"
-                     aria-valuemax="100">
+                <div class="progress">
+                    <div class="progress-bar {{ 'bg-success' if stats.pct_atualizado >= 80 else ('bg-warning' if stats.pct_atualizado >= 50 else 'bg-danger') }}"
+                         role="progressbar" style="width: {{ stats.pct_atualizado }}%"
+                         aria-valuenow="{{ stats.pct_atualizado }}" aria-valuemin="0" aria-valuemax="100">
+                    </div>
                 </div>
-            {% else %}
-                <div class="progress-bar bg-danger"
-                     role="progressbar"
-                     style="width: {{ stats.pct_atualizado }}%"
-                     aria-valuenow="{{ stats.pct_atualizado }}"
-                     aria-valuemin="0"
-                     aria-valuemax="100">
+                <div class="d-flex justify-content-between mt-2" style="font-size:0.75rem;color:var(--gray-500);">
+                    <span><i class="fas fa-circle text-success me-1" style="font-size:0.5rem;"></i>{{ stats.atualizados }} atualizados</span>
+                    <span><i class="fas fa-circle text-danger me-1" style="font-size:0.5rem;"></i>{{ stats.vencidos }} vencidos</span>
+                    <span><i class="fas fa-circle text-warning me-1" style="font-size:0.5rem;"></i>{{ stats.proximos_vencer }} próximos</span>
                 </div>
-            {% endif %}
+            </div>
         </div>
     </div>
 
@@ -641,68 +301,42 @@
 
     <div class="row g-3 mb-4">
         <div class="col-6 col-sm-4 col-lg-2">
-            <a href="{{ url_for('publicados2') }}" class="quick-card">
-                <div class="qc-icon qc-blue">
-                    <i class="fas fa-folder-open"></i>
-                </div>
-                <div class="qc-label">Documentos Publicados</div>
+            <a href="{{ url_for('documents.publicados2') }}" class="quick-card">
+                <div class="qc-icon qc-blue"><i class="fas fa-folder-open"></i></div>
+                <div class="qc-label">Documentos</div>
             </a>
         </div>
-
         {% if session.get('nivel_acesso') == 'elevado' %}
         <div class="col-6 col-sm-4 col-lg-2">
-            <a href="{{ url_for('publicar2_page') }}" class="quick-card">
-                <div class="qc-icon qc-green">
-                    <i class="fas fa-upload"></i>
-                </div>
-                <div class="qc-label">Publicar Documento</div>
+            <a href="{{ url_for('documents.publicar2_page') }}" class="quick-card">
+                <div class="qc-icon qc-green"><i class="fas fa-cloud-arrow-up"></i></div>
+                <div class="qc-label">Publicar</div>
             </a>
         </div>
         {% endif %}
-
         <div class="col-6 col-sm-4 col-lg-2">
-            <a href="{{ url_for('estatisticas') }}" class="quick-card">
-                <div class="qc-icon qc-purple">
-                    <i class="fas fa-chart-bar"></i>
-                </div>
+            <a href="{{ url_for('reports.estatisticas') }}" class="quick-card">
+                <div class="qc-icon qc-purple"><i class="fas fa-chart-bar"></i></div>
                 <div class="qc-label">Estatísticas</div>
             </a>
         </div>
-
         <div class="col-6 col-sm-4 col-lg-2">
-            <a href="{{ url_for('relacao_documentos') }}" class="quick-card">
-                <div class="qc-icon qc-teal">
-                    <i class="fas fa-list-alt"></i>
-                </div>
-                <div class="qc-label">Relação de Documentos</div>
+            <a href="{{ url_for('documents.relacao_documentos') }}" class="quick-card">
+                <div class="qc-icon qc-teal"><i class="fas fa-list-alt"></i></div>
+                <div class="qc-label">Relação</div>
             </a>
         </div>
-
         {% if session.get('nivel_acesso') == 'elevado' %}
         <div class="col-6 col-sm-4 col-lg-2">
-            <a href="{{ url_for('gerenciar_marcadores') }}" class="quick-card">
-                <div class="qc-icon qc-gray">
-                    <i class="fas fa-bookmark"></i>
-                </div>
-                <div class="qc-label">Gerenciar Marcadores</div>
-            </a>
-        </div>
-
-        <div class="col-6 col-sm-4 col-lg-2">
-            <a href="{{ url_for('gerenciar_siglas') }}" class="quick-card">
-                <div class="qc-icon qc-orange">
-                    <i class="fas fa-tags"></i>
-                </div>
-                <div class="qc-label">Gerenciar Siglas</div>
+            <a href="{{ url_for('admin.gerenciar_marcadores') }}" class="quick-card">
+                <div class="qc-icon qc-gray"><i class="fas fa-bookmark"></i></div>
+                <div class="qc-label">Marcadores</div>
             </a>
         </div>
         {% endif %}
-
         <div class="col-6 col-sm-4 col-lg-2">
-            <a href="{{ url_for('exportar_csv') }}" class="quick-card">
-                <div class="qc-icon" style="background:rgba(39,174,96,.12);color:#27ae60;">
-                    <i class="fas fa-file-csv"></i>
-                </div>
+            <a href="{{ url_for('api.exportar_csv') }}" class="quick-card">
+                <div class="qc-icon" style="background:rgba(39,174,96,.12);color:#27ae60;"><i class="fas fa-file-csv"></i></div>
                 <div class="qc-label">Exportar CSV</div>
             </a>
         </div>
@@ -716,13 +350,14 @@
             <option value="15">15 dias</option>
             <option value="30" selected>30 dias</option>
             <option value="60">60 dias</option>
+            <option value="90">90 dias</option>
         </select>
     </div>
 
     <div class="notif-card mb-4">
         <div class="notif-header">
             <h6><i class="fas fa-hourglass-half"></i> Documentos próximos ao vencimento</h6>
-            <a href="{{ url_for('estatisticas') }}">Ver estatísticas <i class="fas fa-arrow-right ms-1"></i></a>
+            <a href="{{ url_for('reports.estatisticas') }}">Ver estatísticas <i class="fas fa-arrow-right ms-1"></i></a>
         </div>
         <div id="vencendo-body" class="px-3 py-2">
             <div class="text-center text-muted py-3">
@@ -736,42 +371,40 @@
     {% if notificacoes %}
     <div class="section-title">
         <i class="fas fa-bell text-warning"></i> Alertas
+        <span class="badge bg-warning text-dark ms-1" style="font-size:0.7rem;">{{ notificacoes|length }}</span>
     </div>
 
     <div class="notif-card mb-4">
         <div class="notif-header">
-            <h6>
-                <i class="fas fa-triangle-exclamation"></i>
-                Notificações recentes
-                <span class="badge bg-warning text-dark ms-1" style="font-size:0.7rem;">
-                    {{ notificacoes|length }}
-                </span>
-            </h6>
-            <a href="{{ url_for('estatisticas') }}">Ver todos <i class="fas fa-arrow-right ms-1"></i></a>
+            <h6><i class="fas fa-triangle-exclamation"></i> Notificações recentes</h6>
+            <a href="{{ url_for('reports.estatisticas') }}">Ver todos <i class="fas fa-arrow-right ms-1"></i></a>
         </div>
-
         <ul class="list-group list-group-flush">
-            {% for notif in notificacoes[:10] %}
+            {% for notif in notificacoes[:15] %}
             <li class="list-group-item">
-                <i class="fas fa-circle-dot"></i>
-                {{ notif }}
+                <i class="fas fa-circle-dot"></i> {{ notif }}
             </li>
             {% endfor %}
+            {% if notificacoes|length > 15 %}
+            <li class="list-group-item text-center">
+                <a href="{{ url_for('reports.estatisticas') }}" class="text-primary">
+                    Ver todas as {{ notificacoes|length }} notificações <i class="fas fa-arrow-right"></i>
+                </a>
+            </li>
+            {% endif %}
         </ul>
     </div>
     {% endif %}
+{% endblock %}
 
-</main>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}
 <script>
-    // Greeting based on time
+    // Greeting based on time of day
     (function () {
         const hour = new Date().getHours();
         let greeting = 'Bom dia';
         if (hour >= 12 && hour < 18) greeting = 'Boa tarde';
         else if (hour >= 18) greeting = 'Boa noite';
-
         const username = "{{ session.get('username', 'Usuário') }}";
         document.getElementById('greeting-text').innerHTML =
             greeting + ', <span>' + username + '</span>!';
@@ -809,11 +442,12 @@
                 docs.forEach(d => {
                     const urgente = d.dias_restantes <= 7;
                     const aviso = d.dias_restantes <= 15;
-                    const cor = urgente ? 'text-danger fw-600' : (aviso ? 'text-warning fw-600' : 'text-success');
+                    const cor = urgente ? 'text-danger fw-bold' : (aviso ? 'text-warning fw-bold' : 'text-success');
+                    const badge = d.abrangencia === 'MEAC' ? 'background:#6f42c1;' : '';
                     html += `<tr>
                         <td><a href="/miac/documento2/${d.id}" class="text-decoration-none text-dark">${d.nome}</a></td>
                         <td>${d.organograma}</td>
-                        <td><span class="badge ${d.abrangencia === 'HUWC' ? 'bg-primary' : 'bg-purple'}" style="background:${d.abrangencia==='MEAC'?'#6f42c1':''};">${d.abrangencia}</span></td>
+                        <td><span class="badge bg-primary" style="${badge}">${d.abrangencia}</span></td>
                         <td class="text-center ${cor}">${d.dias_restantes}d — ${d.vencimento}</td>
                     </tr>`;
                 });
@@ -829,6 +463,11 @@
     document.getElementById('dias-select').addEventListener('change', function() {
         carregarVencendo(parseInt(this.value));
     });
+
+    // Auto-refresh every 5 minutes
+    setInterval(() => {
+        const dias = document.getElementById('dias-select').value;
+        carregarVencendo(parseInt(dias));
+    }, 300000);
 </script>
-</body>
-</html>
+{% endblock %}

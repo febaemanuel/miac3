@@ -26,8 +26,8 @@ from reportlab.platypus import (
     Image,
 )
 
-from extensions import db
-from models import Documento2
+from app.extensions import db
+from app.models import Documento2
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ DATE_FORMATS = ["%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y", "%d.%m.%Y"]
 
 
 def parse_data(data_str):
-    """Retorna datetime a partir de string em qualquer formato suportado."""
+    """Parses a date string using supported formats."""
     for fmt in DATE_FORMATS:
         try:
             return datetime.strptime(data_str, fmt)
@@ -45,7 +45,7 @@ def parse_data(data_str):
 
 
 def calcular_status(doc):
-    """Retorna dict com status, detalhes, cor e vencimento formatado para um documento."""
+    """Returns dict with status, details, color and formatted expiry for a document."""
     try:
         if not doc.vencimento:
             return {
@@ -102,12 +102,12 @@ def calcular_status(doc):
 
 
 def converter_data(data):
-    """Retorna date object a partir de string."""
+    """Returns date object from string."""
     return parse_data(data).date()
 
 
 def formatar_data_para_input(data_str):
-    """Converte data para formato yyyy-mm-dd (input type='date')."""
+    """Converts date to yyyy-mm-dd format for HTML date input."""
     if not data_str:
         return ""
     try:
@@ -117,7 +117,7 @@ def formatar_data_para_input(data_str):
 
 
 def verificar_vencimentos():
-    """Retorna lista de notificações sobre documentos vencidos ou próximos do vencimento."""
+    """Returns list of notifications about expired or expiring documents."""
     documentos = Documento2.query.filter(Documento2.vencimento.isnot(None)).all()
     notificacoes = []
     for doc in documentos:
@@ -135,22 +135,19 @@ def verificar_vencimentos():
 
 
 def identificar_documentos_com_erro():
+    """Identifies documents with validation errors."""
     documentos_com_erro = []
-
-    # Consulta todos os documentos
     documentos = Documento2.query.all()
 
     for documento in documentos:
         erros = []
 
-        # Verifica se a data de vencimento é válida
         if documento.vencimento:
             try:
                 converter_data(documento.vencimento)
             except ValueError:
                 erros.append(f"Data de vencimento inválida: {documento.vencimento}")
 
-        # Verifica campos obrigatórios
         if not documento.organograma:
             erros.append("Organograma não informado")
         if not documento.tipo_documento:
@@ -158,7 +155,6 @@ def identificar_documentos_com_erro():
         if not documento.abrangencia:
             erros.append("Abrangência não informada")
 
-        # Se houver erros, adiciona o documento à lista de documentos com erro
         if erros:
             documentos_com_erro.append({"documento": documento, "erros": erros})
 
@@ -166,6 +162,7 @@ def identificar_documentos_com_erro():
 
 
 def atualizar_status_documentos():
+    """Updates the 'atualizado' field for all documents based on expiry date."""
     documentos = Documento2.query.all()
     for documento in documentos:
         if documento.vencimento:
@@ -179,7 +176,7 @@ def atualizar_status_documentos():
 
 
 def normalizar_texto(texto):
-    """Remove acentos e converte para minúsculas"""
+    """Removes accents and converts to lowercase."""
     if not texto:
         return ""
     texto = unicodedata.normalize("NFD", texto)
@@ -188,27 +185,18 @@ def normalizar_texto(texto):
 
 
 def clean_text(text):
-    """Remove caracteres errados e normaliza espaços"""
+    """Removes bad characters and normalizes whitespace."""
     return re.sub(r"\s+", " ", text).strip()
 
 
 def read_last_page(file_path):
-    """
-    Versão simplificada que:
-    - Extrai apenas o texto da última página
-    - Não usa OCR ou validação por regex
-    """
+    """Extracts text from the last page of a PDF."""
     try:
         doc = fitz.open(file_path)
-        num_pages = len(doc)
-
-        # Pega apenas a última página
         page = doc.load_page(-1)
         text = page.get_text("text")
         cleaned_text = clean_text(text)
-
         return cleaned_text if cleaned_text.strip() else None
-
     except Exception as e:
         logger.error("Erro ao ler última página do PDF: %s", e)
         return None
@@ -218,6 +206,7 @@ def read_last_page(file_path):
 
 
 def send_to_deepseek_with_retry(prompt, api_key, retries=3, delay=2):
+    """Sends prompt to DeepSeek API with retry logic."""
     for i in range(retries):
         try:
             url = "https://api.deepseek.com/v1/chat/completions"
@@ -230,22 +219,19 @@ def send_to_deepseek_with_retry(prompt, api_key, retries=3, delay=2):
                 "messages": [{"role": "user", "content": prompt}],
                 "max_tokens": 150,
             }
-
             response = requests.post(url, headers=headers, json=data)
-
             if response.status_code == 200:
                 return response.json()["choices"][0]["message"]["content"]
             else:
                 logger.warning("DeepSeek tentativa %d falhou: %s %s", i + 1, response.status_code, response.text)
-
         except Exception as e:
             logger.warning("DeepSeek tentativa %d falhou: %s", i + 1, e)
-
         time.sleep(delay)
     return None
 
 
 def send_to_gpt_with_retry(prompt, api_key, retries=3, delay=2):
+    """Sends prompt to OpenAI GPT API with retry logic."""
     for i in range(retries):
         try:
             url = "https://api.openai.com/v1/chat/completions"
@@ -270,50 +256,36 @@ def send_to_gpt_with_retry(prompt, api_key, retries=3, delay=2):
 
 
 def add_watermark(canvas, doc):
+    """Adds watermark images to PDF pages."""
     canvas.saveState()
 
-    # Verifique se a imagem de fundo existe
     marca_fundo_path = os.path.join("static", "marca_fundo.png")
-    if not os.path.exists(marca_fundo_path):
-        logger.warning("Imagem de fundo %s não encontrada.", marca_fundo_path)
-    else:
+    if os.path.exists(marca_fundo_path):
         canvas.setFillAlpha(0.05)
         canvas.drawImage(
-            marca_fundo_path,
-            x=0,
-            y=200,
-            width=letter[0],
-            height=letter[1] * 0.75,
-            preserveAspectRatio=True,
-            mask="auto",
+            marca_fundo_path, x=0, y=200,
+            width=letter[0], height=letter[1] * 0.75,
+            preserveAspectRatio=True, mask="auto",
         )
 
-    # Verifique se a imagem do cabeçalho existe
     marca_cabecalho_path = os.path.join("static", "marca_cabecalho.png")
-    if not os.path.exists(marca_cabecalho_path):
-        logger.warning("Imagem de cabeçalho %s não encontrada.", marca_cabecalho_path)
-    else:
+    if os.path.exists(marca_cabecalho_path):
         canvas.setFillAlpha(1.0)
         canvas.drawImage(
-            marca_cabecalho_path,
-            x=200,
-            y=720,
-            width=400,
-            height=100,
-            preserveAspectRatio=True,
-            mask="auto",
+            marca_cabecalho_path, x=200, y=720,
+            width=400, height=100,
+            preserveAspectRatio=True, mask="auto",
         )
 
     canvas.restoreState()
 
 
 def expired_duration(vencimento):
+    """Template filter: formats duration since document expired."""
     try:
-        # Supondo que a data esteja no formato 'dd/mm/yyyy'
         exp_date = datetime.strptime(vencimento, "%d/%m/%Y")
     except ValueError:
         try:
-            # Caso esteja no formato 'yyyy-mm-dd'
             exp_date = datetime.strptime(vencimento, "%Y-%m-%d")
         except Exception:
             return ""

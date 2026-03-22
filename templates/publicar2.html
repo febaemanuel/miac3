@@ -252,11 +252,11 @@
     <div class="sidebar">
         <h2>MIAC</h2>
         <ul>
-            <li><a href="{{ url_for('publicados2') }}"><i class="fas fa-home"></i> Página Inicial</a></li>
-            <li><a href="{{ url_for('relacao_documentos') }}"><i class="fas fa-list"></i> Relação</a></li>
-            <li><a href="{{ url_for('estatisticas') }}"><i class="fas fa-chart-bar"></i> Estatísticas</a></li>
-            <li><a href="{{ url_for('gerenciar_opcoes') }}"><i class="fas fa-cogs"></i> Configurações</a></li>
-            <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
+            <li><a href="{{ url_for('documents.publicados2') }}"><i class="fas fa-home"></i> Página Inicial</a></li>
+            <li><a href="{{ url_for('documents.relacao_documentos') }}"><i class="fas fa-list"></i> Relação</a></li>
+            <li><a href="{{ url_for('reports.estatisticas') }}"><i class="fas fa-chart-bar"></i> Estatísticas</a></li>
+            <li><a href="{{ url_for('admin.gerenciar_opcoes') }}"><i class="fas fa-cogs"></i> Configurações</a></li>
+            <li><a href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
         </ul>
     </div>
 
@@ -536,7 +536,7 @@
             formData.append('modelo_ia', modeloIA); // Adiciona o modelo selecionado
 
             $.ajax({
-                url: "{{ url_for('obter_dados') }}",
+                url: "{{ url_for('api.obter_dados') }}",
                 type: 'POST',
                 data: formData,
                 processData: false,
@@ -803,7 +803,7 @@
 
             // Envia o FormData via AJAX
             $.ajax({
-                url: "{{ url_for('publicar2') }}",
+                url: "{{ url_for('documents.publicar2') }}",
                 type: 'POST',
                 data: formData,
                 processData: false,
@@ -879,14 +879,14 @@
     $('#publicar-loading').show();
 
     $.ajax({
-        url: "{{ url_for('publicar2') }}",
+        url: "{{ url_for('documents.publicar2') }}",
         type: 'POST',
         data: formData,
         processData: false,
         contentType: false,
         success: function(response) {
             alert(`${files.length} documento(s) publicado(s) com sucesso!`);
-            window.location.href = "{{ url_for('publicados2') }}";
+            window.location.href = "{{ url_for('documents.publicados2') }}";
         },
         error: function(xhr) {
             let msg = 'Falha na publicação';

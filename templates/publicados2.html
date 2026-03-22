@@ -827,7 +827,7 @@ $('#abrir-tutorial').on('click', function () {
 
     <!-- Barra de ações -->
     <div class="d-flex justify-content-end mb-3" style="max-width:900px;margin:0 auto;">
-        <a href="{{ url_for('exportar_csv', abrangencia=abrangencia_selecionada) }}"
+        <a href="{{ url_for('api.exportar_csv', abrangencia=abrangencia_selecionada) }}"
            class="btn btn-sm btn-outline-success">
             <i class="fas fa-file-csv me-1"></i> Exportar CSV
         </a>
@@ -863,7 +863,7 @@ function atualizarResultados() {
 
     // Fazer a requisição AJAX
     $.ajax({
-        url: "{{ url_for('buscar2') }}",
+        url: "{{ url_for('api.buscar2') }}",
         type: "GET",
         data: {
             nome: nome,
@@ -894,7 +894,7 @@ function atualizarResultados() {
         sessionStorage.setItem("lastAbrangencia", abrangencia);
         $('#organograma-grid').html('<p>Carregando...</p>');
         $.ajax({
-            url: "{{ url_for('buscar2') }}",
+            url: "{{ url_for('api.buscar2') }}",
             method: 'GET',
             data: { abrangencia: abrangencia },
             success: function (response) {
@@ -983,7 +983,7 @@ function searchDocuments(page = 1) {
     let apenas_complexo = $('#apenas-complexo').is(':checked');
     
     $.ajax({
-        url: "{{ url_for('buscar2') }}",
+        url: "{{ url_for('api.buscar2') }}",
         method: 'GET',
         data: {
             nome,

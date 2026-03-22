@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MIAC{% endblock %} - UGQ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="/miac/static/css/main.css" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- Mobile Toggle -->
+<button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Menu">
+    <i class="fas fa-bars"></i>
+</button>
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- ═══════ SIDEBAR ═══════ -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <i class="fas fa-shield-halved"></i>
+        <span>MIAC</span>
+    </div>
+
+    <ul class="sidebar-nav">
+        <li class="nav-section-label">Principal</li>
+        <li>
+            <a href="{{ url_for('documents.index') }}" class="{% if active_page == 'dashboard' %}active{% endif %}">
+                <i class="fas fa-gauge-high"></i> Dashboard
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('documents.publicados2') }}" class="{% if active_page == 'publicados' %}active{% endif %}">
+                <i class="fas fa-folder-open"></i> Documentos
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('documents.relacao_documentos') }}" class="{% if active_page == 'relacao' %}active{% endif %}">
+                <i class="fas fa-list-alt"></i> Relação
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('reports.estatisticas') }}" class="{% if active_page == 'estatisticas' %}active{% endif %}">
+                <i class="fas fa-chart-bar"></i> Estatísticas
+            </a>
+        </li>
+
+        {% if session.get('nivel_acesso') == 'elevado' %}
+        <div class="nav-divider"></div>
+        <li class="nav-section-label">Publicação</li>
+        <li>
+            <a href="{{ url_for('documents.publicar2_page') }}" class="{% if active_page == 'publicar' %}active{% endif %}">
+                <i class="fas fa-cloud-arrow-up"></i> Publicar
+            </a>
+        </li>
+
+        <div class="nav-divider"></div>
+        <li class="nav-section-label">Administração</li>
+        <li>
+            <a href="{{ url_for('admin.gerenciar_opcoes') }}" class="{% if active_page == 'opcoes' %}active{% endif %}">
+                <i class="fas fa-sliders"></i> Configurações
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('admin.gerenciar_marcadores') }}" class="{% if active_page == 'marcadores' %}active{% endif %}">
+                <i class="fas fa-bookmark"></i> Marcadores
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('admin.gerenciar_siglas') }}" class="{% if active_page == 'siglas' %}active{% endif %}">
+                <i class="fas fa-tags"></i> Siglas
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+
+    <div class="sidebar-footer">
+        <a href="{{ url_for('auth.logout') }}">
+            <i class="fas fa-right-from-bracket"></i> Sair ({{ session.get('username', '') }})
+        </a>
+    </div>
+</aside>
+
+<!-- ═══════ MAIN CONTENT ═══════ -->
+<main class="main-content">
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-container">
+        {% for category, message in messages %}
+        <div class="flash-message {{ category }}" onclick="this.remove()">
+            <i class="fas {{ 'fa-check-circle' if category == 'success' else 'fa-exclamation-circle' }}"></i>
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+</main>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.querySelector('.sidebar-overlay').classList.toggle('active');
+}
+
+// Auto-dismiss flash messages after 5s
+document.querySelectorAll('.flash-message').forEach(el => {
+    setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateX(100%)';
+        setTimeout(() => el.remove(), 400);
+    }, 5000);
+});
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>
