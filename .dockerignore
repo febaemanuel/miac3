@@ -1,0 +1,8 @@
+.env
+.env.txt
+.git
+.gitignore
+__pycache__
+*.pyc
+*.pyo
+instance/

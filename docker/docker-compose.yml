@@ -1,6 +1,8 @@
 services:
   api:
     image: hg.huwc.ufc.br:5000/miac-app:latest
+    env_file:
+      - ../.env
     ports:
       - 8090:8090
     networks:

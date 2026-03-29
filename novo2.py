@@ -1316,11 +1316,7 @@ def publicar2():
 
 @app.route("/miac/publicados", methods=["GET"])
 def publicados():
-    if "username" not in session:
-        return redirect(url_for("login"))
-
-    documentos = Documento.query.all()
-    return render_template("publicados.html", documentos=documentos)
+    return redirect(url_for("publicados2"), code=301)
 
 
 @app.route("/miac/static/<path:filename>")
@@ -1330,22 +1326,7 @@ def static_files(filename):
 
 @app.route("/miac/documento/<int:doc_id>", methods=["GET"])
 def documento_detalhes(doc_id):
-    if "username" not in session:
-        return redirect(url_for("login"))
-
-    documento = db.session.get(Documento, doc_id)
-    if documento:
-        # Gerar o link para o arquivo PDF
-        documento_url = url_for(
-            "static",
-            filename=f"uploads2/{os.path.basename(documento.caminho)}",
-            _external=True,
-        )
-        return render_template(
-            "detalhes_documento.html", documento=documento, documento_url=documento_url
-        )
-    else:
-        return "Documento não encontrado", 404
+    return redirect(url_for("documento2_detalhes", doc_id=doc_id), code=301)
 
 
 @app.route("/miac/publicados2", methods=["GET"])
