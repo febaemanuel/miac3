@@ -440,21 +440,22 @@ def gerar_relatorio(abrangencia, organograma):
             for doc in documentos_ordenados
             if calcular_status(doc)["status"] == "Vencido"
         ]
+        def _dias_para_vencer(doc):
+            try:
+                return (parse_data(doc.vencimento) - datetime.now()).days
+            except (ValueError, TypeError):
+                return 9999
+
         docs_proximo_vencer = [
             doc
             for doc in documentos_ordenados
             if calcular_status(doc)["status"] == "Atualizado"
             and doc.vencimento
-            and (parse_data(doc.vencimento) - datetime.now()).days
-            <= 30
+            and 0 <= _dias_para_vencer(doc) <= 30
         ]
 
         # Ordenar documentos próximos a vencer por data de vencimento (mais próximos primeiro)
-        docs_proximo_vencer.sort(
-            key=lambda doc: (
-                parse_data(doc.vencimento) - datetime.now()
-            ).days
-        )
+        docs_proximo_vencer.sort(key=_dias_para_vencer)
 
         if docs_vencidos or docs_proximo_vencer:
             content.append(Paragraph("<b>ALERTAS</b>", style_subtitle))
@@ -499,9 +500,7 @@ def gerar_relatorio(abrangencia, organograma):
             # Adiciona todos os documentos próximos a vencer (até 30 dias)
             for doc in docs_proximo_vencer:
                 status = calcular_status(doc)
-                dias_restantes = (
-                    parse_data(doc.vencimento) - datetime.now()
-                ).days
+                dias_restantes = _dias_para_vencer(doc)
                 alertas_data.append(
                     [
                         Paragraph(doc.tipo_documento or "Sem Tipo", style_tipo),
@@ -1398,9 +1397,14 @@ def gerenciar_marcadores():
     if request.method == "POST":
         for key, value in request.form.items():
             if key.startswith("marcador_"):
-                parts = key.split("_")
-                organograma_nome = parts[1]
-                abrangencia = parts[2]
+                # Strip the "marcador_" prefix, then split from the right to get
+                # abrangencia (last segment) and organograma (everything before it).
+                # This is safe even when organograma contains underscores.
+                remainder = key[len("marcador_"):]
+                rsplit_parts = remainder.rsplit("_", 1)
+                if len(rsplit_parts) != 2:
+                    continue
+                organograma_nome, abrangencia = rsplit_parts
 
                 Documento2.query.filter_by(
                     organograma=organograma_nome, abrangencia=abrangencia
