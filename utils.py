@@ -325,6 +325,8 @@ def expired_duration(vencimento):
             return ""
     diff = datetime.now() - exp_date
     days = diff.days
+    if days < 0:
+        return ""
     if days < 30:
         return f"{days} dia{'s' if days != 1 else ''}"
     elif days < 365:

@@ -731,6 +731,7 @@
         // Função para exibir os dados extraídos
         function mostrarDadosExtraidos(index) {
             if (arquivosProcessados.length === 0) return;
+            if (!arquivosProcessados[index] || !arquivosProcessados[index].gpt_response) return;
             let dados = arquivosProcessados[index].gpt_response;
 
             // Atualiza os campos na interface com os dados armazenados

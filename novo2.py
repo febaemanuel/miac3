@@ -680,7 +680,6 @@ def login():
         password = request.form["password"]
 
         if login_user(username, password):
-            session["username"] = username
             # Redireciona para a página principal após login
             return redirect(url_for("index"))
         else:
@@ -1041,9 +1040,11 @@ def obter_dados():
             tentativa = 0
             sucesso = False
             file_path = None
+            pdf_text = None
 
             while tentativa < 3 and not sucesso:
                 try:
+                    file.seek(0)
                     file_name = f"{int(time.time())}_{secure_filename(file.filename)}"
                     file_path = os.path.join(UPLOAD_FOLDER2, file_name).replace("\\", "/")
                     file.save(file_path)
@@ -1376,7 +1377,7 @@ def documento2_detalhes(doc_id):
     if documento:
         documento_url = url_for(
             "static",
-            filename=f"uploads2/{os.path.basename(documento.caminho)}",
+            filename=f"uploads2/{os.path.basename(documento.caminho) if documento.caminho else ''}",
             _external=True,
         )
         return render_template(
@@ -1586,7 +1587,7 @@ def restaurar_versao(doc_id, versao):
             "caminho": documento.caminho,
             "data": datetime.now().strftime("%d/%m/%Y %H:%M"),
             "responsavel": session["username"],
-            "nome_arquivo": os.path.basename(documento.caminho),
+            "nome_arquivo": os.path.basename(documento.caminho) if documento.caminho else None,
         }
         historico.append(nova_entrada_historico)
 

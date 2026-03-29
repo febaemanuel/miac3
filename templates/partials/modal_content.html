@@ -76,7 +76,7 @@
                                    class="btn btn-sm btn-primary" title="Ver detalhes">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <a href="/miac/static/uploads2/{{ documento.caminho.split('/')[-1] }}"
+                                <a href="/miac/static/uploads2/{{ documento.caminho.split('/')[-1] if documento.caminho else '' }}"
                                    class="btn btn-sm btn-outline-danger" target="_blank" title="Abrir PDF">
                                     <i class="fas fa-file-pdf"></i>
                                 </a>

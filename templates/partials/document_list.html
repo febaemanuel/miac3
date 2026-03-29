@@ -9,7 +9,7 @@
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal{{ documento.id }}">
             <i class="fas fa-info-circle"></i> Ver Detalhes
         </button>
-        <a href="{{ url_for('static', filename='uploads/' + documento.caminho.split('/')[-1]) }}" class="btn btn-secondary" target="_blank">
+        <a href="{{ url_for('static', filename='uploads/' + (documento.caminho.split('/')[-1] if documento.caminho else '')) }}" class="btn btn-secondary" target="_blank">
             <i class="fas fa-file-pdf"></i> Visualizar PDF
         </a>
     </div>
