@@ -568,8 +568,8 @@ def gerar_relatorio(abrangencia, organograma):
             [
                 Paragraph("<b>TOTAL GERAL</b>", style_normal),
                 str(total),
-                Paragraph(f"<font color=green>{atualizados}</font> ({atualizados/total*100:.1f}%)", style_normal),
-                Paragraph(f"<font color=red>{desatualizados}</font> ({desatualizados/total*100:.1f}%)", style_normal)
+                Paragraph(f"<font color=green>{atualizados}</font> ({atualizados/total*100:.1f}%)" if total else f"<font color=green>{atualizados}</font> (0.0%)", style_normal),
+                Paragraph(f"<font color=red>{desatualizados}</font> ({desatualizados/total*100:.1f}%)" if total else f"<font color=red>{desatualizados}</font> (0.0%)", style_normal)
             ],
             
             # Separador visual melhorado
@@ -578,11 +578,12 @@ def gerar_relatorio(abrangencia, organograma):
 
         # Adicionar cada tipo de documento com formatação condicional
         for tipo, dados in sorted(contagem_por_tipo.items()):
+            t = dados['total']
             resumo_data.append([
                 tipo,
-                str(dados['total']),
-                Paragraph(f"<font color=green>{dados['atualizados']}</font> ({dados['atualizados']/dados['total']*100:.1f}%)", style_normal),
-                Paragraph(f"<font color=red>{dados['desatualizados']}</font> ({dados['desatualizados']/dados['total']*100:.1f}%)", style_normal)
+                str(t),
+                Paragraph(f"<font color=green>{dados['atualizados']}</font> ({dados['atualizados']/t*100:.1f}%)" if t else f"<font color=green>{dados['atualizados']}</font> (0.0%)", style_normal),
+                Paragraph(f"<font color=red>{dados['desatualizados']}</font> ({dados['desatualizados']/t*100:.1f}%)" if t else f"<font color=red>{dados['desatualizados']}</font> (0.0%)", style_normal)
             ])
 
         # Configuração final da tabela
@@ -1220,6 +1221,9 @@ def publicar2():
 
         # Processa cada arquivo e salva no banco de dados
         for index, file in enumerate(files):
+            if not file.filename:
+                continue
+
             filename_lower = file.filename.lower()
 
             # Verifica se é um arquivo permitido (PDF, DOC ou DOCX)
@@ -1236,7 +1240,8 @@ def publicar2():
                 return jsonify({"error": f"Arquivo '{file.filename}' excede o limite de 50 MB."}), 400
 
             # Gera um nome seguro e adiciona identificador único
-            base_nome = secure_filename(titulos[index].replace(" ", "_"))
+            titulo_base = titulos[index] if index < len(titulos) and titulos[index] else f"documento_{index}"
+            base_nome = secure_filename(titulo_base.replace(" ", "_"))
             file_ext = os.path.splitext(file.filename)[1].lower()
             file_name = f"{base_nome}_{int(time.time())}{file_ext}"
 
@@ -1754,7 +1759,10 @@ def api_vencendo():
     if "username" not in session:
         return jsonify({"error": "Não autenticado"}), 401
 
-    dias = int(request.args.get("dias", 30))
+    try:
+        dias = int(request.args.get("dias", 30))
+    except (ValueError, TypeError):
+        dias = 30
     abrangencia = request.args.get("abrangencia", "").strip()
     hoje = datetime.now()
 

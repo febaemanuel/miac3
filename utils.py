@@ -231,10 +231,13 @@ def send_to_deepseek_with_retry(prompt, api_key, retries=3, delay=2):
                 "max_tokens": 150,
             }
 
-            response = requests.post(url, headers=headers, json=data)
+            response = requests.post(url, headers=headers, json=data, timeout=30)
 
             if response.status_code == 200:
-                return response.json()["choices"][0]["message"]["content"]
+                content = response.json().get("choices", [{}])[0].get("message", {}).get("content")
+                if content:
+                    return content
+                logger.warning("DeepSeek tentativa %d: resposta sem conteúdo", i + 1)
             else:
                 logger.warning("DeepSeek tentativa %d falhou: %s %s", i + 1, response.status_code, response.text)
 
@@ -258,9 +261,12 @@ def send_to_gpt_with_retry(prompt, api_key, retries=3, delay=2):
                 "messages": [{"role": "user", "content": prompt}],
                 "max_tokens": 150,
             }
-            response = requests.post(url, headers=headers, json=data)
+            response = requests.post(url, headers=headers, json=data, timeout=30)
             if response.status_code == 200:
-                return response.json()["choices"][0]["message"]["content"]
+                content = response.json().get("choices", [{}])[0].get("message", {}).get("content")
+                if content:
+                    return content
+                logger.warning("ChatGPT tentativa %d: resposta sem conteúdo", i + 1)
             else:
                 logger.warning("ChatGPT tentativa %d falhou: %s %s", i + 1, response.status_code, response.text)
         except Exception as e:

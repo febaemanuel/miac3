@@ -45,7 +45,7 @@ class Documento2(db.Model):
 
     # Novos campos para versionamento avançado
     versao_atual = db.Column(db.Integer, default=1)  # Número da versão atual
-    historico_versoes = db.Column(MutableList.as_mutable(JSON), default=list)
+    historico_versoes = db.Column(MutableList.as_mutable(JSON), default=lambda: [])
     data_atualizacao = db.Column(db.DateTime)  # Data da última atualização
 
     def __repr__(self):
