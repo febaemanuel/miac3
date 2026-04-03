@@ -1076,15 +1076,10 @@ $('#search-organograma').on('input', function () {
 });
 
 
-    // Função para remover acentos e caracteres especiais
-    function normalizarTexto(texto) {
-        return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-    }
-
     // Função para filtrar documentos dentro do modal
     function filterDocumentsInModal(modalId, searchTerm) {
         let hasResults = false;
-        let searchNormalized = normalizarTexto(searchTerm);
+        let searchNormalized = MIAC.normalizeText(searchTerm);
 
         // Remove o feedback visual anterior
         $(`#modal${modalId} .text-muted`).remove();
@@ -1096,7 +1091,7 @@ $('#search-organograma').on('input', function () {
 
             // Itera sobre cada documento dentro do tipo
             tipoItem.find('.document-list li').each(function () {
-                let docText = normalizarTexto($(this).find('h5').text());
+                let docText = MIAC.normalizeText($(this).find('h5').text());
                 if (docText.includes(searchNormalized)) {
                     $(this).show(); // Mostra o documento se corresponder ao termo de pesquisa
                     tipoHasResults = true;
@@ -1144,20 +1139,6 @@ function salvarFavoritos(favoritos) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(favoritos));
 }
 
-function mostrarToast(msg, tipo = 'success') {
-    const alert = $(`
-        <div class="toast align-items-center text-white bg-${tipo} border-0" role="alert">
-            <div class="d-flex">
-                <div class="toast-body">${msg}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>
-        </div>
-    `);
-    $('.toast-container').append(alert);
-    const bsToast = new bootstrap.Toast(alert[0]);
-    bsToast.show();
-    setTimeout(() => alert.remove(), 4000);
-}
 
 function marcarFavoritosVisiveis() {
     const favoritos = getFavoritos();
@@ -1183,12 +1164,12 @@ $(document).on('click', '.btn-favorito', function () {
         favoritos.splice(index, 1);
         btn.removeClass('btn-warning').addClass('btn-outline-warning');
         btn.html('<i class="fas fa-star"></i> Favorito');
-        mostrarToast('Removido dos favoritos', 'danger');
+        MIAC.toast('Removido dos favoritos', 'danger');
     } else {
         favoritos.push({ id, nome, tipo, caminho, adicionado_em: new Date().toISOString() });
         btn.removeClass('btn-outline-warning').addClass('btn-warning');
         btn.html('<i class="fas fa-star"></i> Favorito');
-        mostrarToast('Adicionado aos favoritos');
+        MIAC.toast('Adicionado aos favoritos', 'success');
     }
 
     salvarFavoritos(favoritos);
@@ -1289,7 +1270,7 @@ $(document).on('click', '[data-remover-fav]', function () {
     let favoritos = getFavoritos().filter(doc => doc.id !== id);
     salvarFavoritos(favoritos);
     $('#ver-favoritos').click();
-    mostrarToast('Favorito removido', 'danger');
+    MIAC.toast('Favorito removido', 'danger');
 });
 
 $(document).on('click', '#limpar-favoritos', function () {
@@ -1303,10 +1284,6 @@ $(document).on('click', '#btn-voltar', function () {
     location.reload();
 });
 
-// Toast container (caso não exista)
-if (!$('.toast-container').length) {
-    $('body').append('<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999;"></div>');
-}
 
 
 // Verificar se já foi visto antes
@@ -1430,65 +1407,8 @@ function initializePagination() {
         window.location.href = `/miac/gerar_relatorio/${ab}/${organograma}`;
     };
 
-    // ── Atalho de teclado: / foca a busca por nome ──
-    $(document).on('keydown', function(e) {
-        if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
-            e.preventDefault();
-            $('#nome').focus();
-        }
-    });
-
-    // ── Contador de resultados ao atualizar a grid ──
-    function updateResultCount() {
-        const items = $('#organograma-grid .doc-list-item');
-        if (items.length) {
-            const total = items.length;
-            // result-count-num is rendered by document_list2.html, nothing extra to do
-        }
-    }
-
-    // Back-to-top button visibility
-    $(window).on('scroll', function() {
-        if ($(this).scrollTop() > 300) {
-            $('#btn-back-top').fadeIn(200);
-        } else {
-            $('#btn-back-top').fadeOut(200);
-        }
-    });
-    $('#btn-back-top').on('click', function() {
-        $('html, body').animate({ scrollTop: 0 }, 300);
-    });
+    // Keyboard shortcut / handled globally by MIAC.js
+    // Back-to-top button handled globally by MIAC.js
 });
-</script>
-
-<!-- Back-to-top button -->
-<button id="btn-back-top" title="Voltar ao topo"
-        style="display:none;position:fixed;bottom:24px;right:24px;z-index:9999;
-               width:42px;height:42px;border-radius:50%;border:none;
-               background:linear-gradient(135deg,#2c3e50,#34495e);color:#fff;
-               box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer;
-               font-size:1.1rem;transition:opacity .2s,transform .2s;"
-        onmouseover="this.style.transform='scale(1.1)'"
-        onmouseout="this.style.transform='scale(1)'">
-    <i class="fas fa-arrow-up"></i>
-</button>
-
-<!-- Keyboard shortcut hint (bottom-left, fades after 4s) -->
-<div id="shortcut-hint"
-     style="position:fixed;bottom:24px;left:290px;z-index:9000;
-            background:rgba(44,62,80,.85);color:#fff;font-size:.75rem;
-            padding:6px 14px;border-radius:20px;pointer-events:none;
-            opacity:0;transition:opacity .4s;">
-    <kbd style="background:rgba(255,255,255,.2);border:none;padding:1px 6px;border-radius:4px;">/</kbd>
-    para pesquisar
-</div>
-<script>
-setTimeout(function() {
-    const hint = document.getElementById('shortcut-hint');
-    if (hint) {
-        hint.style.opacity = '1';
-        setTimeout(function() { hint.style.opacity = '0'; }, 3500);
-    }
-}, 1200);
 </script>
 {% endblock %}

@@ -51,7 +51,7 @@
             <form method="POST" class="row g-3">
                 <div class="col-md-4">
                     <label for="sigla" class="form-label">Sigla (Ex: DIVGP)</label>
-                    <input type="text" class="form-control text-uppercase" id="sigla" name="sigla" required>
+                    <input type="text" class="form-control text-uppercase" id="sigla" name="sigla" required data-uppercase>
                 </div>
                 <div class="col-md-6">
                     <label for="nome_completo" class="form-label">Nome Completo (Ex: DIVISÃO DE GESTÃO DE PESSOAS)</label>
@@ -115,26 +115,16 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-$(document).ready(function() {
-    // Preencher formulário ao clicar em editar
-    $('.edit-btn').click(function() {
-        const sigla = $(this).data('sigla');
-        const nome = $(this).data('nome');
-
-        $('#sigla').val(sigla);
-        $('#nome_completo').val(nome);
-
-        // Rolagem suave para o formulário
-        $('html, body').animate({
-            scrollTop: $('#sigla').offset().top - 100
-        }, 500);
-    });
-
-    // Converter para maiúsculas automaticamente
-    $('#sigla').keyup(function() {
-        $(this).val($(this).val().toUpperCase());
+// #sigla field: auto-uppercase handled by MIAC via data-uppercase attribute
+// Edit button: populate form and scroll to it
+document.querySelectorAll('.edit-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        document.getElementById('sigla').value = this.dataset.sigla || '';
+        document.getElementById('nome_completo').value = this.dataset.nome || '';
+        const field = document.getElementById('sigla');
+        field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        field.focus();
     });
 });
 </script>

@@ -255,44 +255,14 @@
 
 {% block extra_js %}
 <script>
-    // Formatação de datas para inputs type="date"
+    // Convert dd/mm/yyyy stored values to yyyy-mm-dd for date inputs
     document.addEventListener('DOMContentLoaded', function() {
-        const formatDate = (dateStr) => {
-            if (!dateStr) return '';
-            const parts = dateStr.split('/');
-            if (parts.length === 3) {
-                return `${parts[2]}-${parts[1]}-${parts[0]}`;
-            }
-            return dateStr;
-        };
-
-        document.getElementById('data_elaboracao').value = formatDate("{{ documento.data_elaboracao }}");
-        document.getElementById('vencimento').value = formatDate("{{ documento.vencimento }}");
+        document.getElementById('data_elaboracao').value = MIAC.toInputDate("{{ documento.data_elaboracao }}");
+        document.getElementById('vencimento').value = MIAC.toInputDate("{{ documento.vencimento }}");
     });
 
-    // Função para restaurar versão
     function restaurarVersao(versao) {
-        const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
-        document.getElementById('modalMessage').textContent =
-            `Deseja realmente restaurar a versão ${versao} como atual?\n\nA versão atual será movida para o histórico.`;
-
-        document.getElementById('confirmRestore').onclick = function() {
-            fetch(`/miac/restaurar_versao/{{ documento.id }}/${versao}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if(data.success) {
-                    window.location.reload();
-                } else {
-                    alert(`Erro: ${data.error}`);
-                }
-            });
-            modal.hide();
-        };
-
-        modal.show();
+        MIAC.restaurarVersao({{ documento.id }}, versao);
     }
 </script>
 {% endblock %}

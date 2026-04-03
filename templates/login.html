@@ -186,8 +186,10 @@
 {% block extra_js %}
 <script>
     document.getElementById("loginForm").addEventListener("submit", function() {
-        document.getElementById("loader").style.display = "block";
-        document.querySelector(".login-container .btn").disabled = true;
+        const btn = this.querySelector('button[type="submit"]');
+        if (btn) MIAC.btnLoading(btn, true, 'Entrando...');
+        const loader = document.getElementById("loader");
+        if (loader) loader.style.display = "block";
     });
 </script>
 {% endblock %}

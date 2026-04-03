@@ -350,18 +350,7 @@ function confirmarExclusao(docId) {
 }
 
 function restaurarVersao(docId, versao) {
-    if (!confirm(`Restaurar para a versão ${versao}? A versão atual será arquivada.`)) return;
-    fetch(`/miac/restaurar_versao/${docId}/${versao}`, { method: 'POST' })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                location.reload();
-            } else {
-                alert('Erro: ' + data.error);
-            }
-        })
-        .catch(() => alert('Erro de comunicação com o servidor.'));
+    MIAC.restaurarVersao(docId, versao);
 }
 </script>
 {% endblock %}
