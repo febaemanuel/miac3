@@ -1,400 +1,371 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estatísticas - MIAC</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome Icons -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f4f6f9;
-            color: #333;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-        h1 {
-            font-weight: bold;
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .nav-tabs {
-            border-bottom: 2px solid #ddd;
-        }
-        .nav-tabs .nav-link {
-            color: #555;
-            border: none;
-            padding: 15px 20px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-        .nav-tabs .nav-link.active {
-            background-color: #2c3e50;
-            color: #fff;
-            border-radius: 8px 8px 0 0;
-        }
-        .card {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            background-color: #fff;
-            margin-bottom: 20px;
-        }
-        .card-title {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        .badge bg-success text-white {
-            background-color: #2ecc71;
-            color: white;
-        }
-        .badge bg-danger text-white {
-            background-color: #e74c3c;
-            color: white;
-        }
-        .filters label {
-            margin-right: 20px;
-            font-weight: bold;
-            color: #555;
-        }
-        canvas {
-            max-height: 300px;
-        }
-        .table {
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        .table thead th {
-            background-color: #2c3e50;
-            color: #fff;
-            border: none;
-        }
-        .table-striped tbody tr:nth-of-type(odd) {
-            background-color: #f9f9f9;
-        }
-        .list-group-item {
-            border: none;
-            border-radius: 8px;
-            margin-bottom: 5px;
-            background-color: #f9f9f9;
-            color: #333;
-        }
-        .no-data {
-            text-align: center;
-            color: #888;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Estatísticas - MIAC</h1>
-        <!-- Abas -->
-        <ul class="nav nav-tabs" id="myTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <a class="nav-link active" id="estatisticas-tab" data-bs-toggle="tab" href="#estatisticas" role="tab" aria-controls="estatisticas" aria-selected="true">Estatísticas</a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" id="notificacoes-tab" data-bs-toggle="tab" href="#notificacoes" role="tab" aria-controls="notificacoes" aria-selected="false">Notificações</a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" id="erros-tab" data-bs-toggle="tab" href="#erros" role="tab" aria-controls="erros" aria-selected="false">Erros</a>
-            </li>
-        </ul>
-        <!-- Conteúdo das Abas -->
-        <div class="tab-content" id="myTabsContent">
-            <!-- Estatísticas -->
-            <div class="tab-pane fade show active" id="estatisticas" role="tabpanel" aria-labelledby="estatisticas-tab">
-                <!-- Filtros Dinâmicos -->
-                <form method="get" class="filters mt-3">
-                    <label>
-                        Abrangência:
-                        <select name="abrangencia" class="form-select">
-                            <option value="">Todas</option>
-                            {% for abrangencia in abrangencias %}
-                            <option value="{{ abrangencia[0] }}" {% if request.args.get('abrangencia') == abrangencia[0] %}selected{% endif %}>
-                                {{ abrangencia[0] }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </label>
-                    <label>
-                        Organograma:
-                        <select name="organograma" class="form-select">
-                            <option value="">Todos</option>
-                            {% for organograma in organogramas %}
-                            <option value="{{ organograma[0] }}" {% if request.args.get('organograma') == organograma[0] %}selected{% endif %}>
-                                {{ organograma[0] }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </label>
-                    <label>
-                        Tipo de Documento:
-                        <select name="tipo_documento" class="form-select">
-                            <option value="">Todos</option>
-                            {% for tipo in tipos_documento %}
-                            <option value="{{ tipo[0] }}" {% if request.args.get('tipo_documento') == tipo[0] %}selected{% endif %}>
-                                {{ tipo[0] }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </label>
-                    <label>
-                        Status:
-                        <select name="status" class="form-select">
-                            <option value="">Todos</option>
-                            <option value="atualizado" {% if request.args.get('status') == 'atualizado' %}selected{% endif %}>Atualizado</option>
-                            <option value="desatualizado" {% if request.args.get('status') == 'desatualizado' %}selected{% endif %}>Desatualizado</option>
-                        </select>
-                    </label>
-                    <button type="submit" class="btn btn-primary">Filtrar</button>
-                </form>
-                <!-- Resumo Geral com Gráfico -->
-                <div class="card mt-3">
-                    <div class="card-body">
-                        <h2 class="card-title">Resumo Geral</h2>
-                        <p><strong>Total de Documentos:</strong> {{ stats.total }}</p>
-                        <p><strong>Documentos Atualizados:</strong> <span class="badge badge bg-success text-white">{{ stats.atualizados }}</span></p>
-                        <p><strong>Documentos Desatualizados:</strong> <span class="badge badge bg-danger text-white">{{ stats.desatualizados }}</span></p>
-                        <canvas id="resumoGeralChart" width="400" height="200"></canvas>
-                    </div>
-                </div>
-                <!-- Gráfico de Barras por Tipo de Documento -->
-                <div class="card mt-3">
-                    <div class="card-body">
-                        <h2 class="card-title">Documentos por Tipo</h2>
-                        <canvas id="tipoDocumentoChart" width="400" height="200"></canvas>
-                    </div>
-                </div>
-                <!-- Gráfico de Rosca por Abrangência -->
-                <div class="card mt-3">
-                    <div class="card-body">
-                        <h2 class="card-title">Documentos por Abrangência</h2>
-                        <canvas id="abrangenciaChart" width="400" height="200"></canvas>
-                    </div>
-                </div>
-                <!-- Gráfico de Barras por Marcador -->
-                <div class="card mt-3">
-                    <div class="card-body">
-                        <h2 class="card-title">Documentos por Marcador</h2>
-                        <canvas id="marcadorChart" width="400" height="200"></canvas>
-                    </div>
-                </div>
-                <!-- Tabela de Documentos por Organograma -->
-                <div class="card mt-3">
-                    <div class="card-body">
-                        <h2 class="card-title">Documentos por Organograma</h2>
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Organograma</th>
-                                    <th>Total</th>
-                                    <th>Atualizados</th>
-                                    <th>Desatualizados</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for organograma, data in stats.por_organograma.items() %}
-                                <tr>
-                                    <td>{{ organograma }}</td>
-                                    <td>{{ data.total }}</td>
-                                    <td><span class="badge badge bg-success text-white">{{ data.atualizados }}</span></td>
-                                    <td><span class="badge badge bg-danger text-white">{{ data.desatualizados }}</span></td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <!-- Tabela de Documentos por Marcador -->
-                <div class="card mt-3">
-                    <div class="card-body">
-                        <h2 class="card-title">Documentos por Marcador</h2>
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Marcador</th>
-                                    <th>Total</th>
-                                    <th>Atualizados</th>
-                                    <th>Desatualizados</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for marcador, data in stats.por_marcador.items() %}
-                                <tr>
-                                    <td>{{ marcador }}</td>
-                                    <td>{{ data.total }}</td>
-                                    <td><span class="badge badge bg-success text-white">{{ data.atualizados }}</span></td>
-                                    <td><span class="badge badge bg-danger text-white">{{ data.desatualizados }}</span></td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+{% extends "base.html" %}
+
+{% block title %}Estatísticas{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    h1 {
+        font-weight: bold;
+        color: #2c3e50;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .nav-tabs {
+        border-bottom: 2px solid #ddd;
+    }
+    .nav-tabs .nav-link {
+        color: #555;
+        border: none;
+        padding: 15px 20px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    .nav-tabs .nav-link.active {
+        background-color: #2c3e50;
+        color: #fff;
+        border-radius: 8px 8px 0 0;
+    }
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        background-color: #fff;
+        margin-bottom: 20px;
+    }
+    .card-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+    .filters label {
+        margin-right: 20px;
+        font-weight: bold;
+        color: #555;
+    }
+    canvas {
+        max-height: 300px;
+    }
+    .table {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .table thead th {
+        background-color: #2c3e50;
+        color: #fff;
+        border: none;
+    }
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: #f9f9f9;
+    }
+    .list-group-item {
+        border: none;
+        border-radius: 8px;
+        margin-bottom: 5px;
+        background-color: #f9f9f9;
+        color: #333;
+    }
+    .no-data {
+        text-align: center;
+        color: #888;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Estatísticas - MIAC</h1>
+    <!-- Abas -->
+    <ul class="nav nav-tabs" id="myTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" id="estatisticas-tab" data-bs-toggle="tab" href="#estatisticas" role="tab" aria-controls="estatisticas" aria-selected="true">Estatísticas</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" id="notificacoes-tab" data-bs-toggle="tab" href="#notificacoes" role="tab" aria-controls="notificacoes" aria-selected="false">Notificações</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" id="erros-tab" data-bs-toggle="tab" href="#erros" role="tab" aria-controls="erros" aria-selected="false">Erros</a>
+        </li>
+    </ul>
+    <!-- Conteúdo das Abas -->
+    <div class="tab-content" id="myTabsContent">
+        <!-- Estatísticas -->
+        <div class="tab-pane fade show active" id="estatisticas" role="tabpanel" aria-labelledby="estatisticas-tab">
+            <!-- Filtros Dinâmicos -->
+            <form method="get" class="filters mt-3">
+                <label>
+                    Abrangência:
+                    <select name="abrangencia" class="form-select">
+                        <option value="">Todas</option>
+                        {% for abrangencia in abrangencias %}
+                        <option value="{{ abrangencia[0] }}" {% if request.args.get('abrangencia') == abrangencia[0] %}selected{% endif %}>
+                            {{ abrangencia[0] }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>
+                    Organograma:
+                    <select name="organograma" class="form-select">
+                        <option value="">Todos</option>
+                        {% for organograma in organogramas %}
+                        <option value="{{ organograma[0] }}" {% if request.args.get('organograma') == organograma[0] %}selected{% endif %}>
+                            {{ organograma[0] }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>
+                    Tipo de Documento:
+                    <select name="tipo_documento" class="form-select">
+                        <option value="">Todos</option>
+                        {% for tipo in tipos_documento %}
+                        <option value="{{ tipo[0] }}" {% if request.args.get('tipo_documento') == tipo[0] %}selected{% endif %}>
+                            {{ tipo[0] }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>
+                    Status:
+                    <select name="status" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="atualizado" {% if request.args.get('status') == 'atualizado' %}selected{% endif %}>Atualizado</option>
+                        <option value="desatualizado" {% if request.args.get('status') == 'desatualizado' %}selected{% endif %}>Desatualizado</option>
+                    </select>
+                </label>
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+            </form>
+            <!-- Resumo Geral com Gráfico -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h2 class="card-title">Resumo Geral</h2>
+                    <p><strong>Total de Documentos:</strong> {{ stats.total }}</p>
+                    <p><strong>Documentos Atualizados:</strong> <span class="badge badge bg-success text-white">{{ stats.atualizados }}</span></p>
+                    <p><strong>Documentos Desatualizados:</strong> <span class="badge badge bg-danger text-white">{{ stats.desatualizados }}</span></p>
+                    <canvas id="resumoGeralChart" width="400" height="200"></canvas>
                 </div>
             </div>
-            <!-- Notificações -->
-            <div class="tab-pane fade" id="notificacoes" role="tabpanel" aria-labelledby="notificacoes-tab">
-                <div class="card mt-3">
-                    <div class="card-body">
-                        <h2 class="card-title">Notificações</h2>
-                        {% if notificacoes %}
-                        <ul class="list-group">
-                            {% for notificacao in notificacoes %}
-                            <li class="list-group-item">{{ notificacao }}</li>
-                            {% endfor %}
-                        </ul>
-                        {% else %}
-                        <p class="no-data">Nenhuma notificação disponível.</p>
-                        {% endif %}
-                    </div>
+            <!-- Gráfico de Barras por Tipo de Documento -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h2 class="card-title">Documentos por Tipo</h2>
+                    <canvas id="tipoDocumentoChart" width="400" height="200"></canvas>
                 </div>
             </div>
-            <!-- Documentos com Erro -->
-            <div class="tab-pane fade" id="erros" role="tabpanel" aria-labelledby="erros-tab">
-                <div class="card mt-3">
-                    <div class="card-body">
-                        <h2 class="card-title">Documentos com Erro</h2>
-                        {% if documentos_com_erro %}
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Nome do Documento</th>
-                                    <th>Erros</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for doc in documentos_com_erro %}
-                                <tr>
-                                    <td>{{ doc.documento.nome }}</td>
-                                    <td>
-                                        {% for erro in doc.erros %}
-                                        <span class="badge badge bg-danger text-white">{{ erro }}</span><br>
-                                        {% endfor %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        {% else %}
-                        <p class="no-data">Nenhum documento com erro encontrado.</p>
-                        {% endif %}
-                    </div>
+            <!-- Gráfico de Rosca por Abrangência -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h2 class="card-title">Documentos por Abrangência</h2>
+                    <canvas id="abrangenciaChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+            <!-- Gráfico de Barras por Marcador -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h2 class="card-title">Documentos por Marcador</h2>
+                    <canvas id="marcadorChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+            <!-- Tabela de Documentos por Organograma -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h2 class="card-title">Documentos por Organograma</h2>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Organograma</th>
+                                <th>Total</th>
+                                <th>Atualizados</th>
+                                <th>Desatualizados</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for organograma, data in stats.por_organograma.items() %}
+                            <tr>
+                                <td>{{ organograma }}</td>
+                                <td>{{ data.total }}</td>
+                                <td><span class="badge badge bg-success text-white">{{ data.atualizados }}</span></td>
+                                <td><span class="badge badge bg-danger text-white">{{ data.desatualizados }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Tabela de Documentos por Marcador -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h2 class="card-title">Documentos por Marcador</h2>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Marcador</th>
+                                <th>Total</th>
+                                <th>Atualizados</th>
+                                <th>Desatualizados</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for marcador, data in stats.por_marcador.items() %}
+                            <tr>
+                                <td>{{ marcador }}</td>
+                                <td>{{ data.total }}</td>
+                                <td><span class="badge badge bg-success text-white">{{ data.atualizados }}</span></td>
+                                <td><span class="badge badge bg-danger text-white">{{ data.desatualizados }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!-- Notificações -->
+        <div class="tab-pane fade" id="notificacoes" role="tabpanel" aria-labelledby="notificacoes-tab">
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h2 class="card-title">Notificações</h2>
+                    {% if notificacoes %}
+                    <ul class="list-group">
+                        {% for notificacao in notificacoes %}
+                        <li class="list-group-item">{{ notificacao }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="no-data">Nenhuma notificação disponível.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <!-- Documentos com Erro -->
+        <div class="tab-pane fade" id="erros" role="tabpanel" aria-labelledby="erros-tab">
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h2 class="card-title">Documentos com Erro</h2>
+                    {% if documentos_com_erro %}
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Nome do Documento</th>
+                                <th>Erros</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in documentos_com_erro %}
+                            <tr>
+                                <td>{{ doc.documento.nome }}</td>
+                                <td>
+                                    {% for erro in doc.erros %}
+                                    <span class="badge badge bg-danger text-white">{{ erro }}</span><br>
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="no-data">Nenhum documento com erro encontrado.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
-    <!-- Script para Gráficos -->
-    <script>
-        // Gráfico de Pizza para Resumo Geral
-        const ctxPie = document.getElementById('resumoGeralChart').getContext('2d');
-        const resumoGeralChart = new Chart(ctxPie, {
-            type: 'pie',
-            data: {
-                labels: ['Atualizados', 'Desatualizados'],
-                datasets: [{
-                    data: [{{ stats.atualizados }}, {{ stats.desatualizados }}],
-                    backgroundColor: ['#2ecc71', '#e74c3c']
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    }
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Gráfico de Pizza para Resumo Geral
+    const ctxPie = document.getElementById('resumoGeralChart').getContext('2d');
+    const resumoGeralChart = new Chart(ctxPie, {
+        type: 'pie',
+        data: {
+            labels: ['Atualizados', 'Desatualizados'],
+            datasets: [{
+                data: [{{ stats.atualizados }}, {{ stats.desatualizados }}],
+                backgroundColor: ['#2ecc71', '#e74c3c']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
                 }
             }
-        });
-        // Gráfico de Barras para Tipo de Documento
-        const ctxBar = document.getElementById('tipoDocumentoChart').getContext('2d');
-        const tipoDocumentoChart = new Chart(ctxBar, {
-            type: 'bar',
-            data: {
-                labels: [{% for tipo, data in stats.por_tipo.items() %}'{{ tipo }}',{% endfor %}],
-                datasets: [{
-                    label: 'Atualizados',
-                    data: [{% for tipo, data in stats.por_tipo.items() %}{{ data.atualizados }},{% endfor %}],
-                    backgroundColor: '#2ecc71'
-                }, {
-                    label: 'Desatualizados',
-                    data: [{% for tipo, data in stats.por_tipo.items() %}{{ data.desatualizados }},{% endfor %}],
-                    backgroundColor: '#e74c3c'
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    x: {
-                        stacked: true,
-                    },
-                    y: {
-                        stacked: true
-                    }
+        }
+    });
+    // Gráfico de Barras para Tipo de Documento
+    const ctxBar = document.getElementById('tipoDocumentoChart').getContext('2d');
+    const tipoDocumentoChart = new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+            labels: [{% for tipo, data in stats.por_tipo.items() %}'{{ tipo }}',{% endfor %}],
+            datasets: [{
+                label: 'Atualizados',
+                data: [{% for tipo, data in stats.por_tipo.items() %}{{ data.atualizados }},{% endfor %}],
+                backgroundColor: '#2ecc71'
+            }, {
+                label: 'Desatualizados',
+                data: [{% for tipo, data in stats.por_tipo.items() %}{{ data.desatualizados }},{% endfor %}],
+                backgroundColor: '#e74c3c'
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { stacked: true },
+                y: { stacked: true }
+            }
+        }
+    });
+    // Gráfico de Rosca para Abrangência
+    const ctxDoughnut = document.getElementById('abrangenciaChart').getContext('2d');
+    const abrangenciaChart = new Chart(ctxDoughnut, {
+        type: 'doughnut',
+        data: {
+            labels: [{% for abrangencia, data in stats.por_abrangencia.items() %}'{{ abrangencia }}',{% endfor %}],
+            datasets: [{
+                data: [{% for abrangencia, data in stats.por_abrangencia.items() %}{{ data.total }},{% endfor %}],
+                backgroundColor: ['#3498db', '#9b59b6', '#1abc9c', '#f1c40f', '#e67e22']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
                 }
             }
-        });
-        // Gráfico de Rosca para Abrangência
-        const ctxDoughnut = document.getElementById('abrangenciaChart').getContext('2d');
-        const abrangenciaChart = new Chart(ctxDoughnut, {
-            type: 'doughnut',
-            data: {
-                labels: [{% for abrangencia, data in stats.por_abrangencia.items() %}'{{ abrangencia }}',{% endfor %}],
-                datasets: [{
-                    data: [{% for abrangencia, data in stats.por_abrangencia.items() %}{{ data.total }},{% endfor %}],
-                    backgroundColor: ['#3498db', '#9b59b6', '#1abc9c', '#f1c40f', '#e67e22']
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    }
-                }
+        }
+    });
+    // Gráfico de Barras para Marcador
+    const ctxMarcador = document.getElementById('marcadorChart').getContext('2d');
+    const marcadorChart = new Chart(ctxMarcador, {
+        type: 'bar',
+        data: {
+            labels: [{% for marcador, data in stats.por_marcador.items() %}'{{ marcador }}',{% endfor %}],
+            datasets: [{
+                label: 'Atualizados',
+                data: [{% for marcador, data in stats.por_marcador.items() %}{{ data.atualizados }},{% endfor %}],
+                backgroundColor: '#2ecc71'
+            }, {
+                label: 'Desatualizados',
+                data: [{% for marcador, data in stats.por_marcador.items() %}{{ data.desatualizados }},{% endfor %}],
+                backgroundColor: '#e74c3c'
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { stacked: true },
+                y: { stacked: true }
             }
-        });
-        // Gráfico de Barras para Marcador
-        const ctxMarcador = document.getElementById('marcadorChart').getContext('2d');
-        const marcadorChart = new Chart(ctxMarcador, {
-            type: 'bar',
-            data: {
-                labels: [{% for marcador, data in stats.por_marcador.items() %}'{{ marcador }}',{% endfor %}],
-                datasets: [{
-                    label: 'Atualizados',
-                    data: [{% for marcador, data in stats.por_marcador.items() %}{{ data.atualizados }},{% endfor %}],
-                    backgroundColor: '#2ecc71'
-                }, {
-                    label: 'Desatualizados',
-                    data: [{% for marcador, data in stats.por_marcador.items() %}{{ data.desatualizados }},{% endfor %}],
-                    backgroundColor: '#e74c3c'
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    x: {
-                        stacked: true,
-                    },
-                    y: {
-                        stacked: true
-                    }
-                }
-            }
-        });
-    </script>
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+        }
+    });
+</script>
+{% endblock %}
