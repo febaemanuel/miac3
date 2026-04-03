@@ -342,6 +342,39 @@
         </div>
     </div>
 
+    <!-- Admin Panel (visible only to admin users) -->
+    {% if session.get('nivel_acesso') == 'elevado' %}
+    <div class="section-title mt-2">
+        <i class="fas fa-shield-halved text-danger"></i> Painel Administrativo
+    </div>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-sm-4 col-lg-3">
+            <a href="{{ url_for('documents.publicar2_page') }}" class="quick-card">
+                <div class="qc-icon qc-green"><i class="fas fa-cloud-arrow-up"></i></div>
+                <div class="qc-label">Publicar Documento</div>
+            </a>
+        </div>
+        <div class="col-6 col-sm-4 col-lg-3">
+            <a href="{{ url_for('admin.gerenciar_siglas') }}" class="quick-card">
+                <div class="qc-icon qc-blue"><i class="fas fa-id-badge"></i></div>
+                <div class="qc-label">Gerenciar Siglas</div>
+            </a>
+        </div>
+        <div class="col-6 col-sm-4 col-lg-3">
+            <a href="{{ url_for('admin.gerenciar_marcadores') }}" class="quick-card">
+                <div class="qc-icon qc-orange"><i class="fas fa-bookmark"></i></div>
+                <div class="qc-label">Gerenciar Marcadores</div>
+            </a>
+        </div>
+        <div class="col-6 col-sm-4 col-lg-3">
+            <a href="{{ url_for('admin.gerenciar_opcoes') }}" class="quick-card">
+                <div class="qc-icon" style="background:rgba(111,66,193,.12);color:#6f42c1;"><i class="fas fa-cogs"></i></div>
+                <div class="qc-label">Configurações</div>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Vencendo em Breve -->
     <div class="section-title mt-2 d-flex align-items-center gap-3 flex-wrap">
         <span><i class="fas fa-clock text-danger"></i> Vencendo em Breve</span>
