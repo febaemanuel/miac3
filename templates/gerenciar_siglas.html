@@ -3,128 +3,136 @@
 
 {% block title %}Gerenciar Siglas{% endblock %}
 
-{% block extra_css %}
-<style>
-    /* ── Page-specific styles ── */
-    .table-hover tbody tr:hover {
-        background-color: rgba(0, 0, 0, 0.03);
-    }
-
-    .badge {
-        font-size: 0.9em;
-        padding: 5px 10px;
-    }
-
-    .card {
-        border: none;
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 0.15rem 1.75rem 0 rgba(33, 40, 50, 0.15);
-    }
-
-    .card-header {
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-        background-color: #fff;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-    <!-- Page Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<!-- Page Header -->
+<div class="page-header-banner">
+    <div class="d-flex align-items-center gap-3">
+        <div class="header-icon">
+            <i class="fas fa-tags"></i>
+        </div>
         <div>
-            <h2 class="mb-0">
-                <i class="fas fa-tags me-2"></i>Gerenciar Siglas
-            </h2>
-            <small class="text-muted">Vincule siglas a nomes completos para facilitar a busca</small>
+            <h2>Gerenciar Siglas</h2>
+            <p>Vincule siglas de organogramas a nomes completos para facilitar a busca</p>
         </div>
     </div>
+</div>
 
-    <!-- Add/Edit Form -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">
-                <i class="fas fa-plus-circle me-2"></i>Adicionar/Editar Sigla
-            </h6>
+<div class="content-body">
+
+    <!-- Add / Edit Form -->
+    <div class="admin-card mb-4">
+        <div class="admin-card-header">
+            <div class="d-flex align-items-center">
+                <span class="card-icon"><i class="fas fa-plus"></i></span>
+                Adicionar / Editar Sigla
+            </div>
         </div>
-        <div class="card-body">
+        <div class="card-body p-4">
             <form method="POST" class="row g-3">
-                <div class="col-md-4">
-                    <label for="sigla" class="form-label">Sigla (Ex: DIVGP)</label>
-                    <input type="text" class="form-control text-uppercase" id="sigla" name="sigla" required data-uppercase>
+                <div class="col-md-3">
+                    <label for="sigla" class="form-label">Sigla</label>
+                    <input type="text" class="form-control" id="sigla" name="sigla"
+                           placeholder="Ex.: DIVGP" required data-uppercase
+                           maxlength="20">
+                    <div class="form-text">Será convertida para maiúsculas automaticamente.</div>
                 </div>
-                <div class="col-md-6">
-                    <label for="nome_completo" class="form-label">Nome Completo (Ex: DIVISÃO DE GESTÃO DE PESSOAS)</label>
-                    <input type="text" class="form-control" id="nome_completo" name="nome_completo" required>
+                <div class="col-md-7">
+                    <label for="nome_completo" class="form-label">Nome Completo</label>
+                    <input type="text" class="form-control" id="nome_completo" name="nome_completo"
+                           placeholder="Ex.: Divisão de Gestão de Pessoas" required maxlength="200"
+                           data-maxlength-counter>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-save me-2"></i>Salvar
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-save me-1"></i> Salvar
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Siglas List -->
-    <div class="card shadow">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">
-                <i class="fas fa-list me-2"></i>Siglas Cadastradas
-            </h6>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover" width="100%" cellspacing="0">
-                    <thead class="table-dark">
-                        <tr>
-                            <th width="15%">Sigla</th>
-                            <th>Nome Completo</th>
-                            <th width="15%">Documentos</th>
-                            <th width="10%">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for sigla in siglas %}
-                        <tr>
-                            <td><strong>{{ sigla.organograma }}</strong></td>
-                            <td>{{ sigla.nome_completo if sigla.nome_completo else 'Não definido' }}</td>
-                            <td class="text-center">
-                                <span class="badge bg-primary rounded-pill">
-                                    {{ sigla.total_documentos }}
-                                </span>
-                            </td>
-                            <td class="text-center">
-                                <button class="btn btn-sm btn-outline-primary edit-btn"
-                                        data-sigla="{{ sigla.organograma }}"
-                                        data-nome="{{ sigla.nome_completo if sigla.nome_completo else '' }}">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="4" class="text-center text-muted">Nenhuma sigla cadastrada</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <!-- Table -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <div class="d-flex align-items-center">
+                <span class="card-icon"><i class="fas fa-list"></i></span>
+                Siglas Cadastradas
             </div>
+            <span class="badge bg-secondary rounded-pill" style="font-size:.7rem;">
+                {{ siglas | length }} registro(s)
+            </span>
+        </div>
+        <div class="table-responsive">
+            <table class="table admin-table mb-0">
+                <thead>
+                    <tr>
+                        <th width="15%">Sigla</th>
+                        <th>Nome Completo</th>
+                        <th width="12%" class="text-center">Documentos</th>
+                        <th width="10%" class="text-center">Editar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sigla in siglas %}
+                    <tr>
+                        <td>
+                            <span class="fw-600 text-primary" style="font-family:monospace;font-size:.95rem;">
+                                {{ sigla.organograma }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if sigla.nome_completo %}
+                                {{ sigla.nome_completo }}
+                            {% else %}
+                                <span class="text-muted fst-italic">Não definido</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-primary rounded-pill">
+                                {{ sigla.total_documentos }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-primary edit-btn"
+                                    title="Editar esta sigla"
+                                    data-sigla="{{ sigla.organograma }}"
+                                    data-nome="{{ sigla.nome_completo if sigla.nome_completo else '' }}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-2x d-block mb-2 opacity-25"></i>
+                            Nenhuma sigla cadastrada
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
+
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// #sigla field: auto-uppercase handled by MIAC via data-uppercase attribute
-// Edit button: populate form and scroll to it
 document.querySelectorAll('.edit-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
-        document.getElementById('sigla').value = this.dataset.sigla || '';
+        const siglaInput = document.getElementById('sigla');
+        siglaInput.value = this.dataset.sigla || '';
         document.getElementById('nome_completo').value = this.dataset.nome || '';
-        const field = document.getElementById('sigla');
-        field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        field.focus();
+        siglaInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        siglaInput.focus();
+        // Visual feedback: highlight the form card
+        const card = siglaInput.closest('.admin-card');
+        if (card) {
+            card.style.transition = 'box-shadow .3s';
+            card.style.boxShadow = '0 0 0 3px rgba(52,152,219,.4)';
+            setTimeout(() => { card.style.boxShadow = ''; }, 1500);
+        }
     });
 });
 </script>

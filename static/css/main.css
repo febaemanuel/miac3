@@ -611,3 +611,194 @@ a { text-decoration: none; }
     background: rgba(255,255,255,0.15);
     border-radius: 4px;
 }
+
+/* ══════════════════════════════════════════════════
+   Admin Pages — Shared Components
+   ══════════════════════════════════════════════════ */
+
+/* ── Page Header Banner ── */
+.page-header-banner {
+    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+    color: white;
+    padding: 2rem 2.5rem;
+    margin: -32px -36px 0;
+    margin-bottom: 0;
+}
+
+.page-header-banner h2 {
+    font-weight: 700;
+    font-size: 1.6rem;
+    margin: 0;
+}
+
+.page-header-banner p {
+    margin: 0.25rem 0 0;
+    opacity: 0.8;
+    font-size: 0.875rem;
+    font-weight: 300;
+}
+
+.page-header-banner .header-icon {
+    width: 52px;
+    height: 52px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+}
+
+.content-body {
+    padding: 2rem 0;
+}
+
+/* ── Admin Cards ── */
+.admin-card {
+    border: none;
+    border-radius: 14px;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07);
+    overflow: hidden;
+    margin-bottom: 1.75rem;
+}
+
+.admin-card .admin-card-header {
+    background: #2c3e50;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.88rem;
+    padding: 0.9rem 1.25rem;
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.admin-card .admin-card-header .card-icon {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.5rem;
+    font-size: 0.75rem;
+}
+
+/* ── Admin table ── */
+.admin-table thead th {
+    background: #2c3e50;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 0.85rem 1rem;
+    border: none;
+    white-space: nowrap;
+}
+
+.admin-table tbody td {
+    padding: 0.75rem 1rem;
+    vertical-align: middle;
+    border-color: #f0f2f5;
+    font-size: 0.875rem;
+}
+
+.admin-table tbody tr:hover td {
+    background-color: rgba(52, 152, 219, 0.06) !important;
+}
+
+/* ── Admin list item ── */
+.admin-list-item {
+    border-left: none;
+    border-right: none;
+    padding: 0.85rem 1.25rem;
+    font-size: 0.875rem;
+    transition: background 0.15s;
+}
+
+.admin-list-item:first-child { border-top: none; border-radius: 0 !important; }
+.admin-list-item:last-child  { border-bottom: none; }
+.admin-list-item:hover       { background: #f6f8fb; }
+
+.item-dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    background: #3498db;
+    border-radius: 50%;
+    margin-right: 0.6rem;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+/* ── Marcador badge ── */
+.marcador-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.25rem 0.65rem;
+    border-radius: 20px;
+    letter-spacing: 0.3px;
+    min-width: 40px;
+    text-align: center;
+}
+
+.marcador-badge.empty { background: #dee2e6; color: #6c757d; }
+
+/* ── Abrangência badge ── */
+.abrangencia-badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+}
+
+.abrangencia-badge.huwc { background: rgba(52,152,219,0.12); color: #2980b9; }
+.abrangencia-badge.meac { background: rgba(155,89,182,0.12); color: #8e44ad; }
+
+/* ── Stats tab cards ── */
+.stat-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-strip-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    border-left: 4px solid var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.stat-strip-card .ssc-icon {
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+}
+
+.stat-strip-card .ssc-val {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    line-height: 1;
+}
+
+.stat-strip-card .ssc-lbl {
+    font-size: 0.72rem;
+    color: #6c757d;
+    margin-top: 2px;
+}
