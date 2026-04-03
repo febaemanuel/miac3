@@ -12,12 +12,15 @@
 </head>
 <body>
 
+{% block sidebar_toggle %}
 <!-- Mobile Toggle -->
 <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Menu">
     <i class="fas fa-bars"></i>
 </button>
 <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+{% endblock %}
 
+{% block sidebar %}
 <!-- ═══════ SIDEBAR ═══════ -->
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
@@ -83,6 +86,7 @@
         </a>
     </div>
 </aside>
+{% endblock %}
 
 <!-- ═══════ MAIN CONTENT ═══════ -->
 <main class="main-content">
