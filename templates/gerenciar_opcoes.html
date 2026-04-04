@@ -3,194 +3,7 @@
 
 {% block title %}Gerenciar Opções{% endblock %}
 
-{% block extra_css %}
-<style>
-    /* ── Page Header ── */
-    .page-header-banner {
-        background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
-        color: white;
-        padding: 2rem 2.5rem;
-        margin: -32px -36px 0;
-    }
 
-    .page-header-banner h2 {
-        font-weight: 700;
-        font-size: 1.6rem;
-        margin: 0;
-    }
-
-    .page-header-banner p {
-        margin: 0.25rem 0 0;
-        opacity: 0.8;
-        font-size: 0.875rem;
-        font-weight: 300;
-    }
-
-    .header-icon {
-        width: 52px;
-        height: 52px;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.4rem;
-        flex-shrink: 0;
-    }
-
-    /* ── Content Body ── */
-    .content-body {
-        padding: 2rem 0;
-    }
-
-    /* ── Cards ── */
-    .card {
-        border: none;
-        border-radius: 14px;
-        box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07);
-        overflow: hidden;
-    }
-
-    .card-header {
-        border-radius: 0 !important;
-        font-weight: 600;
-        font-size: 0.88rem;
-        padding: 0.9rem 1.25rem;
-        letter-spacing: 0.3px;
-    }
-
-    .card-header.bg-dark {
-        background: #2c3e50 !important;
-        color: #ffffff;
-    }
-
-    .card-header .card-icon {
-        width: 28px;
-        height: 28px;
-        background: rgba(255, 255, 255, 0.15);
-        border-radius: 7px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 0.5rem;
-        font-size: 0.75rem;
-    }
-
-    /* ── Form Styling ── */
-    .form-label {
-        font-weight: 500;
-        font-size: 0.82rem;
-        color: #495057;
-        margin-bottom: 0.4rem;
-    }
-
-    .form-control,
-    .form-select {
-        border-radius: 9px;
-        border: 1.5px solid #dee2e6;
-        padding: 0.6rem 0.95rem;
-        font-size: 0.875rem;
-        transition: border-color 0.2s, box-shadow 0.2s;
-        background-color: #fdfdfd;
-    }
-
-    .form-control:focus,
-    .form-select:focus {
-        border-color: #3498db;
-        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
-        background-color: #fff;
-    }
-
-    /* ── Buttons ── */
-    .btn {
-        border-radius: 9px;
-        font-weight: 500;
-        font-size: 0.85rem;
-        padding: 0.55rem 1.1rem;
-        transition: all 0.2s;
-    }
-
-    .btn-success {
-        background: #27ae60;
-        border-color: #27ae60;
-        color: #fff;
-    }
-
-    .btn-success:hover {
-        background: #219a52;
-        border-color: #219a52;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 14px rgba(39, 174, 96, 0.35);
-    }
-
-    .btn-danger {
-        background: #e74c3c;
-        border-color: #e74c3c;
-        color: #fff;
-    }
-
-    .btn-danger:hover {
-        background: #c0392b;
-        border-color: #c0392b;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
-    }
-
-    /* ── List Group ── */
-    .list-group-item {
-        border-left: none;
-        border-right: none;
-        padding: 0.85rem 1.25rem;
-        font-size: 0.875rem;
-        transition: background 0.15s;
-    }
-
-    .list-group-item:first-child {
-        border-top: none;
-        border-radius: 0 !important;
-    }
-
-    .list-group-item:last-child {
-        border-bottom: none;
-    }
-
-    .list-group-item:hover {
-        background: #f6f8fb;
-    }
-
-    .item-name {
-        font-weight: 500;
-        color: #2c3e50;
-    }
-
-    .item-dot {
-        display: inline-block;
-        width: 7px;
-        height: 7px;
-        background: #3498db;
-        border-radius: 50%;
-        margin-right: 0.6rem;
-        vertical-align: middle;
-        flex-shrink: 0;
-    }
-
-    /* ── Empty State ── */
-    .empty-state {
-        padding: 2rem 1.25rem;
-        color: #adb5bd;
-        font-size: 0.85rem;
-        font-style: italic;
-        text-align: center;
-    }
-
-    .empty-state i {
-        font-size: 2rem;
-        opacity: 0.25;
-        display: block;
-        margin-bottom: 0.6rem;
-    }
-</style>
-{% endblock %}
 
 {% block content %}
     <!-- Page Header -->
@@ -212,8 +25,8 @@
         <!-- Add Item Form -->
         <div class="row mb-4">
             <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-dark d-flex align-items-center">
+                <div class="admin-card">
+                    <div class="admin-card-header d-flex align-items-center">
                         <span class="card-icon"><i class="fa-solid fa-plus"></i></span>
                         Adicionar Item
                     </div>
@@ -246,8 +59,8 @@
 
             <!-- Organogramas -->
             <div class="col-md-6">
-                <div class="card h-100">
-                    <div class="card-header bg-dark d-flex align-items-center justify-content-between">
+                <div class="admin-card h-100">
+                    <div class="admin-card-header d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center">
                             <span class="card-icon"><i class="fa-solid fa-sitemap"></i></span>
                             Organogramas
@@ -260,14 +73,14 @@
                         {% if organogramas %}
                             <ul class="list-group list-group-flush">
                                 {% for org in organogramas %}
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <li class="admin-list-item d-flex justify-content-between align-items-center">
                                         <span class="item-name d-flex align-items-center">
                                             <span class="item-dot"></span>
                                             {{ org.nome }}
                                         </span>
                                         <a href="{{ url_for('admin.remover_opcao', id=org.id, tipo='organograma') }}"
                                            class="btn btn-danger btn-sm"
-                                           onclick="return confirm('Remover este organograma?')">
+                                           data-confirm-delete="Remover o organograma '{{ org.nome }}'?">
                                             <i class="fa-solid fa-trash-can me-1"></i>Remover
                                         </a>
                                     </li>
@@ -285,8 +98,8 @@
 
             <!-- Tipos de Documento -->
             <div class="col-md-6">
-                <div class="card h-100">
-                    <div class="card-header bg-dark d-flex align-items-center justify-content-between">
+                <div class="admin-card h-100">
+                    <div class="admin-card-header d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center">
                             <span class="card-icon"><i class="fa-solid fa-file-circle-check"></i></span>
                             Tipos de Documento
@@ -299,14 +112,14 @@
                         {% if tipos_documento %}
                             <ul class="list-group list-group-flush">
                                 {% for tipo in tipos_documento %}
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <li class="admin-list-item d-flex justify-content-between align-items-center">
                                         <span class="item-name d-flex align-items-center">
                                             <span class="item-dot"></span>
                                             {{ tipo.nome }}
                                         </span>
                                         <a href="{{ url_for('admin.remover_opcao', id=tipo.id, tipo='tipo_documento') }}"
                                            class="btn btn-danger btn-sm"
-                                           onclick="return confirm('Remover este tipo de documento?')">
+                                           data-confirm-delete="Remover o tipo de documento '{{ tipo.nome }}'?">
                                             <i class="fa-solid fa-trash-can me-1"></i>Remover
                                         </a>
                                     </li>

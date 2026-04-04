@@ -371,17 +371,21 @@ def restaurar_versao(doc_id, versao):
                 {"success": False, "error": f"Versão {versao} não encontrada"}
             ), 404
 
+        # Archive current version before restoring the old one
+        versao_atual_num = documento.versao_atual if documento.versao_atual is not None else 1
         nova_entrada_historico = {
-            "versao": documento.versao_atual if documento.versao_atual is not None else 1,
+            "versao": versao_atual_num,
             "caminho": documento.caminho,
             "data": datetime.now().strftime("%d/%m/%Y %H:%M"),
             "responsavel": session["username"],
             "nome_arquivo": os.path.basename(documento.caminho),
         }
-        historico.append(nova_entrada_historico)
+        # Keep all existing history entries EXCEPT the one being restored (it becomes current)
+        historico_atualizado = [v for v in historico if v["versao"] != versao]
+        historico_atualizado.append(nova_entrada_historico)
 
         documento.versao_atual = versao
-        documento.historico_versoes = [v for v in historico if v["versao"] != versao]
+        documento.historico_versoes = historico_atualizado
         documento.pdf_antigo = documento.caminho
         documento.caminho = versao_restaurar["caminho"]
         documento.data_publicacao = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

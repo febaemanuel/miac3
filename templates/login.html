@@ -154,10 +154,10 @@
 {% block content %}
 <div class="login-container position-relative">
     <!-- Logo -->
-    <img src="/miac/static/images/logo.png" alt="Logo" class="logo">
+    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="logo">
 
     <h1>Login - UGQ</h1>
-    <form action="/miac/login" method="POST" id="loginForm">
+    <form action="{{ url_for('auth.login') }}" method="POST" id="loginForm">
         <div class="mb-3">
             <label for="username" class="form-label">Usuário</label>
             <input type="text" class="form-control" id="username" name="username" placeholder="Digite seu usuário" required>
@@ -186,8 +186,10 @@
 {% block extra_js %}
 <script>
     document.getElementById("loginForm").addEventListener("submit", function() {
-        document.getElementById("loader").style.display = "block";
-        document.querySelector(".login-container .btn").disabled = true;
+        const btn = this.querySelector('button[type="submit"]');
+        if (btn) MIAC.btnLoading(btn, true, 'Entrando...');
+        const loader = document.getElementById("loader");
+        if (loader) loader.style.display = "block";
     });
 </script>
 {% endblock %}

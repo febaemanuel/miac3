@@ -1,258 +1,310 @@
 {% extends "base.html" %}
+{% set active_page = 'estatisticas' %}
 
 {% block title %}Estatísticas{% endblock %}
 
 {% block extra_css %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-    .container {
-        max-width: 1400px;
-        margin: 0 auto;
-    }
-    h1 {
-        font-weight: bold;
-        color: #2c3e50;
-        text-align: center;
-        margin-bottom: 30px;
-    }
-    .nav-tabs {
-        border-bottom: 2px solid #ddd;
-    }
-    .nav-tabs .nav-link {
-        color: #555;
-        border: none;
-        padding: 15px 20px;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-    }
-    .nav-tabs .nav-link.active {
-        background-color: #2c3e50;
-        color: #fff;
-        border-radius: 8px 8px 0 0;
-    }
-    .card {
-        border: none;
-        border-radius: 12px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        background-color: #fff;
-        margin-bottom: 20px;
-    }
-    .card-title {
-        font-size: 1.2rem;
-        font-weight: bold;
-        color: #2c3e50;
-    }
-    .filters label {
-        margin-right: 20px;
-        font-weight: bold;
-        color: #555;
-    }
-    canvas {
-        max-height: 300px;
-    }
-    .table {
-        border-radius: 10px;
-        overflow: hidden;
-    }
-    .table thead th {
-        background-color: #2c3e50;
-        color: #fff;
-        border: none;
-    }
-    .table-striped tbody tr:nth-of-type(odd) {
-        background-color: #f9f9f9;
-    }
-    .list-group-item {
-        border: none;
-        border-radius: 8px;
-        margin-bottom: 5px;
-        background-color: #f9f9f9;
-        color: #333;
-    }
-    .no-data {
-        text-align: center;
-        color: #888;
-    }
+.stat-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1rem; margin-bottom:1.5rem; }
+.chart-card { background:#fff; border-radius:14px; box-shadow:0 2px 14px rgba(0,0,0,.07); padding:1.5rem; margin-bottom:1.5rem; }
+.chart-card h6 { font-weight:600; color:#2c3e50; margin-bottom:1rem; font-size:.95rem; }
+.filter-bar { background:#fff; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.06); padding:1.25rem 1.5rem; margin-bottom:1.5rem; }
+.tab-pills .nav-link { border-radius:8px; color:#6c757d; padding:.5rem 1.25rem; font-size:.88rem; font-weight:500; }
+.tab-pills .nav-link.active { background:#2c3e50; color:#fff; }
+.tab-pills .nav-link:hover:not(.active) { background:#f0f2f5; color:#2c3e50; }
+.section-title { font-size:1rem; font-weight:600; color:#2c3e50; margin:1.5rem 0 .75rem; padding-bottom:.4rem; border-bottom:2px solid #f0f2f5; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1>Estatísticas - MIAC</h1>
-    <!-- Abas -->
-    <ul class="nav nav-tabs" id="myTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <a class="nav-link active" id="estatisticas-tab" data-bs-toggle="tab" href="#estatisticas" role="tab" aria-controls="estatisticas" aria-selected="true">Estatísticas</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" id="notificacoes-tab" data-bs-toggle="tab" href="#notificacoes" role="tab" aria-controls="notificacoes" aria-selected="false">Notificações</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" id="erros-tab" data-bs-toggle="tab" href="#erros" role="tab" aria-controls="erros" aria-selected="false">Erros</a>
-        </li>
-    </ul>
-    <!-- Conteúdo das Abas -->
-    <div class="tab-content" id="myTabsContent">
-        <!-- Estatísticas -->
-        <div class="tab-pane fade show active" id="estatisticas" role="tabpanel" aria-labelledby="estatisticas-tab">
-            <!-- Filtros Dinâmicos -->
-            <form method="get" class="filters mt-3">
-                <label>
-                    Abrangência:
-                    <select name="abrangencia" class="form-select">
-                        <option value="">Todas</option>
-                        {% for abrangencia in abrangencias %}
-                        <option value="{{ abrangencia[0] }}" {% if request.args.get('abrangencia') == abrangencia[0] %}selected{% endif %}>
-                            {{ abrangencia[0] }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </label>
-                <label>
-                    Organograma:
-                    <select name="organograma" class="form-select">
-                        <option value="">Todos</option>
-                        {% for organograma in organogramas %}
-                        <option value="{{ organograma[0] }}" {% if request.args.get('organograma') == organograma[0] %}selected{% endif %}>
-                            {{ organograma[0] }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </label>
-                <label>
-                    Tipo de Documento:
-                    <select name="tipo_documento" class="form-select">
-                        <option value="">Todos</option>
-                        {% for tipo in tipos_documento %}
-                        <option value="{{ tipo[0] }}" {% if request.args.get('tipo_documento') == tipo[0] %}selected{% endif %}>
-                            {{ tipo[0] }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </label>
-                <label>
-                    Status:
-                    <select name="status" class="form-select">
+<!-- Page Header -->
+<div class="page-header-banner">
+    <div class="d-flex align-items-center gap-3">
+        <div class="header-icon"><i class="fas fa-chart-bar"></i></div>
+        <div>
+            <h2>Estatísticas</h2>
+            <p>Conformidade documental e indicadores em tempo real</p>
+        </div>
+    </div>
+</div>
+
+<div class="content-body">
+
+    <!-- Summary Stats Strip -->
+    <div class="stat-row">
+        <div class="stat-strip-card" style="border-left-color:#3498db;">
+            <div class="ssc-icon" style="background:rgba(52,152,219,.12);color:#2980b9;"><i class="fas fa-file-alt"></i></div>
+            <div><div class="ssc-val">{{ stats.total }}</div><div class="ssc-lbl">Total de Documentos</div></div>
+        </div>
+        <div class="stat-strip-card" style="border-left-color:#27ae60;">
+            <div class="ssc-icon" style="background:rgba(39,174,96,.12);color:#219a52;"><i class="fas fa-check-circle"></i></div>
+            <div><div class="ssc-val">{{ stats.atualizados }}</div><div class="ssc-lbl">Atualizados</div></div>
+        </div>
+        <div class="stat-strip-card" style="border-left-color:#e74c3c;">
+            <div class="ssc-icon" style="background:rgba(231,76,60,.12);color:#c0392b;"><i class="fas fa-times-circle"></i></div>
+            <div><div class="ssc-val">{{ stats.desatualizados }}</div><div class="ssc-lbl">Desatualizados</div></div>
+        </div>
+        {% if stats.total > 0 %}
+        <div class="stat-strip-card" style="border-left-color:#f39c12;">
+            <div class="ssc-icon" style="background:rgba(243,156,18,.12);color:#d68910;"><i class="fas fa-percent"></i></div>
+            <div>
+                <div class="ssc-val">{{ ((stats.atualizados / stats.total) * 100) | round(1) }}%</div>
+                <div class="ssc-lbl">Conformidade</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-sm-6 col-md-3">
+                <label class="form-label" style="font-size:.8rem;font-weight:500;">Abrangência</label>
+                <select name="abrangencia" class="form-select form-select-sm">
+                    <option value="">Todas</option>
+                    {% for abrangencia in abrangencias %}
+                    <option value="{{ abrangencia[0] }}" {% if request.args.get('abrangencia') == abrangencia[0] %}selected{% endif %}>
+                        {{ abrangencia[0] }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <label class="form-label" style="font-size:.8rem;font-weight:500;">Organograma</label>
+                <select name="organograma" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    {% for organograma in organogramas %}
+                    <option value="{{ organograma[0] }}" {% if request.args.get('organograma') == organograma[0] %}selected{% endif %}>
+                        {{ organograma[0] }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <label class="form-label" style="font-size:.8rem;font-weight:500;">Tipo de Documento</label>
+                <select name="tipo_documento" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    {% for tipo in tipos_documento %}
+                    <option value="{{ tipo[0] }}" {% if request.args.get('tipo_documento') == tipo[0] %}selected{% endif %}>
+                        {{ tipo[0] }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <label class="form-label" style="font-size:.8rem;font-weight:500;">Status</label>
+                <div class="d-flex gap-2">
+                    <select name="status" class="form-select form-select-sm">
                         <option value="">Todos</option>
                         <option value="atualizado" {% if request.args.get('status') == 'atualizado' %}selected{% endif %}>Atualizado</option>
                         <option value="desatualizado" {% if request.args.get('status') == 'desatualizado' %}selected{% endif %}>Desatualizado</option>
                     </select>
-                </label>
-                <button type="submit" class="btn btn-primary">Filtrar</button>
-            </form>
-            <!-- Resumo Geral com Gráfico -->
-            <div class="card mt-3">
-                <div class="card-body">
-                    <h2 class="card-title">Resumo Geral</h2>
-                    <p><strong>Total de Documentos:</strong> {{ stats.total }}</p>
-                    <p><strong>Documentos Atualizados:</strong> <span class="badge badge bg-success text-white">{{ stats.atualizados }}</span></p>
-                    <p><strong>Documentos Desatualizados:</strong> <span class="badge badge bg-danger text-white">{{ stats.desatualizados }}</span></p>
-                    <canvas id="resumoGeralChart" width="400" height="200"></canvas>
+                    <button type="submit" class="btn btn-primary btn-sm px-3">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                    {% if request.args %}
+                    <a href="{{ url_for('reports.estatisticas') }}" class="btn btn-outline-secondary btn-sm px-3" title="Limpar filtros">
+                        <i class="fas fa-times"></i>
+                    </a>
+                    {% endif %}
                 </div>
             </div>
-            <!-- Gráfico de Barras por Tipo de Documento -->
-            <div class="card mt-3">
-                <div class="card-body">
-                    <h2 class="card-title">Documentos por Tipo</h2>
-                    <canvas id="tipoDocumentoChart" width="400" height="200"></canvas>
+        </form>
+    </div>
+
+    <!-- Tab Navigation -->
+    <ul class="nav tab-pills mb-3" id="statTabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#tab-graficos">
+                <i class="fas fa-chart-pie me-1"></i> Gráficos
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab-organograma">
+                <i class="fas fa-sitemap me-1"></i> Por Organograma
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab-marcador">
+                <i class="fas fa-bookmark me-1"></i> Por Marcador
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab-notificacoes">
+                <i class="fas fa-bell me-1"></i> Notificações
+                {% if notificacoes %}
+                <span class="badge bg-danger rounded-pill ms-1" style="font-size:.65rem;">{{ notificacoes|length }}</span>
+                {% endif %}
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab-erros">
+                <i class="fas fa-exclamation-triangle me-1"></i> Erros
+                {% if documentos_com_erro %}
+                <span class="badge bg-warning text-dark rounded-pill ms-1" style="font-size:.65rem;">{{ documentos_com_erro|length }}</span>
+                {% endif %}
+            </a>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+
+        <!-- ─── Gráficos ─── -->
+        <div class="tab-pane fade show active" id="tab-graficos">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="chart-card">
+                        <h6><i class="fas fa-circle-half-stroke me-2 text-primary"></i>Resumo Geral</h6>
+                        <canvas id="resumoGeralChart" style="max-height:260px;"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="chart-card">
+                        <h6><i class="fas fa-globe me-2 text-primary"></i>Por Abrangência</h6>
+                        <canvas id="abrangenciaChart" style="max-height:260px;"></canvas>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="chart-card">
+                        <h6><i class="fas fa-file-alt me-2 text-primary"></i>Por Tipo de Documento</h6>
+                        <canvas id="tipoDocumentoChart" style="max-height:240px;"></canvas>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="chart-card">
+                        <h6><i class="fas fa-bookmark me-2 text-primary"></i>Por Marcador</h6>
+                        <canvas id="marcadorChart" style="max-height:240px;"></canvas>
+                    </div>
                 </div>
             </div>
-            <!-- Gráfico de Rosca por Abrangência -->
-            <div class="card mt-3">
-                <div class="card-body">
-                    <h2 class="card-title">Documentos por Abrangência</h2>
-                    <canvas id="abrangenciaChart" width="400" height="200"></canvas>
+        </div>
+
+        <!-- ─── Por Organograma ─── -->
+        <div class="tab-pane fade" id="tab-organograma">
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <div class="d-flex align-items-center">
+                        <span class="card-icon"><i class="fas fa-sitemap"></i></span>
+                        Documentos por Organograma
+                    </div>
                 </div>
-            </div>
-            <!-- Gráfico de Barras por Marcador -->
-            <div class="card mt-3">
-                <div class="card-body">
-                    <h2 class="card-title">Documentos por Marcador</h2>
-                    <canvas id="marcadorChart" width="400" height="200"></canvas>
-                </div>
-            </div>
-            <!-- Tabela de Documentos por Organograma -->
-            <div class="card mt-3">
-                <div class="card-body">
-                    <h2 class="card-title">Documentos por Organograma</h2>
-                    <table class="table table-striped">
+                <div class="table-responsive">
+                    <table class="table admin-table mb-0">
                         <thead>
                             <tr>
                                 <th>Organograma</th>
-                                <th>Total</th>
-                                <th>Atualizados</th>
-                                <th>Desatualizados</th>
+                                <th class="text-center">Total</th>
+                                <th class="text-center">Atualizados</th>
+                                <th class="text-center">Desatualizados</th>
+                                <th class="text-center">Conformidade</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for organograma, data in stats.por_organograma.items() %}
                             <tr>
-                                <td>{{ organograma }}</td>
-                                <td>{{ data.total }}</td>
-                                <td><span class="badge badge bg-success text-white">{{ data.atualizados }}</span></td>
-                                <td><span class="badge badge bg-danger text-white">{{ data.desatualizados }}</span></td>
+                                <td class="fw-500">{{ organograma }}</td>
+                                <td class="text-center">{{ data.total }}</td>
+                                <td class="text-center">
+                                    <span class="badge bg-success">{{ data.atualizados }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-danger">{{ data.desatualizados }}</span>
+                                </td>
+                                <td class="text-center">
+                                    {% if data.total > 0 %}
+                                    {% set pct = ((data.atualizados / data.total) * 100) | round(0) | int %}
+                                    <div class="d-flex align-items-center gap-2" style="min-width:100px;">
+                                        <div class="progress flex-grow-1" style="height:6px;">
+                                            <div class="progress-bar {% if pct >= 80 %}bg-success{% elif pct >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+                                                 style="width:{{ pct }}%"></div>
+                                        </div>
+                                        <small class="text-muted" style="font-size:.75rem;white-space:nowrap;">{{ pct }}%</small>
+                                    </div>
+                                    {% else %}—{% endif %}
+                                </td>
                             </tr>
+                            {% else %}
+                            <tr><td colspan="5" class="text-center text-muted py-4">Nenhum dado disponível</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
-            <!-- Tabela de Documentos por Marcador -->
-            <div class="card mt-3">
-                <div class="card-body">
-                    <h2 class="card-title">Documentos por Marcador</h2>
-                    <table class="table table-striped">
+        </div>
+
+        <!-- ─── Por Marcador ─── -->
+        <div class="tab-pane fade" id="tab-marcador">
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <span class="card-icon"><i class="fas fa-bookmark"></i></span>
+                    Documentos por Marcador
+                </div>
+                <div class="table-responsive">
+                    <table class="table admin-table mb-0">
                         <thead>
                             <tr>
                                 <th>Marcador</th>
-                                <th>Total</th>
-                                <th>Atualizados</th>
-                                <th>Desatualizados</th>
+                                <th class="text-center">Total</th>
+                                <th class="text-center">Atualizados</th>
+                                <th class="text-center">Desatualizados</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for marcador, data in stats.por_marcador.items() %}
                             <tr>
-                                <td>{{ marcador }}</td>
-                                <td>{{ data.total }}</td>
-                                <td><span class="badge badge bg-success text-white">{{ data.atualizados }}</span></td>
-                                <td><span class="badge badge bg-danger text-white">{{ data.desatualizados }}</span></td>
+                                <td><span class="marcador-badge">{{ marcador or '—' }}</span></td>
+                                <td class="text-center">{{ data.total }}</td>
+                                <td class="text-center"><span class="badge bg-success">{{ data.atualizados }}</span></td>
+                                <td class="text-center"><span class="badge bg-danger">{{ data.desatualizados }}</span></td>
                             </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="text-center text-muted py-4">Nenhum dado disponível</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
-        <!-- Notificações -->
-        <div class="tab-pane fade" id="notificacoes" role="tabpanel" aria-labelledby="notificacoes-tab">
-            <div class="card mt-3">
-                <div class="card-body">
-                    <h2 class="card-title">Notificações</h2>
+
+        <!-- ─── Notificações ─── -->
+        <div class="tab-pane fade" id="tab-notificacoes">
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <span class="card-icon"><i class="fas fa-bell"></i></span>
+                    Notificações de Vencimento
+                </div>
+                <div class="card-body p-3">
                     {% if notificacoes %}
-                    <ul class="list-group">
+                    <ul class="list-unstyled mb-0">
                         {% for notificacao in notificacoes %}
-                        <li class="list-group-item">{{ notificacao }}</li>
+                        <li class="d-flex align-items-start gap-2 py-2 border-bottom">
+                            <i class="fas fa-exclamation-circle text-warning mt-1" style="font-size:.85rem;"></i>
+                            <span style="font-size:.875rem;">{{ notificacao }}</span>
+                        </li>
                         {% endfor %}
                     </ul>
                     {% else %}
-                    <p class="no-data">Nenhuma notificação disponível.</p>
+                    <div class="text-center py-5 text-muted">
+                        <i class="fas fa-check-circle fa-2x d-block mb-2 text-success opacity-50"></i>
+                        Nenhuma notificação pendente
+                    </div>
                     {% endif %}
                 </div>
             </div>
         </div>
-        <!-- Documentos com Erro -->
-        <div class="tab-pane fade" id="erros" role="tabpanel" aria-labelledby="erros-tab">
-            <div class="card mt-3">
-                <div class="card-body">
-                    <h2 class="card-title">Documentos com Erro</h2>
-                    {% if documentos_com_erro %}
-                    <table class="table table-striped">
+
+        <!-- ─── Erros ─── -->
+        <div class="tab-pane fade" id="tab-erros">
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <span class="card-icon"><i class="fas fa-triangle-exclamation"></i></span>
+                    Documentos com Erro
+                </div>
+                {% if documentos_com_erro %}
+                <div class="table-responsive">
+                    <table class="table admin-table mb-0">
                         <thead>
-                            <tr>
-                                <th>Nome do Documento</th>
-                                <th>Erros</th>
-                            </tr>
+                            <tr><th>Nome do Documento</th><th>Erros Detectados</th></tr>
                         </thead>
                         <tbody>
                             {% for doc in documentos_com_erro %}
@@ -260,112 +312,85 @@
                                 <td>{{ doc.documento.nome }}</td>
                                 <td>
                                     {% for erro in doc.erros %}
-                                    <span class="badge badge bg-danger text-white">{{ erro }}</span><br>
+                                    <span class="badge bg-danger me-1">{{ erro }}</span>
                                     {% endfor %}
                                 </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
-                    {% else %}
-                    <p class="no-data">Nenhum documento com erro encontrado.</p>
-                    {% endif %}
                 </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-check-circle fa-2x d-block mb-2 text-success opacity-50"></i>
+                    Nenhum documento com erro encontrado
+                </div>
+                {% endif %}
             </div>
         </div>
-    </div>
+
+    </div><!-- /tab-content -->
+
 </div>
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-    // Gráfico de Pizza para Resumo Geral
-    const ctxPie = document.getElementById('resumoGeralChart').getContext('2d');
-    const resumoGeralChart = new Chart(ctxPie, {
+(function() {
+    const palette = { green: '#27ae60', red: '#e74c3c', blue: '#3498db', purple: '#9b59b6', orange: '#e67e22', teal: '#1abc9c', yellow: '#f1c40f' };
+    const defaults = { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 12 }, padding: 16 } } } };
+
+    // Pie — resumo geral
+    new Chart(document.getElementById('resumoGeralChart'), {
         type: 'pie',
         data: {
             labels: ['Atualizados', 'Desatualizados'],
-            datasets: [{
-                data: [{{ stats.atualizados }}, {{ stats.desatualizados }}],
-                backgroundColor: ['#2ecc71', '#e74c3c']
-            }]
+            datasets: [{ data: [{{ stats.atualizados }}, {{ stats.desatualizados }}], backgroundColor: [palette.green, palette.red], borderWidth: 0 }]
         },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'top',
-                }
-            }
-        }
+        options: { ...defaults }
     });
-    // Gráfico de Barras para Tipo de Documento
-    const ctxBar = document.getElementById('tipoDocumentoChart').getContext('2d');
-    const tipoDocumentoChart = new Chart(ctxBar, {
-        type: 'bar',
-        data: {
-            labels: [{% for tipo, data in stats.por_tipo.items() %}'{{ tipo }}',{% endfor %}],
-            datasets: [{
-                label: 'Atualizados',
-                data: [{% for tipo, data in stats.por_tipo.items() %}{{ data.atualizados }},{% endfor %}],
-                backgroundColor: '#2ecc71'
-            }, {
-                label: 'Desatualizados',
-                data: [{% for tipo, data in stats.por_tipo.items() %}{{ data.desatualizados }},{% endfor %}],
-                backgroundColor: '#e74c3c'
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                x: { stacked: true },
-                y: { stacked: true }
-            }
-        }
-    });
-    // Gráfico de Rosca para Abrangência
-    const ctxDoughnut = document.getElementById('abrangenciaChart').getContext('2d');
-    const abrangenciaChart = new Chart(ctxDoughnut, {
+
+    // Doughnut — abrangência
+    new Chart(document.getElementById('abrangenciaChart'), {
         type: 'doughnut',
         data: {
-            labels: [{% for abrangencia, data in stats.por_abrangencia.items() %}'{{ abrangencia }}',{% endfor %}],
-            datasets: [{
-                data: [{% for abrangencia, data in stats.por_abrangencia.items() %}{{ data.total }},{% endfor %}],
-                backgroundColor: ['#3498db', '#9b59b6', '#1abc9c', '#f1c40f', '#e67e22']
-            }]
+            labels: [{% for ab, _ in stats.por_abrangencia.items() %}'{{ ab }}',{% endfor %}],
+            datasets: [{ data: [{% for _, d in stats.por_abrangencia.items() %}{{ d.total }},{% endfor %}],
+                backgroundColor: [palette.blue, palette.purple, palette.teal, palette.orange], borderWidth: 0 }]
         },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'top',
-                }
-            }
-        }
+        options: { ...defaults, cutout: '60%' }
     });
-    // Gráfico de Barras para Marcador
-    const ctxMarcador = document.getElementById('marcadorChart').getContext('2d');
-    const marcadorChart = new Chart(ctxMarcador, {
+
+    // Bar — tipo de documento
+    {% if stats.por_tipo %}
+    new Chart(document.getElementById('tipoDocumentoChart'), {
         type: 'bar',
         data: {
-            labels: [{% for marcador, data in stats.por_marcador.items() %}'{{ marcador }}',{% endfor %}],
-            datasets: [{
-                label: 'Atualizados',
-                data: [{% for marcador, data in stats.por_marcador.items() %}{{ data.atualizados }},{% endfor %}],
-                backgroundColor: '#2ecc71'
-            }, {
-                label: 'Desatualizados',
-                data: [{% for marcador, data in stats.por_marcador.items() %}{{ data.desatualizados }},{% endfor %}],
-                backgroundColor: '#e74c3c'
-            }]
+            labels: [{% for tipo, _ in stats.por_tipo.items() %}'{{ tipo }}',{% endfor %}],
+            datasets: [
+                { label: 'Atualizados',   data: [{% for _, d in stats.por_tipo.items() %}{{ d.atualizados }},{% endfor %}],   backgroundColor: palette.green },
+                { label: 'Desatualizados', data: [{% for _, d in stats.por_tipo.items() %}{{ d.desatualizados }},{% endfor %}], backgroundColor: palette.red }
+            ]
         },
-        options: {
-            responsive: true,
-            scales: {
-                x: { stacked: true },
-                y: { stacked: true }
-            }
-        }
+        options: { ...defaults, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } }
     });
+    {% endif %}
+
+    // Bar — marcador
+    {% if stats.por_marcador %}
+    new Chart(document.getElementById('marcadorChart'), {
+        type: 'bar',
+        data: {
+            labels: [{% for m, _ in stats.por_marcador.items() %}'{{ m or "Sem marcador" }}',{% endfor %}],
+            datasets: [
+                { label: 'Atualizados',   data: [{% for _, d in stats.por_marcador.items() %}{{ d.atualizados }},{% endfor %}],   backgroundColor: palette.blue },
+                { label: 'Desatualizados', data: [{% for _, d in stats.por_marcador.items() %}{{ d.desatualizados }},{% endfor %}], backgroundColor: palette.orange }
+            ]
+        },
+        options: { ...defaults, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } }
+    });
+    {% endif %}
+})();
 </script>
 {% endblock %}

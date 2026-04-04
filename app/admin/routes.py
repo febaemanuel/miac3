@@ -27,6 +27,10 @@ def gerenciar_siglas():
         sigla = (request.form.get("sigla") or "").strip().upper()
         nome_completo = (request.form.get("nome_completo") or "").strip()
 
+        if not sigla:
+            flash("Sigla não pode ser vazia.", "error")
+            return redirect(url_for("admin.gerenciar_siglas"))
+
         Documento2.query.filter_by(organograma=sigla).update(
             {"nome_completo": nome_completo}
         )
@@ -43,9 +47,12 @@ def gerenciar_marcadores():
     if request.method == "POST":
         for key, value in request.form.items():
             if key.startswith("marcador_"):
-                parts = key.split("_")
-                organograma_nome = parts[1]
-                abrangencia = parts[2]
+                # key format: marcador_{organograma}_{abrangencia}
+                # organograma can contain underscores; abrangencia (HUWC/MEAC) cannot
+                rest = key[len("marcador_"):]
+                organograma_nome, _, abrangencia = rest.rpartition("_")
+                if not organograma_nome or not abrangencia:
+                    continue
 
                 Documento2.query.filter_by(
                     organograma=organograma_nome, abrangencia=abrangencia

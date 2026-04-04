@@ -303,15 +303,19 @@ def gerar_relatorio(abrangencia, organograma):
             doc for doc in documentos_ordenados
             if calcular_status(doc)["status"] == "Vencido"
         ]
+        def _dias_restantes(doc):
+            try:
+                return (parse_data(doc.vencimento) - datetime.now()).days
+            except Exception:
+                return 9999
+
         docs_proximo_vencer = [
             doc for doc in documentos_ordenados
             if calcular_status(doc)["status"] == "Atualizado"
             and doc.vencimento
-            and (parse_data(doc.vencimento) - datetime.now()).days <= 30
+            and _dias_restantes(doc) <= 30
         ]
-        docs_proximo_vencer.sort(
-            key=lambda doc: (parse_data(doc.vencimento) - datetime.now()).days
-        )
+        docs_proximo_vencer.sort(key=_dias_restantes)
 
         if docs_vencidos or docs_proximo_vencer:
             content.append(Paragraph("<b>ALERTAS</b>", style_subtitle))
@@ -339,7 +343,7 @@ def gerar_relatorio(abrangencia, organograma):
 
             for doc in docs_proximo_vencer:
                 status = calcular_status(doc)
-                dias_restantes = (parse_data(doc.vencimento) - datetime.now()).days
+                dias_restantes = _dias_restantes(doc)
                 alertas_data.append([
                     Paragraph(doc.tipo_documento or "Sem Tipo", style_tipo),
                     Paragraph(doc.nome, style_normal_wrap),
