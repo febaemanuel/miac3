@@ -452,13 +452,16 @@
             formatted.charAt(0).toUpperCase() + formatted.slice(1);
     })();
 
+    // URL base para detalhes de documento (gerada pelo Jinja)
+    const DOC_DETALHES_URL = "{{ url_for('documents.documento2_detalhes', doc_id=0) }}";
+
     // Vencendo em Breve — live loader
     function carregarVencendo(dias) {
         const body = document.getElementById('vencendo-body');
         body.innerHTML = `<div class="text-center text-muted py-3">
             <div class="spinner-border spinner-border-sm" role="status"></div>
             <span class="ms-2">Carregando...</span></div>`;
-        fetch(`/miac/api/vencendo?dias=${dias}`)
+        fetch(`{{ url_for('api.vencendo') }}?dias=${dias}`)
             .then(r => r.json())
             .then(docs => {
                 if (!docs.length) {
@@ -478,7 +481,7 @@
                     const cor = urgente ? 'text-danger fw-bold' : (aviso ? 'text-warning fw-bold' : 'text-success');
                     const badge = d.abrangencia === 'MEAC' ? 'background:#6f42c1;' : '';
                     html += `<tr>
-                        <td><a href="/miac/documento2/${d.id}" class="text-decoration-none text-dark">${d.nome}</a></td>
+                        <td><a href="${DOC_DETALHES_URL.replace('/0', '/' + d.id)}" class="text-decoration-none text-dark">${d.nome}</a></td>
                         <td>${d.organograma}</td>
                         <td><span class="badge bg-primary" style="${badge}">${d.abrangencia}</span></td>
                         <td class="text-center ${cor}">${d.dias_restantes}d — ${d.vencimento}</td>

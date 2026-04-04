@@ -3,218 +3,255 @@
 
 {% block title %}Publicar Documento{% endblock %}
 
-{% block extra_css %}
-<style>
-    .toggle-buttons { display: flex; justify-content: center; margin-bottom: 20px; gap: 12px; }
-    .toggle-buttons .btn.active { background-color: #0056b3; }
-    .form-section { margin-bottom: 20px; }
-    .form-section h3 { font-size: 1.1rem; margin-bottom: 12px; color: #555; border-bottom: 2px solid #007bff; padding-bottom: 5px; }
-    .spinner { border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid #007bff; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: none; margin-left: 10px; }
-    @keyframes spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
-    #success-message { display: none; background-color: #28a745; color: white; padding: 30px; border-radius: 10px; margin-top: 20px; text-align: center; font-size: 1.25rem; font-weight: bold; }
-    #success-message a { color: #fff; text-decoration: underline; }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="container-fluid px-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card shadow-sm">
-                <div class="card-header">
-                    <h4 class="mb-0"><i class="fas fa-cloud-arrow-up me-2"></i>Publicar Documento</h4>
+
+<!-- Page Header -->
+<div class="page-header-banner mb-4">
+    <div class="header-icon" style="background:rgba(52,152,219,0.15);color:#3498db;">
+        <i class="fas fa-cloud-arrow-up"></i>
+    </div>
+    <div>
+        <h4 class="mb-0 fw-700">Publicar Documento</h4>
+        <p class="mb-0 text-muted" style="font-size:.85rem;">Envie PDFs manualmente ou use IA para extrair os dados automaticamente</p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+
+        <!-- Mode Toggle -->
+        <div class="d-flex justify-content-center gap-3 mb-4">
+            <button id="manual-btn" class="btn btn-primary px-4">
+                <i class="fas fa-pen me-2"></i>Preenchimento Manual
+            </button>
+            <button id="ia-btn" class="btn btn-outline-secondary px-4">
+                <i class="fas fa-robot me-2"></i>Extrair via IA
+            </button>
+        </div>
+
+        <!-- ─── FORMULÁRIO MANUAL ─── -->
+        <form id="form-manual" onsubmit="publicarManual(event)">
+
+            <div class="edit-card">
+                <div class="edit-card-header">
+                    <i class="fas fa-paperclip"></i> Arquivo
                 </div>
-                <div class="card-body">
+                <div class="edit-card-body">
+                    <label for="pdf_file_manual" class="form-label fw-600">Selecione os Arquivos <span class="text-danger">*</span></label>
+                    <input type="file" class="form-control" id="pdf_file_manual" name="pdf_file"
+                           multiple accept=".pdf,.doc,.docx" required>
+                    <div class="form-text">PDF ou Word — múltiplos arquivos permitidos. Máx 50 MB cada.</div>
+                </div>
+            </div>
 
-                    <!-- Toggle Manual / IA -->
-                    <div class="toggle-buttons">
-                        <button id="manual-btn" class="btn btn-primary active">
-                            <i class="fas fa-pen me-1"></i> Preenchimento Manual
-                        </button>
-                        <button id="ia-btn" class="btn btn-secondary">
-                            <i class="fas fa-robot me-1"></i> Extrair Dados via IA
-                        </button>
+            <div class="edit-card">
+                <div class="edit-card-header">
+                    <i class="fas fa-file-lines"></i> Dados do Documento
+                </div>
+                <div class="edit-card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label for="titulo_manual" class="form-label fw-600">Título <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="titulo_manual" name="titulo[]" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="organograma_manual" class="form-label fw-600">Organograma <span class="text-danger">*</span></label>
+                            <select class="form-select" id="organograma_manual" name="organograma[]" required>
+                                <option value="">Selecione...</option>
+                                {% for org in organogramas %}
+                                    <option value="{{ org }}">{{ org }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="tipo_documento_manual" class="form-label fw-600">Tipo de Documento <span class="text-danger">*</span></label>
+                            <select class="form-select" id="tipo_documento_manual" name="tipo_documento[]" required>
+                                <option value="">Selecione...</option>
+                                {% for tipo in tipos_documento %}
+                                    <option value="{{ tipo }}">{{ tipo }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="abrangencia_manual" class="form-label fw-600">Abrangência <span class="text-danger">*</span></label>
+                            <select class="form-select" id="abrangencia_manual" name="abrangencia[]" required>
+                                <option value="">Selecione...</option>
+                                {% for abrang in abrangencias %}
+                                    <option value="{{ abrang }}">{{ abrang }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="numero_sei_manual" class="form-label fw-600">Número SEI</label>
+                            <input type="text" class="form-control" id="numero_sei_manual"
+                                   name="numero_sei[]" placeholder="Opcional">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="data_elaboracao_manual" class="form-label fw-600">Data de Elaboração <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="data_elaboracao_manual"
+                                   name="data_elaboracao[]" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="vencimento_manual" class="form-label fw-600">Vencimento <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="vencimento_manual"
+                                   name="vencimento[]" required>
+                        </div>
+                        <div class="col-12">
+                            <label for="elaboradores_manual" class="form-label fw-600">Elaboradores</label>
+                            <input type="text" class="form-control" id="elaboradores_manual"
+                                   name="elaboradores[]" placeholder="Separe os nomes por vírgula">
+                        </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- ─── FORMULÁRIO MANUAL ─── -->
-                    <form id="form-manual" onsubmit="publicarManual(event)">
-                        <div class="form-section">
-                            <h3>Envio de Arquivo</h3>
-                            <div class="form-group mb-3">
-                                <label for="pdf_file_manual">Arquivo PDF ou DOC</label>
-                                <input type="file" class="form-control" id="pdf_file_manual" name="pdf_file"
-                                       multiple accept=".pdf,.doc,.docx" required>
-                                <small class="text-muted">Selecione um ou mais arquivos (PDF ou Word). Máx 50 MB cada.</small>
-                            </div>
-                        </div>
+            <div class="text-center mb-4">
+                <button type="submit" class="btn btn-primary btn-lg px-5">
+                    <i class="fas fa-cloud-arrow-up me-2"></i> Publicar Documento(s)
+                    <div class="spinner-border spinner-border-sm ms-2" id="publicar-loading" style="display:none;"></div>
+                </button>
+            </div>
+        </form>
 
-                        <div class="form-section">
-                            <h3>Dados do Documento</h3>
-                            <div class="form-group mb-3">
-                                <label for="titulo_manual">Título*</label>
-                                <input type="text" class="form-control" id="titulo_manual" name="titulo[]" required>
-                            </div>
-                            <div class="form-group mb-3">
-                                <label for="organograma_manual">Organograma*</label>
-                                <select class="form-control" id="organograma_manual" name="organograma[]" required>
-                                    <option value="">Selecione...</option>
-                                    {% for org in organogramas %}
-                                        <option value="{{ org }}">{{ org }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="form-group mb-3">
-                                <label for="tipo_documento_manual">Tipo de Documento*</label>
-                                <select class="form-control" id="tipo_documento_manual" name="tipo_documento[]" required>
-                                    <option value="">Selecione...</option>
-                                    {% for tipo in tipos_documento %}
-                                        <option value="{{ tipo }}">{{ tipo }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="form-group mb-3">
-                                <label for="abrangencia_manual">Abrangência*</label>
-                                <select class="form-control" id="abrangencia_manual" name="abrangencia[]" required>
-                                    <option value="">Selecione...</option>
-                                    {% for abrang in abrangencias %}
-                                        <option value="{{ abrang }}">{{ abrang }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 form-group mb-3">
-                                    <label for="data_elaboracao_manual">Data de Elaboração*</label>
-                                    <input type="date" class="form-control" id="data_elaboracao_manual"
-                                           name="data_elaboracao[]" required>
-                                </div>
-                                <div class="col-md-6 form-group mb-3">
-                                    <label for="vencimento_manual">Vencimento*</label>
-                                    <input type="date" class="form-control" id="vencimento_manual"
-                                           name="vencimento[]" required>
-                                </div>
-                            </div>
-                            <div class="form-group mb-3">
-                                <label for="numero_sei_manual">Número SEI</label>
-                                <input type="text" class="form-control" id="numero_sei_manual"
-                                       name="numero_sei[]" placeholder="Opcional">
-                            </div>
-                            <div class="form-group mb-3">
-                                <label for="elaboradores_manual">Elaboradores</label>
-                                <input type="text" class="form-control" id="elaboradores_manual"
-                                       name="elaboradores[]" placeholder="Separe por vírgula">
-                            </div>
-                        </div>
+        <!-- ─── FORMULÁRIO IA ─── -->
+        <div id="form-ia" style="display:none;">
 
-                        <div class="text-center mt-3">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="fas fa-save me-1"></i> Publicar Documento(s)
-                                <div class="spinner-border spinner-border-sm ms-2" id="publicar-loading" style="display:none;"></div>
-                            </button>
-                        </div>
-                    </form>
-
-                    <!-- ─── FORMULÁRIO IA ─── -->
-                    <form id="form-ia" style="display:none;">
-                        <div class="form-section">
-                            <h3>Envio de Arquivo</h3>
-                            <div class="form-group mb-3">
-                                <label for="pdf_file_ia">Arquivos PDF</label>
+            <div class="edit-card">
+                <div class="edit-card-header">
+                    <i class="fas fa-robot"></i> Extração Automática via IA
+                </div>
+                <div class="edit-card-body">
+                    <form id="form-ia-inner">
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label for="pdf_file_ia" class="form-label fw-600">Arquivos PDF <span class="text-danger">*</span></label>
                                 <input type="file" class="form-control" id="pdf_file_ia" name="pdf_file"
                                        multiple accept=".pdf" required>
+                                <div class="form-text">A IA extrairá os metadados da última página de cada PDF.</div>
                             </div>
-                            <div class="form-group mb-3">
-                                <label for="modelo-ia">Modelo de IA</label>
-                                <select class="form-control" id="modelo-ia" name="modelo_ia">
+                            <div class="col-md-4">
+                                <label for="modelo-ia" class="form-label fw-600">Modelo de IA</label>
+                                <select class="form-select" id="modelo-ia" name="modelo_ia">
                                     <option value="deepseek">DeepSeek</option>
                                     <option value="chatgpt">ChatGPT</option>
                                 </select>
                             </div>
-                            <div class="d-flex align-items-center">
-                                <button type="submit" class="btn btn-secondary" id="obter-dados-btn">
-                                    <i class="fas fa-robot me-1"></i> Obter Dados
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary" id="obter-dados-btn">
+                                    <i class="fas fa-wand-magic-sparkles me-2"></i> Extrair Dados
+                                    <div class="spinner-border spinner-border-sm ms-2" id="obter-loading" style="display:none;"></div>
                                 </button>
-                                <div class="spinner ms-2" id="obter-loading"></div>
                             </div>
                         </div>
                     </form>
+                </div>
+            </div>
 
-                    <!-- ─── DADOS EXTRAÍDOS ─── -->
-                    <div id="dados-extraidos" style="display:none;">
-                        <hr>
-                        <h5>Dados Extraídos</h5>
-                        <div class="row">
-                            <div class="col-12 form-group mb-3">
-                                <label>Título</label>
+            <!-- Progresso -->
+            <div id="progresso-wrapper" style="display:none;" class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="fw-600" style="font-size:.9rem;">Processando arquivos...</span>
+                    <span id="progresso" class="text-muted" style="font-size:.85rem;"></span>
+                </div>
+                <div class="progress" style="height:8px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                         id="progresso-bar" role="progressbar" style="width:0%"></div>
+                </div>
+            </div>
+
+            <!-- Dados Extraídos -->
+            <div id="dados-extraidos" style="display:none;">
+
+                <!-- Navegação entre arquivos -->
+                <div id="nav-arquivos" class="d-flex align-items-center justify-content-between mb-3 px-1">
+                    <button id="prev-arquivo" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-chevron-left"></i> Anterior
+                    </button>
+                    <div class="text-center">
+                        <span class="badge bg-primary px-3 py-2" style="font-size:.85rem;">
+                            Arquivo <span id="arquivo-atual">1</span> / <span id="total-arquivos">1</span>
+                        </span>
+                    </div>
+                    <button id="next-arquivo" class="btn btn-outline-secondary btn-sm">
+                        Próximo <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+
+                <div class="edit-card">
+                    <div class="edit-card-header">
+                        <i class="fas fa-file-lines"></i> Dados Extraídos — revise antes de publicar
+                    </div>
+                    <div class="edit-card-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-600">Título</label>
                                 <input type="text" class="form-control" id="titulo_ia">
                             </div>
-                            <div class="col-md-6 form-group mb-3">
-                                <label>Data de Elaboração</label>
-                                <input type="text" class="form-control" id="data_elaboracao">
+                            <div class="col-md-6">
+                                <label class="form-label fw-600">Data de Elaboração</label>
+                                <input type="text" class="form-control" id="data_elaboracao" placeholder="dd/mm/aaaa">
                             </div>
-                            <div class="col-md-6 form-group mb-3">
-                                <label>Vencimento</label>
-                                <input type="text" class="form-control" id="vencimento">
+                            <div class="col-md-6">
+                                <label class="form-label fw-600">Vencimento</label>
+                                <input type="text" class="form-control" id="vencimento" placeholder="dd/mm/aaaa">
                             </div>
-                            <div class="col-md-6 form-group mb-3">
-                                <label>Número SEI</label>
-                                <input type="text" class="form-control" id="numero_sei">
-                            </div>
-                            <div class="col-md-6 form-group mb-3">
-                                <label>Organograma</label>
+                            <div class="col-md-6">
+                                <label class="form-label fw-600">Organograma</label>
                                 <input type="text" class="form-control" id="organograma_ia">
                             </div>
-                            <div class="col-md-6 form-group mb-3">
-                                <label>Abrangência</label>
-                                <input type="text" class="form-control" id="abrangencia_ia">
-                            </div>
-                            <div class="col-md-6 form-group mb-3">
-                                <label>Tipo de Documento</label>
+                            <div class="col-md-6">
+                                <label class="form-label fw-600">Tipo de Documento</label>
                                 <input type="text" class="form-control" id="tipo_documento_ia">
                             </div>
-                            <div class="col-12 form-group mb-3">
-                                <label>Elaboradores</label>
+                            <div class="col-md-6">
+                                <label class="form-label fw-600">Abrangência</label>
+                                <input type="text" class="form-control" id="abrangencia_ia">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-600">Número SEI</label>
+                                <input type="text" class="form-control" id="numero_sei">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-600">Elaboradores</label>
                                 <input type="text" class="form-control" id="elaboradores_ia">
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Navegação entre arquivos -->
-                    <div id="nav-arquivos" style="display:none; text-align:center; margin:10px 0;">
-                        <button id="prev-arquivo" class="btn btn-outline-secondary btn-sm">&#9664;</button>
-                        <span id="arquivo-atual" class="mx-2">1</span> / <span id="total-arquivos" class="ms-1">1</span>
-                        <button id="next-arquivo" class="btn btn-outline-secondary btn-sm ms-2">&#9654;</button>
+                <!-- Arquivos com erro -->
+                <div id="arquivos-com-erro" class="edit-card" style="display:none;">
+                    <div class="edit-card-header" style="background:linear-gradient(135deg,#c0392b,#e74c3c);">
+                        <i class="fas fa-triangle-exclamation"></i> Arquivos com Campos Incompletos
                     </div>
-
-                    <!-- Progresso e publicar todos -->
-                    <div class="text-center mt-3">
-                        <div id="progresso" style="margin-bottom:8px; font-weight:bold;"></div>
-                        <button type="button" class="btn btn-success btn-lg" id="publicar-todos-btn" style="display:none;">
-                            <i class="fas fa-check me-1"></i> Publicar Todos
-                            <div class="spinner ms-2" id="publicar-todos-loading"></div>
-                        </button>
-                    </div>
-
-                    <!-- Arquivos com erro -->
-                    <div id="arquivos-com-erro" style="display:none; margin-top:20px;">
-                        <h5>Arquivos com Erro</h5>
-                        <table class="table table-bordered table-sm">
-                            <thead><tr><th>Arquivo</th><th>Campos com Erro</th><th>Selecionar</th></tr></thead>
-                            <tbody id="tabela-arquivos-erro"></tbody>
-                        </table>
-                        <div class="d-flex justify-content-center gap-3 mt-3">
+                    <div class="edit-card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm admin-table mb-3">
+                                <thead><tr><th>Arquivo</th><th>Campos com Erro</th><th>Selecionar</th></tr></thead>
+                                <tbody id="tabela-arquivos-erro"></tbody>
+                            </table>
+                        </div>
+                        <div class="d-flex gap-3">
                             <button type="button" class="btn btn-warning" id="processar-novamente-btn" style="display:none;">
                                 <i class="fas fa-sync-alt me-1"></i> Reprocessar Selecionados
                                 <div class="spinner-border spinner-border-sm ms-2" id="processar-novamente-loading" style="display:none;"></div>
                             </button>
-                            <button type="button" class="btn btn-info" id="continuar-editar-btn" style="display:none;">
-                                <i class="fas fa-edit me-1"></i> Continuar e Editar Manualmente
+                            <button type="button" class="btn btn-outline-info" id="continuar-editar-btn" style="display:none;">
+                                <i class="fas fa-edit me-1"></i> Editar Manualmente
                             </button>
                         </div>
                     </div>
+                </div>
 
-                </div><!-- card-body -->
-            </div><!-- card -->
+                <div class="text-center mb-4">
+                    <button type="button" class="btn btn-success btn-lg px-5" id="publicar-todos-btn" style="display:none;">
+                        <i class="fas fa-check me-2"></i> Publicar Todos
+                        <div class="spinner-border spinner-border-sm ms-2" id="publicar-todos-loading" style="display:none;"></div>
+                    </button>
+                </div>
+            </div>
         </div>
+
     </div>
 </div>
 {% endblock %}
@@ -232,24 +269,26 @@
     let tentativasReprocessamento = {};
 
     $(document).ready(function () {
-        // Toggle Manual / IA
-        $('#manual-btn').on('click', function () {
-            $('#form-manual').show();
-            $('#form-ia, #dados-extraidos').hide();
-            $('#manual-btn').addClass('active');
-            $('#ia-btn').removeClass('active');
-        });
+        // Toggle initial state
+        $('#form-ia, #dados-extraidos, #progresso-wrapper').hide();
         $('#ia-btn').on('click', function () {
             $('#form-manual').hide();
             $('#form-ia').show();
-            $('#ia-btn').addClass('active');
-            $('#manual-btn').removeClass('active');
+            $('#ia-btn').addClass('active').removeClass('btn-outline-secondary').addClass('btn-primary');
+            $('#manual-btn').removeClass('active').removeClass('btn-primary').addClass('btn-outline-secondary');
+        });
+        $('#manual-btn').on('click', function () {
+            $('#form-ia, #dados-extraidos').hide();
+            $('#form-manual').show();
+            $('#manual-btn').addClass('active').removeClass('btn-outline-secondary').addClass('btn-primary');
+            $('#ia-btn').removeClass('active').removeClass('btn-primary').addClass('btn-outline-secondary');
         });
 
         // Submit IA form
-        $('#form-ia').on('submit', function (e) {
+        $('#form-ia-inner').on('submit', function (e) {
             e.preventDefault();
             $('#obter-loading').show();
+            $('#progresso-wrapper').show();
             arquivosProcessados = [];
             arquivosFalhas = [];
             arquivosProcessadosCount = 0;
@@ -288,7 +327,9 @@
                 success: function (data) {
                     arquivosProcessados[index] = data[0];
                     arquivosProcessadosCount++;
-                    $('#progresso').text(`Processados: ${arquivosProcessadosCount}/${arquivosTotal}`);
+                    const pct = Math.round((arquivosProcessadosCount / arquivosTotal) * 100);
+                    $('#progresso').text(`${arquivosProcessadosCount} de ${arquivosTotal} processados`);
+                    $('#progresso-bar').css('width', pct + '%');
                     if (arquivosProcessadosCount === arquivosTotal) finalizarProcessamento();
                     arquivosEmProcesso--;
                     processarFila(modeloIA);
@@ -305,6 +346,7 @@
 
         function finalizarProcessamento() {
             $('#obter-loading').hide();
+            $('#progresso-bar').removeClass('progress-bar-animated').addClass('bg-success');
             $('#dados-extraidos').show();
             $('#nav-arquivos').show();
             $('#total-arquivos').text(arquivosProcessados.length);
@@ -335,13 +377,13 @@
             }
 
             if (arquivosFalhas.length > 0) {
-                alert(`Alguns arquivos falharam: ${arquivosFalhas.join(', ')}`);
+                MIAC.toast(`Alguns arquivos falharam: ${arquivosFalhas.join(', ')}`, 'danger', 6000);
             }
         }
 
         $('#processar-novamente-btn').on('click', function () {
             const modeloIA = $('#modelo-ia').val();
-            if (!modeloIA) { alert('Selecione um modelo de IA antes de reprocessar.'); return; }
+            if (!modeloIA) { MIAC.toast('Selecione um modelo de IA antes de reprocessar.', 'warning'); return; }
 
             const arquivosSelecionados = [];
             $('.arquivo-erro-checkbox:checked').each(function () {
@@ -349,7 +391,7 @@
                 if (tentativasReprocessamento[idx] < 2) {
                     arquivosSelecionados.push(idx);
                 } else {
-                    alert(`Arquivo "${(arquivosProcessados[idx] && arquivosProcessados[idx].gpt_response.titulo) || idx}" atingiu o limite de reprocessamento.`);
+                    MIAC.toast(`Arquivo "${(arquivosProcessados[idx] && arquivosProcessados[idx].gpt_response.titulo) || idx}" atingiu o limite de reprocessamento.`, 'warning', 5000);
                 }
             });
 
@@ -487,13 +529,13 @@
                 processData: false,
                 contentType: false,
                 success: function () {
-                    alert('Todos os documentos foram publicados com sucesso!');
-                    window.location.href = "{{ url_for('documents.publicados2') }}";
+                    MIAC.toast('Todos os documentos foram publicados com sucesso!', 'success');
+                    setTimeout(() => { window.location.href = "{{ url_for('documents.publicados2') }}"; }, 1200);
                 },
                 error: function (xhr) {
                     let msg = 'Falha na publicação';
                     try { msg = JSON.parse(xhr.responseText).error || msg; } catch (e) {}
-                    alert('Erro: ' + msg);
+                    MIAC.toast('Erro: ' + msg, 'danger', 6000);
                 },
                 complete: function () {
                     $('#publicar-todos-loading').hide();
@@ -505,12 +547,12 @@
     function publicarManual(event) {
         event.preventDefault();
         const files = $('#pdf_file_manual')[0].files;
-        if (files.length === 0) { alert('Selecione pelo menos um arquivo'); return; }
+        if (files.length === 0) { MIAC.toast('Selecione pelo menos um arquivo', 'warning'); return; }
 
         const dataElaboracao = new Date($('#data_elaboracao_manual').val());
         const dataVencimento = new Date($('#vencimento_manual').val());
         if (dataVencimento <= dataElaboracao) {
-            alert('A data de vencimento deve ser posterior à data de elaboração');
+            MIAC.toast('A data de vencimento deve ser posterior à data de elaboração', 'warning');
             return;
         }
 
@@ -535,13 +577,13 @@
             processData: false,
             contentType: false,
             success: function () {
-                alert(files.length + ' documento(s) publicado(s) com sucesso!');
-                window.location.href = "{{ url_for('documents.publicados2') }}";
+                MIAC.toast(files.length + ' documento(s) publicado(s) com sucesso!', 'success');
+                setTimeout(() => { window.location.href = "{{ url_for('documents.publicados2') }}"; }, 1200);
             },
             error: function (xhr) {
                 let msg = 'Falha na publicação';
                 try { msg = JSON.parse(xhr.responseText).error || msg; } catch (e) {}
-                alert('Erro: ' + msg);
+                MIAC.toast('Erro: ' + msg, 'danger', 6000);
             },
             complete: function () { $('#publicar-loading').hide(); }
         });

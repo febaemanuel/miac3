@@ -850,6 +850,10 @@ $('#abrir-tutorial').on('click', function () {
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    // URLs geradas pelo Jinja para uso no JS
+    const DOC_DETALHES_BASE = "{{ url_for('documents.documento2_detalhes', doc_id=0) }}";
+    const DOC_PDF_BASE = "{{ url_for('static', filename='uploads2/') }}";
+
  $(document).ready(function () {
     let currentAbrangencia = 'HUWC'; // Define um valor padrão
 // Evento para o checkbox "Apenas documentos do complexo"
@@ -912,7 +916,7 @@ function atualizarResultados() {
                 sessionStorage.setItem("marcadores", $('#organograma-grid').html());
             },
             error: function () {
-                alert('Erro ao buscar documentos. Tente novamente.');
+                MIAC.toast('Erro ao buscar documentos. Tente novamente.', 'danger');
             }
         });
 
@@ -1006,7 +1010,7 @@ function searchDocuments(page = 1) {
             initializePagination();
         },
         error: function () {
-            alert('Erro ao buscar documentos. Tente novamente.');
+            MIAC.toast('Erro ao buscar documentos. Tente novamente.', 'danger');
         }
     });
 }
@@ -1016,8 +1020,38 @@ function searchDocuments(page = 1) {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(function() { searchDocuments(); }, 350);
     }
-    $('#nome').on('input', debounceSearch);
-    $('#organograma, #tipo_documento').on('change', function () { searchDocuments(); });
+    // Persistir filtros no localStorage
+    const FILTRO_KEY = 'miac_filtros_publicados';
+    function salvarFiltros() {
+        localStorage.setItem(FILTRO_KEY, JSON.stringify({
+            nome: $('#nome').val(),
+            organograma: $('#organograma').val(),
+            tipo_documento: $('#tipo_documento').val(),
+            search_organograma: $('#search-organograma').val(),
+            apenas_complexo: $('#apenas-complexo').is(':checked')
+        }));
+    }
+    function restaurarFiltros() {
+        try {
+            const f = JSON.parse(localStorage.getItem(FILTRO_KEY));
+            if (!f) return;
+            if (f.nome) { $('#nome').val(f.nome); }
+            if (f.organograma) { $('#organograma').val(f.organograma); }
+            if (f.tipo_documento) { $('#tipo_documento').val(f.tipo_documento); }
+            if (f.search_organograma) { $('#search-organograma').val(f.search_organograma); }
+            if (f.apenas_complexo) { $('#apenas-complexo').prop('checked', true); }
+            // Só dispara busca se houver algum filtro ativo
+            if (f.nome || f.organograma || f.tipo_documento || f.search_organograma || f.apenas_complexo) {
+                searchDocuments();
+            }
+        } catch(e) {}
+    }
+    restaurarFiltros();
+
+    $('#nome').on('input', function() { salvarFiltros(); debounceSearch(); });
+    $('#organograma, #tipo_documento').on('change', function () { salvarFiltros(); searchDocuments(); });
+    $('#search-organograma').on('input', function() { salvarFiltros(); });
+    $('#apenas-complexo').on('change', function() { salvarFiltros(); });
 
 $('#limpar-filtros').on('click', function () {
     $('#nome').val('');
@@ -1025,6 +1059,7 @@ $('#limpar-filtros').on('click', function () {
     $('#tipo_documento').val('');
     $('#search-organograma').val('');
     $('#apenas-complexo').prop('checked', false);
+    localStorage.removeItem(FILTRO_KEY);
     
     // Recupera os marcadores salvos
     const marcadoresSalvos = sessionStorage.getItem("marcadores");
@@ -1241,8 +1276,8 @@ $('#ver-favoritos').on('click', function () {
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     <div>
                         <strong>${doc.nome}</strong><br>
-                        <a href="/miac/documento2/${doc.id}">Detalhes</a> | 
-                        <a href="/miac/${doc.caminho || ''}" target="_blank">Visualizar PDF</a>
+                        <a href="${DOC_DETALHES_BASE.replace('/0', '/' + doc.id)}">Detalhes</a> |
+                        <a href="${DOC_PDF_BASE}${(doc.caminho || '').split('/').pop()}" target="_blank">Visualizar PDF</a>
                     </div>
                     <button class="btn btn-sm btn-outline-danger" data-remover-fav="${doc.id}">
                         <i class="fas fa-trash-alt"></i>

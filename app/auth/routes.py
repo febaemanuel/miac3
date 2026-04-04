@@ -15,8 +15,11 @@ def login():
         return redirect(url_for("documents.index"))
 
     if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+
+        if not username or not password:
+            return render_template("login.html", error="Preencha usuário e senha")
 
         users = current_app.config["USERS"]
         if username in users and users[username]["senha"] == password:
