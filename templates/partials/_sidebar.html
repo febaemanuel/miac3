@@ -1,0 +1,15 @@
+<div class="sidebar">
+    {% if org_config.logo_path %}
+    <img src="{{ url_for('static', filename=org_config.logo_path) }}" alt="{{ org_config.nome_empresa }}" style="max-width:140px;max-height:80px;margin-bottom:15px;">
+    {% endif %}
+    <h2>{{ org_config.sigla_app }}</h2>
+    <ul>
+        <li><a href="{{ url_for('index') }}"><i class="fas fa-home"></i> Página Inicial</a></li>
+        <li><a href="{{ url_for('publicados2') }}"><i class="fas fa-file-alt"></i> Documentos</a></li>
+        <li><a href="{{ url_for('estatisticas') }}"><i class="fas fa-chart-line"></i> Relatórios</a></li>
+        {% if session.get('nivel_acesso') == 'elevado' %}
+        <li><a href="{{ url_for('admin_panel') }}"><i class="fas fa-cogs"></i> Configurações</a></li>
+        {% endif %}
+        <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
+    </ul>
+</div>
