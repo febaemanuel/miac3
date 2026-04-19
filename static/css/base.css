@@ -4,8 +4,8 @@
 
 :root {
     --miac-primary: #007bff;
-    --miac-sidebar: #34495e;
-    --miac-primary-dark: #34495e;
+    --miac-sidebar: #2c3e50;
+    --miac-primary-dark: #2c3e50;
     --miac-primary-hover: #2980b9;
     --miac-accent: #3498db;
     --miac-muted: #6c757d;
@@ -15,7 +15,9 @@
     --miac-border: #dee2e6;
     --miac-text: #333;
     --miac-text-soft: #555;
-    --miac-danger: #b22222;
+    --miac-danger: #dc3545;
+    --miac-success: #28a745;
+    --miac-sidebar-hover: #34495e;
 }
 
 body {
@@ -41,46 +43,52 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+    z-index: 100;
 }
 
 .sidebar h2 {
-    font-size: 1.75rem;
-    margin-bottom: 40px;
+    font-size: 1.6rem;
+    margin-bottom: 30px;
     color: #ecf0f1;
     font-weight: 500;
+    text-align: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(236, 240, 241, 0.2);
+    width: 100%;
 }
 
 .sidebar ul {
     list-style: none;
     padding: 0;
     width: 100%;
+    margin: 0;
 }
 
 .sidebar ul li {
-    margin: 15px 0;
-    padding: 12px 18px;
-    cursor: pointer;
-    border-radius: 8px;
-    transition: background 0.3s, transform 0.2s;
-}
-
-.sidebar ul li:hover {
-    background-color: var(--miac-primary-dark);
-    transform: translateX(5px);
+    margin: 8px 0;
 }
 
 .sidebar ul li a {
     text-decoration: none;
-    color: white;
+    color: #ecf0f1;
     font-size: 1rem;
     display: flex;
     align-items: center;
+    padding: 10px 15px;
+    border-radius: 6px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.sidebar ul li a:hover {
+    background-color: var(--miac-sidebar-hover);
+    transform: translateX(4px);
 }
 
 .sidebar ul li a i {
-    margin-right: 12px;
-    font-size: 1.2rem;
+    margin-right: 10px;
+    width: 18px;
+    text-align: center;
 }
 
 /* ============ Main content ============ */
@@ -91,6 +99,7 @@ body {
     background: var(--miac-surface);
     color: var(--miac-text);
     position: relative;
+    min-height: 100vh;
 }
 
 /* ============ Botões-card ============ */
@@ -120,7 +129,8 @@ body {
 
 .btn-card:hover {
     background-color: var(--miac-primary-hover);
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
 }
 
 .btn-card-secondary {
@@ -141,11 +151,164 @@ body {
 /* ============ Rodapé ============ */
 footer {
     margin-top: auto;
-    padding: 20px;
+    padding: 18px 20px;
     background-color: var(--miac-sidebar);
-    color: white;
+    color: #ecf0f1;
     text-align: center;
+    font-size: 0.85rem;
+}
+
+/* ============ Animações comuns ============ */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ============ Status de documentos ============ */
+.documento-atualizado {
+    border-left: 5px solid var(--miac-success);
+    background-color: #e8f5e9;
+}
+
+.documento-desatualizado {
+    border-left: 5px solid var(--miac-danger);
+    background-color: #f8d7da;
+}
+
+.status-indicator {
     font-size: 0.9rem;
+    font-weight: 500;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.status-indicator .fa-check-circle { color: var(--miac-success); }
+.status-indicator .fa-times-circle { color: var(--miac-danger); }
+
+/* ============ Badge de documento complexo ============ */
+.badge-documento-complexo {
+    background-color: #ffc107;
+    color: #000;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 5px;
+    font-size: 0.75rem;
+    display: inline-block;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+/* ============ Lista de documentos ============ */
+.document-list {
+    list-style: none;
+    padding-left: 0;
+}
+
+.document-list li {
+    margin-bottom: 15px;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: var(--miac-light);
+    transition: background-color 0.25s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.document-list li:hover {
+    background-color: #e9ecef;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+.document-list h5 {
+    font-size: 1.05rem;
+    color: var(--miac-primary-dark);
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.document-list p {
+    color: var(--miac-muted);
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+
+.document-btns .btn {
+    margin-right: 8px;
+    font-size: 0.9rem;
+    padding: 7px 12px;
+    border-radius: 6px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.document-btns .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ============ Accordion compartilhado ============ */
+.accordion-button {
+    font-size: 1rem;
+    color: #4a4a4a;
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 12px 20px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: var(--miac-light);
+    color: var(--miac-primary-dark);
+    box-shadow: none;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.accordion-button:focus {
+    box-shadow: none;
+}
+
+.accordion-item {
+    border: none;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.accordion-body {
+    padding: 15px;
+}
+
+/* ============ Contêiner de botões de ação ============ */
+.btn-container {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
 /* ============ Responsivo ============ */
@@ -154,7 +317,7 @@ footer {
         width: 100%;
         height: auto;
         position: relative;
-        padding: 10px;
+        padding: 12px;
     }
 
     .main-content {

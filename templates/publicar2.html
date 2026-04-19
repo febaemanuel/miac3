@@ -1,122 +1,92 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Publicar 2</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-	<style>
+    {% include "partials/_head.html" %}
+    <title>Publicar Documento · MIAC</title>
+    <style>
         body {
-            font-family: 'Roboto', sans-serif;
-            margin: 0;
-            display: flex;
-            min-height: 100vh;
             background: linear-gradient(135deg, #a1c4fd, #c2e9fb);
-            color: #333;
-        }
-
-        .sidebar {
-            width: 250px;
-            background-color: #34495e;
-            color: white;
-            height: 100vh;
-            padding: 20px 10px;
-            position: fixed;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            box-shadow: 3px 0 10px rgba(0, 0, 0, 0.2);
-            animation: slideIn 0.5s ease-in-out;
-        }
-
-        .sidebar h2 {
-            font-size: 1.5rem;
-            margin-bottom: 30px;
-            text-transform: uppercase;
-            color: #ecf0f1;
-        }
-
-        .sidebar ul {
-            list-style: none;
-            padding: 0;
-            width: 100%;
-        }
-
-        .sidebar ul li {
-            margin: 10px 0;
-            padding: 10px 15px;
-            cursor: pointer;
-            border-radius: 10px;
-            transition: background 0.3s, transform 0.2s;
-        }
-
-        .sidebar ul li:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            transform: translateX(5px);
-        }
-
-        .sidebar ul li a {
-            text-decoration: none;
-            color: white;
-            display: flex;
-            align-items: center;
-            font-size: 1rem;
-        }
-
-        .sidebar ul li a i {
-            margin-right: 10px;
         }
 
         .main-content {
-            margin-left: 250px;
-            padding: 40px;
-            flex-grow: 1;
             display: flex;
             justify-content: center;
-            align-items: center;
-            color: #333;
+            align-items: flex-start;
+            padding: 40px;
         }
 
-        .container {
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        .pub-container {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
             width: 100%;
-            max-width: 800px;
+            max-width: 820px;
             animation: fadeIn 0.5s ease-in-out;
         }
 
         h1 {
-            font-size: 2rem;
-            font-weight: bold;
+            font-size: 1.8rem;
+            font-weight: 700;
             text-align: center;
-            margin-bottom: 20px;
-            color: #007bff;
+            margin-bottom: 22px;
+            color: var(--miac-primary);
         }
 
-        label {
-            font-weight: bold;
+        .form-section {
+            margin-bottom: 22px;
         }
 
-        .btn {
+        .form-section h3 {
+            font-size: 1.1rem;
+            margin-bottom: 14px;
+            color: var(--miac-text-soft);
+            border-bottom: 2px solid var(--miac-primary);
+            padding-bottom: 5px;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        label { font-weight: 600; }
+
+        .btn-pub {
             border-radius: 30px;
-            background-color: #007bff;
+            background-color: var(--miac-primary);
             color: white;
             transition: all 0.3s ease-in-out;
-            padding: 10px 20px;
+            padding: 10px 22px;
             font-size: 1rem;
+            border: none;
+            cursor: pointer;
         }
 
-        .btn:hover {
+        .btn-pub:hover {
             background-color: #0056b3;
-            transform: translateY(-3px);
+            transform: translateY(-2px);
+        }
+
+        .toggle-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+
+        .toggle-buttons button {
+            border-radius: 30px;
+            padding: 8px 20px;
+        }
+
+        .toggle-buttons button.active {
+            background-color: #0056b3;
+            color: white;
         }
 
         .spinner {
             border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid #007bff;
+            border-top: 4px solid var(--miac-primary);
             border-radius: 50%;
             width: 20px;
             height: 20px;
@@ -125,272 +95,148 @@
             margin-left: 10px;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(-100%); }
-            to { transform: translateX(0); }
-        }
-
-        #loading {
-            display: none;
-            margin-top: 20px;
-            text-align: center;
-        }
+        #loading { display: none; margin-top: 20px; text-align: center; }
 
         #success-message {
             display: none;
             background-color: #28a745;
             color: white;
-            padding: 30px;
+            padding: 28px;
             border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             margin-top: 20px;
             text-align: center;
-            font-size: 1.25rem;
+            font-size: 1.15rem;
             font-weight: bold;
         }
 
-        #success-message i {
-            font-size: 2rem;
-            margin-right: 15px;
-        }
-
-        #success-message a {
-            color: #ffffff;
-            text-decoration: underline;
-        }
-
-        #success-message button {
-            margin-top: 20px;
-        }
-
-        .form-section {
-            margin-bottom: 20px;
-        }
-
-        .form-section h3 {
-            font-size: 1.25rem;
-            margin-bottom: 15px;
-            color: #555;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 5px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        #publicar-loading {
-            display: none;
-            margin-left: 10px;
-        }
-
-        .form-section text-center {
-            text-align: center;
-        }
-
-        .progress {
-            height: 10px;
-            margin-top: 20px;
-        }
-
-        .progress-bar {
-            background-color: #007bff;
-        }
-
-        .toggle-buttons {
+        .d-flex.gap-3 {
             display: flex;
+            flex-wrap: wrap;
             justify-content: center;
-            margin-bottom: 20px;
+            gap: 14px;
         }
 
-        .toggle-buttons button {
-            margin: 0 10px;
+        .btn-lg {
+            font-size: 1.05rem;
+            padding: 11px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease-in-out;
         }
 
-        .toggle-buttons button.active {
-            background-color: #0056b3;
-        }
-		/* Estilização dos botões */
-.btn-lg {
-    font-size: 1.1rem;
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-weight: bold;
-    transition: all 0.3s ease-in-out;
-}
-
-.btn-lg:hover {
-    transform: translateY(-2px);
-}
-
-/* Ícones espaçados nos botões */
-.btn i {
-    margin-right: 8px;
-}
-
-/* Estilização dos botões para ficarem alinhados */
-.d-flex.gap-3 {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 15px;
-}
-
+        .btn-lg:hover { transform: translateY(-2px); }
     </style>
-    <link href="{{ url_for('static', filename='css/base.css') }}" rel="stylesheet">
 </head>
 <body>
-    <div class="sidebar">
-        <h2>MIAC</h2>
-        <ul>
-            <li><a href="#"><i class="fas fa-home"></i> Página Inicial</a></li>
-            <li><a href="#"><i class="fas fa-file-alt"></i> Arquivos</a></li>
-            <li><a href="#"><i class="fas fa-cogs"></i> Configurações</a></li>
-            <li><a href="#"><i class="fas fa-question-circle"></i> Ajuda</a></li>
-        </ul>
-    </div>
+    {% include "partials/_sidebar.html" %}
 
     <div class="main-content">
-        <div class="container">
-            <h1>PUBLICAR 2</h1>
+        <div class="pub-container">
+            <h1>PUBLICAR DOCUMENTO</h1>
 
-            <!-- Botões de alternância entre Manual e IA -->
             <div class="toggle-buttons">
-                <button id="manual-btn" class="btn active">Preenchimento Manual</button>
-                <button id="ia-btn" class="btn">Extrair Dados via IA</button>
+                <button id="manual-btn" class="btn btn-primary active">Preenchimento Manual</button>
+                <button id="ia-btn" class="btn btn-outline-primary">Extrair Dados via IA</button>
             </div>
 
-       <!-- Formulário Manual (substitua o existente por este) -->
-<form id="form-manual" onsubmit="publicarManual(event)">
-    <div class="form-section">
-        <h3>Envio de Arquivo</h3>
-        <div class="form-group">
-    <label for="pdf_file_manual">Arquivo PDF ou DOC</label>
-    <input type="file" class="form-control" id="pdf_file_manual" name="pdf_file" multiple 
-           accept=".pdf,.doc,.docx" required>
-    <small class="text-muted">Selecione um ou mais arquivos (PDF ou Word)</small>
-</div>
-    </div>
+            <form id="form-manual" onsubmit="publicarManual(event)">
+                <div class="form-section">
+                    <h3>Envio de Arquivo</h3>
+                    <div class="form-group">
+                        <label for="pdf_file_manual">Arquivo PDF ou DOC</label>
+                        <input type="file" class="form-control" id="pdf_file_manual" name="pdf_file" multiple
+                               accept=".pdf,.doc,.docx" required>
+                        <small class="text-muted">Selecione um ou mais arquivos (PDF ou Word)</small>
+                    </div>
+                </div>
 
-    <div class="form-section">
-        <h3>Dados do Documento</h3>
-        
-        <!-- Título -->
-        <div class="form-group">
-            <label for="titulo_manual">Título*</label>
-            <input type="text" class="form-control" id="titulo_manual" name="titulo[]" required>
-        </div>
+                <div class="form-section">
+                    <h3>Dados do Documento</h3>
+                    <div class="form-group">
+                        <label for="titulo_manual">Título*</label>
+                        <input type="text" class="form-control" id="titulo_manual" name="titulo[]" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="organograma_manual">Organograma*</label>
+                        <select class="form-control" id="organograma_manual" name="organograma[]" required>
+                            <option value="">Selecione...</option>
+                            {% for org in organogramas %}
+                                <option value="{{ org }}">{{ org }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tipo_documento_manual">Tipo de Documento*</label>
+                        <select class="form-control" id="tipo_documento_manual" name="tipo_documento[]" required>
+                            <option value="">Selecione...</option>
+                            {% for tipo in tipos_documento %}
+                                <option value="{{ tipo }}">{{ tipo }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="abrangencia_manual">Abrangência*</label>
+                        <select class="form-control" id="abrangencia_manual" name="abrangencia[]" required>
+                            <option value="">Selecione...</option>
+                            {% for abrang in abrangencias %}
+                                <option value="{{ abrang }}">{{ abrang }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="data_elaboracao_manual">Data de Elaboração*</label>
+                        <input type="date" class="form-control" id="data_elaboracao_manual" name="data_elaboracao[]" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="vencimento_manual">Vencimento*</label>
+                        <input type="date" class="form-control" id="vencimento_manual" name="vencimento[]" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="numero_sei_manual">Número SEI</label>
+                        <input type="text" class="form-control" id="numero_sei_manual" name="numero_sei[]" placeholder="Opcional">
+                    </div>
+                    <div class="form-group">
+                        <label for="elaboradores_manual">Elaboradores</label>
+                        <input type="text" class="form-control" id="elaboradores_manual" name="elaboradores[]" placeholder="Separe por vírgula">
+                    </div>
+                </div>
 
-        <!-- Organograma -->
-        <div class="form-group">
-            <label for="organograma_manual">Organograma*</label>
-            <select class="form-control" id="organograma_manual" name="organograma[]" required>
-                <option value="">Selecione...</option>
-                {% for org in organogramas %}
-                    <option value="{{ org }}">{{ org }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <!-- Tipo Documento -->
-        <div class="form-group">
-            <label for="tipo_documento_manual">Tipo de Documento*</label>
-            <select class="form-control" id="tipo_documento_manual" name="tipo_documento[]" required>
-                <option value="">Selecione...</option>
-                {% for tipo in tipos_documento %}
-                    <option value="{{ tipo }}">{{ tipo }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <!-- Abrangência -->
-        <div class="form-group">
-            <label for="abrangencia_manual">Abrangência*</label>
-            <select class="form-control" id="abrangencia_manual" name="abrangencia[]" required>
-                <option value="">Selecione...</option>
-                {% for abrang in abrangencias %}
-                    <option value="{{ abrang }}">{{ abrang }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <!-- Data Elaboração -->
-        <div class="form-group">
-            <label for="data_elaboracao_manual">Data de Elaboração*</label>
-            <input type="date" class="form-control" id="data_elaboracao_manual" name="data_elaboracao[]" required>
-        </div>
-
-        <!-- Vencimento -->
-        <div class="form-group">
-            <label for="vencimento_manual">Vencimento*</label>
-            <input type="date" class="form-control" id="vencimento_manual" name="vencimento[]" required>
-        </div>
-
-        <!-- Número SEI -->
-        <div class="form-group">
-            <label for="numero_sei_manual">Número SEI</label>
-            <input type="text" class="form-control" id="numero_sei_manual" name="numero_sei[]" placeholder="Opcional">
-        </div>
-
-        <!-- Elaboradores -->
-        <div class="form-group">
-            <label for="elaboradores_manual">Elaboradores</label>
-            <input type="text" class="form-control" id="elaboradores_manual" name="elaboradores[]" placeholder="Separe por vírgula">
-        </div>
-    </div>
-
-    <div class="form-section text-center mt-4">
-        <button type="submit" class="btn btn-primary btn-lg">
-            <i class="fas fa-save"></i> Publicar Documento(s)
-            <div class="spinner-border spinner-border-sm ms-2" id="publicar-loading" style="display: none;"></div>
-        </button>
-    </div>
-</form>
+                <div class="form-section text-center mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save"></i> Publicar Documento(s)
+                        <div class="spinner-border spinner-border-sm ms-2" id="publicar-loading" style="display:none;"></div>
+                    </button>
+                </div>
+            </form>
 
             <!-- Formulário de Extração via IA -->
-            <form id="form-ia" enctype="multipart/form-data" style="display: none;">
+            <form id="form-ia" enctype="multipart/form-data" style="display:none;">
                 <div class="form-section">
                     <h3>Envio de Arquivo</h3>
                     <div class="form-group">
                         <label for="pdf_file_ia">Arquivos PDF</label>
                         <input type="file" class="form-control" id="pdf_file_ia" name="pdf_file" multiple required>
                     </div>
-					<div class="form-group">
-    <label for="modelo-ia">Escolha o Modelo de IA</label>
-    <select class="form-control" id="modelo-ia" name="modelo_ia">
-        <option value="deepseek">DeepSeek</option>
-        <option value="chatgpt">ChatGPT</option>
-    </select>
-</div>
+                    <div class="form-group">
+                        <label for="modelo-ia">Escolha o Modelo de IA</label>
+                        <select class="form-control" id="modelo-ia" name="modelo_ia">
+                            <option value="deepseek">DeepSeek</option>
+                            <option value="chatgpt">ChatGPT</option>
+                        </select>
+                    </div>
                     <div class="d-flex align-items-center">
-                        <button type="submit" class="btn" id="obter-dados-btn">Obter Dados</button>
+                        <button type="submit" class="btn-pub" id="obter-dados-btn">Obter Dados</button>
                         <div class="spinner" id="obter-loading"></div>
                     </div>
                 </div>
-                
-                <!-- Selecao manual da Abrangência -->
-               
-
-             
             </form>
 
             <!-- Campos para exibir dados extraídos -->
             <div id="dados-extraidos" style="display:none;">
-               <div class="form-group">
-    <label for="titulo">Título</label>
-    <input type="text" class="form-control" id="titulo_ia" name="titulo[]">
-</div>
-
+                <div class="form-group">
+                    <label for="titulo_ia">Título</label>
+                    <input type="text" class="form-control" id="titulo_ia" name="titulo[]">
+                </div>
                 <div class="form-group">
                     <label for="data_elaboracao">Data de Elaboração</label>
                     <input type="text" class="form-control" id="data_elaboracao">
@@ -407,15 +253,14 @@
                     <label for="organograma_ia">Organograma</label>
                     <input type="text" class="form-control" id="organograma_ia">
                 </div>
-				<div class="form-group">
-    <label for="elaboradores_ia">Elaboradores</label>
-    <input type="text" class="form-control" id="elaboradores_ia">
-</div>
-				<div class="form-group">
-    <label for="abrangencia_ia">Abrangência</label>
-    <input type="text" class="form-control" id="abrangencia_ia">
-</div>
-		
+                <div class="form-group">
+                    <label for="elaboradores_ia">Elaboradores</label>
+                    <input type="text" class="form-control" id="elaboradores_ia">
+                </div>
+                <div class="form-group">
+                    <label for="abrangencia_ia">Abrangência</label>
+                    <input type="text" class="form-control" id="abrangencia_ia">
+                </div>
                 <div class="form-group">
                     <label for="tipo_documento_ia">Tipo de Documento</label>
                     <input type="text" class="form-control" id="tipo_documento_ia">
@@ -423,7 +268,7 @@
             </div>
 
             <!-- Navegação entre arquivos -->
-            <div id="nav-arquivos" style="display: none; text-align: center; margin-bottom: 10px;">
+            <div id="nav-arquivos" style="display:none; text-align:center; margin-bottom:10px;">
                 <button id="prev-arquivo" class="btn btn-secondary">&#9664;</button>
                 <span id="arquivo-atual">1</span> / <span id="total-arquivos">1</span>
                 <button id="next-arquivo" class="btn btn-secondary">&#9654;</button>
@@ -431,49 +276,42 @@
 
             <!-- Botão para publicar todos os arquivos extraídos -->
             <div class="form-section text-center mt-4">
-			<div id="progresso" style="margin-top: 10px; font-weight: bold;"></div>
-                <button type="button" class="btn btn-success" id="publicar-todos-btn" style="display: none;">
+                <div id="progresso" style="margin-top:10px; font-weight:bold;"></div>
+                <button type="button" class="btn btn-success btn-lg" id="publicar-todos-btn" style="display:none;">
                     Publicar Todos
                     <div class="spinner" id="publicar-todos-loading"></div>
                 </button>
             </div>
-			<!-- Botões de ação para arquivos com erro -->
-<div id="arquivos-com-erro" style="display: none; margin-top: 20px;">
-    <h3>Arquivos com Erro:</h3>
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Arquivo</th>
-                <th>Campos com Erro</th>
-                <th>Ação</th>
-            </tr>
-        </thead>
-        <tbody id="tabela-arquivos-erro">
-            <!-- Linhas preenchidas dinamicamente -->
-        </tbody>
-    </table>
 
-    <!-- Container para botões com alinhamento -->
-    <div class="d-flex justify-content-center gap-3 mt-3">
-        <button type="button" class="btn btn-warning btn-lg" id="processar-novamente-btn" style="display: none;">
-            <i class="fas fa-sync-alt"></i> Reprocessar Selecionados
-            <div class="spinner-border spinner-border-sm ms-2" id="processar-novamente-loading" style="display: none;"></div>
-        </button>
-
-        <button type="button" class="btn btn-info btn-lg" id="continuar-editar-btn" style="display: none;">
-            <i class="fas fa-edit"></i> Continuar e Editar Manualmente
-        </button>
+            <!-- Arquivos com erro -->
+            <div id="arquivos-com-erro" style="display:none; margin-top:20px;">
+                <h3>Arquivos com Erro:</h3>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr><th>Arquivo</th><th>Campos com Erro</th><th>Ação</th></tr>
+                    </thead>
+                    <tbody id="tabela-arquivos-erro"></tbody>
+                </table>
+                <div class="d-flex justify-content-center gap-3 mt-3">
+                    <button type="button" class="btn btn-warning btn-lg" id="processar-novamente-btn" style="display:none;">
+                        <i class="fas fa-sync-alt"></i> Reprocessar Selecionados
+                        <div class="spinner-border spinner-border-sm ms-2" id="processar-novamente-loading" style="display:none;"></div>
+                    </button>
+                    <button type="button" class="btn btn-info btn-lg" id="continuar-editar-btn" style="display:none;">
+                        <i class="fas fa-edit"></i> Continuar e Editar Manualmente
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
 
-
-   <script src="/miac/static/js/jquery-3.6.0.min.js"></script>
-<script>
-    window.MIAC_URLS = {
-        obter_dados: "{{ url_for('obter_dados') }}",
-        publicar2: "{{ url_for('publicar2') }}"
-    };
-</script>
-<script src="{{ url_for('static', filename='js/publicar2.js') }}"></script>
+    <script src="/miac/static/js/jquery-3.6.0.min.js"></script>
+    <script>
+        window.MIAC_URLS = {
+            obter_dados: "{{ url_for('obter_dados') }}",
+            publicar2: "{{ url_for('publicar2') }}"
+        };
+    </script>
+    <script src="{{ url_for('static', filename='js/publicar2.js') }}"></script>
 </body>
 </html>
