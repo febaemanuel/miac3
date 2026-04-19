@@ -65,3 +65,27 @@ class Organograma(db.Model):
 class TipoDocumento(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(100), unique=True)
+
+
+class Abrangencia(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(50), unique=True, nullable=False)
+    ativo = db.Column(db.Boolean, default=True, nullable=False)
+
+
+class AbrangenciaSinonimo(db.Model):
+    __tablename__ = "abrangencia_sinonimo"
+    id = db.Column(db.Integer, primary_key=True)
+    de = db.Column(db.String(50), nullable=False, index=True)
+    para_id = db.Column(
+        db.Integer, db.ForeignKey("abrangencia.id"), nullable=False
+    )
+    para = db.relationship("Abrangencia")
+
+
+class Usuario(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    senha_hash = db.Column(db.String(255), nullable=False)
+    nivel_acesso = db.Column(db.String(20), nullable=False, default="padrao")
+    ativo = db.Column(db.Boolean, default=True, nullable=False)

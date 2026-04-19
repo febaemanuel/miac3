@@ -11,34 +11,44 @@ from app.services.ia_service import (
     send_to_gpt_with_retry,
 )
 from app.services.pdf_service import read_last_page
-
-
-PROMPT_EXTRACAO = (
-    "Por favor, extraia as seguintes informações do texto de forma literal. "
-    "Retorne apenas o valor encontrado ou 'Não localizado' se não houver correspondência. "
-    "Não use alternativas aproximadas.\n"
-    "Data de Elaboração (tem que ser no formato dd/mm/aaaa se encontrar dd.mm.aaaa "
-    "mande no formato que eu disse:\n"
-    "Vencimento (também pode ser identificado como 'Revisão' mande nesse formato "
-    "dd/mm/aaaa sempre mesmo se tiver no formato dd.mm.aaaa, pq as vezes voce pode "
-    "achar dd.mm.aaaa, se não achar, a data de vencimento é 2 a mais do que a de "
-    "elaboração aaaa+2):\n"
-    "Organograma (se o formato for EX:'POP.UAP-CHUFC.006', 'UAP' é o Organograma. "
-    "Se o formato for EX 'PRO.MED-OBS-MEAC.013', 'MED-OBS' é o Organograma. "
-    "Caso o código do documento seja EX'FOR.DIVGP-CHUFC.005', 'DIVGP' é o Organograma. "
-    "Os outros códigos serão parecidos com esse, entendeu? Serão nesse formato, códigos "
-    "genéricos):\n"
-    "Tipo de Documento (RETORNE EM CAIXA ALTA, se aparer FOR é FORMULÁRIO, SE APARECER "
-    "POP É PROCEDIMENTO OPERACIONAL PADRÃO, MANDE COMPLETO):\n"
-    "Abrangência (se a sigla final for 'CHUFC' ou 'CH', retorne 'HUWC'. "
-    "Se for 'MEAC' ou 'HUWC', mantenha a sigla encontrada, ou seja, no final só pode "
-    "ser MEAC ou HUWC):\n"
-    "Código do Documento (ex.: 'FOR.DIVGP-CHUFC.005'):\n"
-    "Título do Documento:\n"
-    "Número SEI (é tipo esse o SEI nº 23533.003368/2023-10):\n"
-    "Elaboradores (separe por vírgula caso tenha mais de um):\n"
-    "Texto:\n"
+from app.services.vocabulario import (
+    listar_abrangencias,
+    listar_organogramas,
+    listar_tipos_documento,
+    resolver_abrangencia,
+    resolver_organograma,
+    resolver_tipo_documento,
 )
+
+
+def _build_prompt(pdf_text):
+    abrangencias = listar_abrangencias()
+    organogramas = listar_organogramas()
+    tipos = listar_tipos_documento()
+
+    def _ou_livre(lista):
+        return (
+            f"OBRIGATORIAMENTE um destes: {', '.join(lista)}"
+            if lista
+            else "valor livre"
+        )
+
+    return (
+        "Extraia as seguintes informações do texto de forma literal. "
+        "Retorne apenas o valor encontrado ou 'Não localizado' se não houver correspondência. "
+        "Não use alternativas aproximadas.\n"
+        "Data de Elaboração (formato dd/mm/aaaa):\n"
+        "Vencimento (também pode ser 'Revisão'; formato dd/mm/aaaa; "
+        "se não houver, use data de elaboração + 2 anos):\n"
+        f"Organograma ({_ou_livre(organogramas)}; em códigos tipo 'POP.UAP-CHUFC.006' é a sigla do meio, ex.: 'UAP'):\n"
+        f"Tipo de Documento ({_ou_livre(tipos)}; retorne em CAIXA ALTA):\n"
+        f"Abrangência ({_ou_livre(abrangencias)}):\n"
+        "Código do Documento (ex.: 'FOR.DIVGP-CHUFC.005'):\n"
+        "Título do Documento:\n"
+        "Número SEI (ex.: 23533.003368/2023-10):\n"
+        "Elaboradores (separe por vírgula se mais de um):\n"
+        f"\nTexto:\n{pdf_text}"
+    )
 
 
 def _parse_gpt_response(response_text, filename):
@@ -121,7 +131,7 @@ def init_routes(app):
                                 f"Texto não encontrado ou insuficiente no PDF: {file.filename}"
                             )
 
-                        prompt = PROMPT_EXTRACAO + pdf_text
+                        prompt = _build_prompt(pdf_text)
                         if modelo_ia == "deepseek":
                             gpt_response = send_to_deepseek_with_retry(
                                 prompt, deepseek_key
@@ -137,6 +147,20 @@ def init_routes(app):
                             )
 
                         extracted = _parse_gpt_response(gpt_response, file.filename)
+
+                        extracted["abrangencia"] = (
+                            resolver_abrangencia(extracted["abrangencia"])
+                            or "Não localizado"
+                        )
+                        extracted["organograma"] = (
+                            resolver_organograma(extracted["organograma"])
+                            or "Não localizado"
+                        )
+                        extracted["tipo_documento"] = (
+                            resolver_tipo_documento(extracted["tipo_documento"])
+                            or "Não localizado"
+                        )
+
                         titulo_completo = (
                             f"{extracted['codigo_documento']} - "
                             f"{extracted['titulo_documento']}"

@@ -19,7 +19,7 @@ from sqlalchemy.ext.mutable import MutableList
 from werkzeug.utils import secure_filename
 
 from app.extensions import db
-from app.models import Documento, Documento2
+from app.models import Documento2
 from app.services.dates import converter_data, formatar_data_para_input
 
 
@@ -174,13 +174,6 @@ def init_routes(app):
                 500,
             )
 
-    @app.route("/miac/publicados", methods=["GET"])
-    def publicados():
-        if "username" not in session:
-            return redirect(url_for("login"))
-        documentos = Documento.query.all()
-        return render_template("publicados.html", documentos=documentos)
-
     @app.route("/miac/publicados2", methods=["GET"])
     def publicados2():
         _atualizar_status_documentos()
@@ -236,22 +229,6 @@ def init_routes(app):
             tipo_documento_filtro=tipo_documento_filtro,
         )
 
-    @app.route("/miac/documento/<int:doc_id>", methods=["GET"])
-    def documento_detalhes(doc_id):
-        documento = db.session.get(Documento, doc_id)
-        if documento:
-            documento_url = url_for(
-                "static",
-                filename=f"uploads2/{os.path.basename(documento.caminho)}",
-                _external=True,
-            )
-            return render_template(
-                "detalhes_documento.html",
-                documento=documento,
-                documento_url=documento_url,
-            )
-        return "Documento não encontrado", 404
-
     @app.route("/miac/documento2/<int:doc_id>", methods=["GET"])
     def documento2_detalhes(doc_id):
         documento = db.session.get(Documento2, doc_id)
@@ -274,22 +251,16 @@ def init_routes(app):
         if "username" not in session:
             return redirect(url_for("login"))
 
-        if tipo == "documento":
-            documento = db.session.get(Documento, doc_id)
-        elif tipo == "documento2":
-            documento = db.session.get(Documento2, doc_id)
-        else:
+        if tipo != "documento2":
             return "Tipo de documento inválido", 400
 
+        documento = db.session.get(Documento2, doc_id)
         if documento is None:
             return "Documento não encontrado", 404
 
         db.session.delete(documento)
         db.session.commit()
         flash("Documento excluído com sucesso!", "success")
-
-        if tipo == "documento":
-            return redirect(url_for("publicados"))
         return redirect(url_for("publicados2"))
 
     @app.route("/miac/editar_documento2/<int:doc_id>", methods=["GET", "POST"])

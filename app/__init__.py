@@ -29,7 +29,11 @@ def create_app(config_class=Config):
             db.create_all()
             print("Banco de dados e tabelas criados com sucesso!")
         else:
+            db.create_all()
             print("Banco de dados já existe.")
+
+        from app.seed import run_seeds
+        run_seeds()
 
     app.add_template_filter(expired_duration_filter, name="expired_duration")
 
