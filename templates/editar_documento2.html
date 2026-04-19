@@ -1,390 +1,237 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editar Documento - MIAC</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-	<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #f8f9fa;
-            color: #495057;
-            margin: 0;
-            display: flex;
-            min-height: 100vh;
-        }
+{% extends "base.html" %}
+{% set active_page = 'publicados' %}
 
-        .sidebar {
-            width: 260px;
-            background-color: #2c3e50;
-            color: #fff;
-            position: fixed;
-            height: 100%;
-            padding: 20px;
-            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
-        }
+{% block title %}Editar Documento{% endblock %}
 
-        .sidebar h2 {
-            font-size: 1.8rem;
-            color: #ecf0f1;
-            margin-bottom: 30px;
-            font-weight: 600;
-        }
+{% block extra_css %}
+<style>
+    h1 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        text-align: center;
+        color: #2c3e50;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
 
-        .sidebar ul {
-            padding: 0;
-            list-style: none;
-        }
+    .card {
+        margin-bottom: 25px;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        background-color: #ffffff;
+    }
 
-        .sidebar ul li {
-            margin: 15px 0;
-            padding: 12px 20px;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
-        }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
 
-        .sidebar ul li:hover {
-            background-color: #34495e;
-            transform: translateX(5px);
-            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
-        }
+    .card-header {
+        background-color: #2c3e50;
+        color: white;
+        font-weight: 600;
+        border-radius: 12px 12px 0 0;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.2rem;
+    }
 
-        .sidebar ul li a {
-            text-decoration: none;
-            color: #ecf0f1;
-            display: flex;
-            align-items: center;
-            font-size: 1rem;
-        }
+    .card-body {
+        padding: 25px;
+    }
 
-        .sidebar ul li a i {
-            margin-right: 12px;
-        }
+    .form-label {
+        font-weight: 600;
+        color: #2c3e50;
+    }
 
-        .main-content {
-            margin-left: 260px;
-            padding: 30px;
-            flex-grow: 1;
-            background-color: #fff;
-            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
-        }
+    .form-check-input:checked {
+        background-color: #2c3e50;
+        border-color: #2c3e50;
+    }
 
+    .btn-container {
+        margin-top: 30px;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    @media (max-width: 768px) {
         h1 {
-            font-size: 2.2rem;
-            font-weight: 700;
-            text-align: center;
-            color: #2c3e50;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .form-control {
-            border-radius: 8px;
-            border: 1px solid #e9ecef;
-            padding: 10px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-        }
-
-        .form-control:focus {
-            border-color: #2c3e50;
-            box-shadow: 0 0 5px rgba(44, 62, 80, 0.3);
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: #2c3e50;
-        }
-
-        .btn {
-            background-color: #2c3e50;
-            color: white;
-            font-size: 16px;
-            padding: 12px 28px;
-            border-radius: 8px;
-            border: none;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 500;
-        }
-
-        .btn-secondary {
-            background-color: #6c757d;
-        }
-
-        .btn-warning {
-            background-color: #ffc107;
-            color: #000;
-        }
-
-        .btn-danger {
-            background-color: #dc3545;
-        }
-
-        .btn-danger:hover {
-            background-color: #c82333;
-        }
-
-        .btn:hover {
-            background-color: #34495e;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            font-size: 26px;
         }
 
         .btn-container {
-            margin-top: 30px;
-            text-align: center;
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-
-        .card {
-            margin-bottom: 25px;
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            background-color: #ffffff;
-            border: 1px solid #e9ecef;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-        }
-
-        .card-header {
-            background-color: #2c3e50;
-            color: white;
-            font-weight: 600;
-            border-radius: 12px 12px 0 0;
-            padding: 20px;
-            display: flex;
-            align-items: center;
             gap: 10px;
-            font-size: 1.2rem;
         }
+    }
+</style>
+{% endblock %}
 
-        .card-body {
-            padding: 25px;
-        }
+{% block content %}
+    <h1>
+        <i class="fas fa-edit"></i> Editar Documento v{{ versao_efetiva }}
+    </h1>
 
-        .form-check-input:checked {
-            background-color: #2c3e50;
-            border-color: #2c3e50;
-        }
-
-        .form-check-label {
-            color: #495057;
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 100%;
-                height: auto;
-                position: relative;
-                padding: 10px;
-            }
-
-            .main-content {
-                margin-left: 0;
-                padding: 15px;
-            }
-
-            .btn {
-                font-size: 14px;
-                padding: 10px 20px;
-            }
-
-            h1 {
-                font-size: 26px;
-            }
-
-            .btn-container {
-                gap: 10px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <!-- Barra Lateral -->
-    <div class="sidebar">
-        <h2>MIAC</h2>
-        <ul>
-            <li><a href="#"><i class="fas fa-home"></i> Página Inicial</a></li>
-            <li><a href="#"><i class="fas fa-file-alt"></i> Arquivos</a></li>
-            <li><a href="#"><i class="fas fa-cogs"></i> Configurações</a></li>
-            <li><a href="#"><i class="fas fa-question-circle"></i> Ajuda</a></li>
-        </ul>
-    </div>
-
-    <!-- Conteúdo Principal -->
-    <div class="main-content">
-        <h1>
-            <i class="fas fa-edit"></i> Editar Documento v{{ versao_efetiva }}
-        </h1>
-
-        <form method="POST" enctype="multipart/form-data">
-            <!-- Card de Informações Gerais -->
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-info-circle"></i> Informações Gerais
+    <form id="edit-form" method="POST" enctype="multipart/form-data">
+        <!-- Card de Informações Gerais -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-info-circle"></i> Informações Gerais
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="nome" class="form-label">Nome</label>
+                    <input type="text" class="form-control" id="nome" name="nome" value="{{ documento.nome }}" required>
                 </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label for="nome" class="form-label">Nome</label>
-                        <input type="text" class="form-control" id="nome" name="nome" value="{{ documento.nome }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="organograma" class="form-label">Organograma</label>
-                        <input type="text" class="form-control" id="organograma" name="organograma" value="{{ documento.organograma }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="tipo_documento" class="form-label">Tipo de Documento</label>
-                        <input type="text" class="form-control" id="tipo_documento" name="tipo_documento" value="{{ documento.tipo_documento }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="abrangencia" class="form-label">Abrangência</label>
-                        <input type="text" class="form-control" id="abrangencia" name="abrangencia" value="{{ documento.abrangencia }}" required>
-                    </div>
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="atualizado" name="atualizado" {% if documento.atualizado %}checked{% endif %}>
-                        <label class="form-check-label" for="atualizado">Atualizado</label>
-                    </div>
+                <div class="mb-3">
+                    <label for="organograma" class="form-label">Organograma</label>
+                    <input type="text" class="form-control" id="organograma" name="organograma" value="{{ documento.organograma }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="tipo_documento" class="form-label">Tipo de Documento</label>
+                    <input type="text" class="form-control" id="tipo_documento" name="tipo_documento" value="{{ documento.tipo_documento }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="abrangencia" class="form-label">Abrangência</label>
+                    <input type="text" class="form-control" id="abrangencia" name="abrangencia" value="{{ documento.abrangencia }}" required>
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="atualizado" name="atualizado" {% if documento.atualizado %}checked{% endif %}>
+                    <label class="form-check-label" for="atualizado">Atualizado</label>
                 </div>
             </div>
+        </div>
 
-            <!-- Card de Datas e Elaboração -->
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-calendar-alt"></i> Datas e Elaboração
+        <!-- Card de Datas e Elaboração -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-calendar-alt"></i> Datas e Elaboração
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="data_elaboracao" class="form-label">Data de Elaboração</label>
+                    <input type="date" class="form-control" id="data_elaboracao" name="data_elaboracao" value="{{ data_elaboracao }}">
                 </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label for="data_elaboracao" class="form-label">Data de Elaboração</label>
-                        <input type="date" class="form-control" id="data_elaboracao" name="data_elaboracao" value="{{ data_elaboracao }}">
-                    </div>
-                    <div class="mb-3">
-                        <label for="vencimento" class="form-label">Data de Validade</label>
-                        <input type="date" class="form-control" id="vencimento" name="vencimento" value="{{ vencimento }}">
-                    </div>
-                    <div class="mb-3">
-                        <label for="numero_sei" class="form-label">Número SEI</label>
-                        <input type="text" class="form-control" id="numero_sei" name="numero_sei" value="{{ documento.numero_sei }}">
-                    </div>
-                    <div class="mb-3">
-                        <label for="elaboradores" class="form-label">Elaboradores</label>
-                        <input type="text" class="form-control" id="elaboradores" name="elaboradores" value="{{ documento.elaboradores }}">
-                    </div>
+                <div class="mb-3">
+                    <label for="vencimento" class="form-label">Data de Validade</label>
+                    <input type="date" class="form-control" id="vencimento" name="vencimento" value="{{ vencimento }}">
+                </div>
+                <div class="mb-3">
+                    <label for="numero_sei" class="form-label">Número SEI</label>
+                    <input type="text" class="form-control" id="numero_sei" name="numero_sei" value="{{ documento.numero_sei }}">
+                </div>
+                <div class="mb-3">
+                    <label for="elaboradores" class="form-label">Elaboradores</label>
+                    <input type="text" class="form-control" id="elaboradores" name="elaboradores" value="{{ documento.elaboradores }}">
                 </div>
             </div>
+        </div>
 
-            <!-- Card de Atualização de Versão -->
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-file-upload"></i> Atualizar Versão
+        <!-- Card de Atualização de Versão -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-file-upload"></i> Atualizar Versão
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="novo_pdf" class="form-label">Nova Versão (PDF)</label>
+                    <input type="file" class="form-control" id="novo_pdf" name="novo_pdf" accept=".pdf">
+                    <small class="text-muted">Ao enviar, a versão atual será arquivada no histórico</small>
                 </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label for="novo_pdf" class="form-label">Nova Versão (PDF)</label>
-                        <input type="file" class="form-control" id="novo_pdf" name="novo_pdf" accept=".pdf">
-                        <small class="text-muted">Ao enviar, a versão atual será arquivada no histórico</small>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Versão Atual (v{{ versao_efetiva }}):</label>
-                        <a href="{{ url_for('static', filename='miac/uploads2/' + documento.caminho.split('/')[-1]) }}" 
-                           class="btn btn-sm btn-primary" target="_blank">
-                            <i class="fas fa-download"></i> Baixar
-                        </a>
-                    </div>
-                    
-                    {% if documento.pdf_antigo %}
-                    <div class="mb-3">
-                        <label class="form-label">Versão Anterior (v{{ versao_efetiva - 1 }}):</label>
-                        <a href="{{ url_for('static', filename='uploads2/' + documento.pdf_antigo.split('/')[-1]) }}" 
-                           class="btn btn-sm btn-secondary" target="_blank">
-                            <i class="fas fa-history"></i> Visualizar
-                        </a>
-                    </div>
-                    {% endif %}
+
+                <div class="mb-3">
+                    <label class="form-label">Versão Atual (v{{ versao_efetiva }}):</label>
+                    <a href="{{ url_for('static', filename='uploads2/' + documento.caminho.split('/')[-1]) }}"
+                       class="btn btn-sm btn-primary" target="_blank">
+                        <i class="fas fa-download"></i> Baixar
+                    </a>
+                </div>
+
+                {% if documento.pdf_antigo %}
+                <div class="mb-3">
+                    <label class="form-label">Versão Anterior (v{{ versao_efetiva - 1 }}):</label>
+                    <a href="{{ url_for('static', filename='uploads2/' + documento.pdf_antigo.split('/')[-1]) }}"
+                       class="btn btn-sm btn-secondary" target="_blank">
+                        <i class="fas fa-history"></i> Visualizar
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Card de Histórico de Versões -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-history"></i> Histórico de Versões
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Versão</th>
+                                <th>Data</th>
+                                <th>Responsável</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for versao in historico_efetivo|sort(attribute='versao', reverse=True) %}
+                            <tr>
+                                <td>v{{ versao.versao }}</td>
+                                <td>{{ versao.data }}</td>
+                                <td>{{ versao.responsavel }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('static', filename='uploads2/' + versao.nome_arquivo) }}"
+                                           class="btn btn-outline-primary" target="_blank">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-warning"
+                                                onclick="restaurarVersao({{ versao.versao }})">
+                                            <i class="fas fa-undo"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center">Nenhuma versão anterior registrada</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
+        </div>
 
-            <!-- Card de Histórico de Versões -->
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-history"></i> Histórico de Versões
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Versão</th>
-                                    <th>Data</th>
-                                    <th>Responsável</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for versao in historico_efetivo|sort(attribute='versao', reverse=True) %}
-                                <tr>
-                                    <td>v{{ versao.versao }}</td>
-                                    <td>{{ versao.data }}</td>
-                                    <td>{{ versao.responsavel }}</td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="{{ url_for('static', filename='uploads2/' + versao.nome_arquivo) }}" 
-                                               class="btn btn-outline-primary" target="_blank">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            <button type="button" class="btn btn-outline-warning" 
-                                                    onclick="restaurarVersao({{ versao.versao }})">
-                                                <i class="fas fa-undo"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="4" class="text-center">Nenhuma versão anterior registrada</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Botões de Ação -->
-            <div class="btn-container">
-                <button type="submit" class="btn">
-                    <i class="fas fa-save"></i> Salvar Alterações
-                </button>
-                <a href="{{ url_for('documento2_detalhes', doc_id=documento.id) }}" class="btn btn-secondary">
-                    <i class="fas fa-times"></i> Cancelar
-                </a>
-                <a href="{{ url_for('excluir_documento', doc_id=documento.id, tipo='documento2') }}" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja excluir este documento e todas suas versões?');">
-                    <i class="fas fa-trash"></i> Excluir
-                </a>
-            </div>
-        </form>
-    </div>
+        <!-- Botões de Ação -->
+        <div class="btn-container">
+            <button type="submit" form="edit-form" class="btn btn-primary">
+                <i class="fas fa-save"></i> Salvar Alterações
+            </button>
+            <a href="{{ url_for('documents.documento2_detalhes', doc_id=documento.id) }}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancelar
+            </a>
+            <button type="submit" form="delete-form" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Excluir
+            </button>
+        </div>
+    </form>
+    <form id="delete-form" method="POST" action="{{ url_for('documents.excluir_documento', doc_id=documento.id, tipo='documento2') }}" style="display:none" onsubmit="return confirm('Tem certeza que deseja excluir este documento e todas suas versões?')"></form>
 
     <!-- Modal de Confirmação -->
     <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
@@ -404,50 +251,48 @@
             </div>
         </div>
     </div>
+{% endblock %}
 
-    <script>
-        // Formatação de datas para inputs type="date"
-        document.addEventListener('DOMContentLoaded', function() {
-            const formatDate = (dateStr) => {
-                if (!dateStr) return '';
-                const parts = dateStr.split('/');
-                if (parts.length === 3) {
-                    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+{% block extra_js %}
+<script>
+    // Formatação de datas para inputs type="date"
+    document.addEventListener('DOMContentLoaded', function() {
+        const formatDate = (dateStr) => {
+            if (!dateStr) return '';
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+                return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+            return dateStr;
+        };
+
+        document.getElementById('data_elaboracao').value = formatDate("{{ documento.data_elaboracao }}");
+        document.getElementById('vencimento').value = formatDate("{{ documento.vencimento }}");
+    });
+
+    // Função para restaurar versão
+    function restaurarVersao(versao) {
+        const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+        document.getElementById('modalMessage').textContent =
+            `Deseja realmente restaurar a versão ${versao} como atual?\n\nA versão atual será movida para o histórico.`;
+
+        document.getElementById('confirmRestore').onclick = function() {
+            fetch(`/miac/restaurar_versao/{{ documento.id }}/${versao}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    window.location.reload();
+                } else {
+                    alert(`Erro: ${data.error}`);
                 }
-                return dateStr;
-            };
+            });
+            modal.hide();
+        };
 
-            document.getElementById('data_elaboracao').value = formatDate("{{ documento.data_elaboracao }}");
-            document.getElementById('vencimento').value = formatDate("{{ documento.vencimento }}");
-        });
-
-        // Função para restaurar versão
-        function restaurarVersao(versao) {
-            const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
-            document.getElementById('modalMessage').textContent = 
-                `Deseja realmente restaurar a versão ${versao} como atual?\n\nA versão atual será movida para o histórico.`;
-            
-            document.getElementById('confirmRestore').onclick = function() {
-                fetch(`/miac/restaurar_versao/{{ documento.id }}/${versao}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if(data.success) {
-                        window.location.reload();
-                    } else {
-                        alert(`Erro: ${data.error}`);
-                    }
-                });
-                modal.hide();
-            };
-            
-            modal.show();
-        }
-    </script>
-
-    <!-- Scripts do Bootstrap -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+        modal.show();
+    }
+</script>
+{% endblock %}
