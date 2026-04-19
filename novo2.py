@@ -1,65 +1,71 @@
-from waitress import serve
-from flask import (
-    Flask,
-    render_template,
-    request,
-    redirect,
-    url_for,
-    session,
-    jsonify,
-    send_from_directory,
-    send_file,
-    flash,
-)
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import or_
-from dotenv import load_dotenv
-import PyPDF2
-import requests
-import os
-import time
-import re
-from sqlalchemy import inspect
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
-from io import BytesIO
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.platypus import (
-    SimpleDocTemplate,
-    Table,
-    TableStyle,
-    Paragraph,
-    Spacer,
-    Image,
-)
-from reportlab.lib.units import cm
-from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib.colors import HexColor
-from datetime import datetime
-from werkzeug.utils import secure_filename
-
-import qrcode
-from reportlab.lib.utils import ImageReader
-from io import BytesIO
-import tempfile
-from sqlalchemy.ext.mutable import MutableList
-from sqlalchemy import JSON
-from datetime import datetime
 import json
 import os
-from flask import flash, redirect, render_template, request, url_for
+import re
+import tempfile
+import time
 import unicodedata
+from datetime import datetime
+from io import BytesIO
 
-# Configuração do Google Cloud Vision
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "google_credentials.json"
+import PyPDF2
+import fitz
+import qrcode
+import requests
+from dotenv import load_dotenv
+from flask import (
+    Flask,
+    flash,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    send_file,
+    send_from_directory,
+    session,
+    url_for,
+)
+from flask_sqlalchemy import SQLAlchemy
+from google.cloud import vision
+from reportlab.lib import colors
+from reportlab.lib.colors import HexColor
+from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import cm
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen import canvas
+from reportlab.platypus import (
+    Image,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
+from sqlalchemy import JSON, inspect, or_
+from sqlalchemy.ext.mutable import MutableList
+from waitress import serve
+from werkzeug.security import check_password_hash
+from werkzeug.utils import secure_filename
 
 load_dotenv()
 
+# Google Cloud Vision — respeita GOOGLE_APPLICATION_CREDENTIALS do .env
+os.environ.setdefault(
+    "GOOGLE_APPLICATION_CREDENTIALS",
+    os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "google_credentials.json"),
+)
+
 app = Flask(__name__)
 
-app.secret_key = os.urandom(24)
+# SECRET_KEY persistente — sessões sobrevivem a restart.
+secret_key = os.getenv("SECRET_KEY")
+if not secret_key:
+    raise RuntimeError(
+        "SECRET_KEY ausente no .env. Gere com: "
+        'python -c "import secrets; print(secrets.token_hex(32))"'
+    )
+app.secret_key = secret_key
 
 db_host = os.getenv("DB_HOST")
 db_port = os.getenv("DB_PORT")
@@ -67,7 +73,6 @@ db_user = os.getenv("DB_USER")
 db_password = os.getenv("DB_PASSWORD")
 db_name = os.getenv("DB_NAME")
 
-# Configuração do SQLAlchemy
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
 )
@@ -78,11 +83,31 @@ db = SQLAlchemy(app)
 UPLOAD_FOLDER2 = os.path.join("static", "uploads2")
 os.makedirs(UPLOAD_FOLDER2, exist_ok=True)
 
+# API keys para integrações de IA (opcional; rota de IA retorna erro se ausente).
+deepseek_api_key = os.getenv("DEEPSEEK_API_KEY", "")
+chatgpt_api_key = os.getenv("OPENAI_API_KEY", "")
 
-users = {
-    "usuario": {"senha": "senha123", "nivel_acesso": "padrao"},
-    "admin": {"senha": "Qualidade@admin!", "nivel_acesso": "elevado"},
-}
+
+def _load_users():
+    """Carrega usuários do .env. Cada usuário tem username, hash e nível."""
+    definicoes = [
+        ("USER_PADRAO_USERNAME", "USER_PADRAO_HASH", "padrao"),
+        ("USER_ADMIN_USERNAME", "USER_ADMIN_HASH", "elevado"),
+    ]
+    carregados = {}
+    for env_user, env_hash, nivel in definicoes:
+        username = os.getenv(env_user)
+        password_hash = os.getenv(env_hash)
+        if username and password_hash:
+            carregados[username] = {"hash": password_hash, "nivel_acesso": nivel}
+    if not carregados:
+        raise RuntimeError(
+            "Nenhum usuário configurado. Defina USER_*_USERNAME e USER_*_HASH no .env."
+        )
+    return carregados
+
+
+users = _load_users()
 
 
 class Documento(db.Model):
@@ -175,9 +200,10 @@ criar_banco_de_dados()
 
 
 def login_user(username, password):
-    if username in users and users[username]["senha"] == password:
+    user = users.get(username)
+    if user and check_password_hash(user["hash"], password):
         session["username"] = username
-        session["nivel_acesso"] = users[username]["nivel_acesso"]
+        session["nivel_acesso"] = user["nivel_acesso"]
         return True
     return False
 
@@ -1085,10 +1111,6 @@ def identificar_documentos_com_erro():
     return documentos_com_erro
 
 
-import unicodedata
-from flask import request, render_template
-
-
 @app.route("/miac/buscar2", methods=["GET"])
 def buscar2():
     # Obter parâmetros de pesquisa
@@ -1213,10 +1235,6 @@ def index():
 
     documentos = query.all()
     return render_template("index.html", documentos=documentos)
-
-
-from google.cloud import vision
-import fitz
 
 
 def read_last_page(file_path):
