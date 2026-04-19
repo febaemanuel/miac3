@@ -9,6 +9,7 @@ from app.models import (
     AbrangenciaSinonimo,
     Documento2,
     Organograma,
+    OrganizacaoConfig,
     TipoDocumento,
     Usuario,
 )
@@ -80,4 +81,5 @@ def run_seeds():
     _seed_organogramas()
     _seed_tipos_documento()
     _seed_usuarios()
+    OrganizacaoConfig.get()  # cria singleton com defaults se não existir
     db.session.commit()

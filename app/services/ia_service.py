@@ -1,7 +1,10 @@
 """Integração com provedores de IA para extração de metadados de PDFs."""
+import logging
 import time
 
 import requests
+
+logger = logging.getLogger(__name__)
 
 DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions"
 OPENAI_URL = "https://api.openai.com/v1/chat/completions"
@@ -9,7 +12,7 @@ OPENAI_URL = "https://api.openai.com/v1/chat/completions"
 
 def _post_with_retry(url, api_key, model, prompt, retries=3, delay=2):
     if not api_key:
-        print(f"API key ausente para {url}")
+        logger.warning("API key ausente para %s — pulando chamada.", url)
         return None
 
     headers = {
@@ -27,9 +30,12 @@ def _post_with_retry(url, api_key, model, prompt, retries=3, delay=2):
             response = requests.post(url, headers=headers, json=data, timeout=30)
             if response.status_code == 200:
                 return response.json()["choices"][0]["message"]["content"]
-            print(f"Tentativa {i+1} falhou. Erro: {response.status_code}, {response.text}")
-        except Exception as exc:
-            print(f"Tentativa {i+1} falhou. Erro ao comunicar com {url}: {exc}")
+            logger.warning(
+                "Tentativa %d falhou (%s): %s %s",
+                i + 1, url, response.status_code, response.text,
+            )
+        except requests.RequestException as exc:
+            logger.warning("Tentativa %d falhou (%s): %s", i + 1, url, exc)
         time.sleep(delay)
     return None
 

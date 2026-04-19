@@ -32,6 +32,7 @@
                 <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#siglas" type="button">Siglas</button></li>
                 <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#marcadores" type="button">Marcadores</button></li>
                 <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#usuarios" type="button">Usuários</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#identidade" type="button">Identidade</button></li>
             </ul>
 
             <div class="tab-content pt-4">
@@ -248,6 +249,42 @@
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+                <!-- IDENTIDADE (whitelabel) -->
+                <div class="tab-pane fade" id="identidade">
+                    <p class="text-muted">Personalize nome, cores e logo. Aplica em toda a interface e nos PDFs gerados.</p>
+                    <form method="POST" action="{{ url_for('admin_identidade') }}" enctype="multipart/form-data">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nome da empresa</label>
+                                <input type="text" name="nome_empresa" class="form-control" value="{{ org_config.nome_empresa }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Sigla do app (sidebar)</label>
+                                <input type="text" name="sigla_app" class="form-control" value="{{ org_config.sigla_app }}" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Cor primária</label>
+                                <input type="color" name="cor_primaria" class="form-control form-control-color" value="{{ org_config.cor_primaria }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Cor da sidebar</label>
+                                <input type="color" name="cor_sidebar" class="form-control form-control-color" value="{{ org_config.cor_sidebar }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Logo (PNG/JPG)</label>
+                                <input type="file" name="logo" class="form-control" accept="image/*">
+                                {% if org_config.logo_path %}
+                                    <small class="text-muted">Atual: <img src="{{ url_for('static', filename=org_config.logo_path) }}" style="height:30px;vertical-align:middle;"></small>
+                                {% endif %}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Rodapé</label>
+                                <textarea name="rodape" class="form-control" rows="2">{{ org_config.rodape }}</textarea>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary mt-3">Salvar identidade</button>
+                    </form>
                 </div>
             </div>
         </div>

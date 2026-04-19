@@ -1,10 +1,12 @@
 """API interna: endpoint AJAX de extração de metadados via IA."""
+import logging
 import os
 import time
-import traceback
 
 from flask import current_app, jsonify, request, session
 from werkzeug.utils import secure_filename
+
+logger = logging.getLogger(__name__)
 
 from app.services.ia_service import (
     send_to_deepseek_with_retry,
@@ -217,11 +219,15 @@ def init_routes(app):
                         if file_path and os.path.exists(file_path):
                             try:
                                 os.remove(file_path)
-                            except Exception as exc:
-                                print(f"Erro ao remover arquivo temporário: {exc}")
+                            except OSError:
+                                logger.warning(
+                                    "Falha ao remover arquivo temporário %s",
+                                    file_path,
+                                    exc_info=True,
+                                )
 
             return jsonify(resultados)
 
         except Exception as exc:
-            traceback.print_exc()
+            logger.exception("Erro ao processar arquivos enviados para IA")
             return jsonify({"error": f"Erro ao processar arquivos: {exc}"}), 500

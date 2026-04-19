@@ -3,7 +3,8 @@
    Estilos específicos de cada página ficam no próprio template. */
 
 :root {
-    --miac-primary: #2c3e50;
+    --miac-primary: #007bff;
+    --miac-sidebar: #34495e;
     --miac-primary-dark: #34495e;
     --miac-primary-hover: #2980b9;
     --miac-accent: #3498db;
@@ -32,7 +33,7 @@ body {
 /* ============ Sidebar ============ */
 .sidebar {
     width: 250px;
-    background-color: var(--miac-primary);
+    background-color: var(--miac-sidebar);
     color: white;
     height: 100vh;
     padding: 20px;
@@ -141,7 +142,7 @@ body {
 footer {
     margin-top: auto;
     padding: 20px;
-    background-color: var(--miac-primary);
+    background-color: var(--miac-sidebar);
     color: white;
     text-align: center;
     font-size: 0.9rem;

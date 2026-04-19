@@ -1,6 +1,18 @@
 """Painel administrativo unificado: organogramas, abrangências, tipos, siglas, marcadores, usuários."""
-from flask import flash, redirect, render_template, request, session, url_for
+from flask import (
+    current_app,
+    flash,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 from werkzeug.security import generate_password_hash
+
+import os
+
+from werkzeug.utils import secure_filename
 
 from app.extensions import db
 from app.models import (
@@ -8,6 +20,7 @@ from app.models import (
     AbrangenciaSinonimo,
     Documento2,
     Organograma,
+    OrganizacaoConfig,
     TipoDocumento,
     Usuario,
 )
@@ -199,3 +212,33 @@ def init_routes(app):
                 u.nivel_acesso = nivel
         db.session.commit()
         return redirect(url_for("admin_panel") + "#usuarios")
+
+    @app.route("/miac/admin/identidade", methods=["POST"])
+    def admin_identidade():
+        guard = _require_admin()
+        if guard:
+            return guard
+
+        org = OrganizacaoConfig.get()
+        org.nome_empresa = (request.form.get("nome_empresa") or org.nome_empresa).strip()
+        org.sigla_app = (request.form.get("sigla_app") or org.sigla_app).strip()
+        org.cor_primaria = (request.form.get("cor_primaria") or org.cor_primaria).strip()
+        org.cor_sidebar = (request.form.get("cor_sidebar") or org.cor_sidebar).strip()
+        rodape = request.form.get("rodape")
+        if rodape is not None:
+            org.rodape = rodape.strip()
+
+        logo = request.files.get("logo")
+        if logo and logo.filename:
+            nome = secure_filename(logo.filename)
+            destino_dir = os.path.join(
+                current_app.root_path, "..", "static", "branding"
+            )
+            os.makedirs(destino_dir, exist_ok=True)
+            caminho_abs = os.path.join(destino_dir, nome)
+            logo.save(caminho_abs)
+            org.logo_path = f"branding/{nome}"
+
+        db.session.commit()
+        flash("Identidade atualizada.", "success")
+        return redirect(url_for("admin_panel") + "#identidade")

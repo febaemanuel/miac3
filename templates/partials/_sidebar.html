@@ -1,5 +1,8 @@
 <div class="sidebar">
-    <h2>DOC'S-UGQ</h2>
+    {% if org_config.logo_path %}
+    <img src="{{ url_for('static', filename=org_config.logo_path) }}" alt="{{ org_config.nome_empresa }}" style="max-width:140px;max-height:80px;margin-bottom:15px;">
+    {% endif %}
+    <h2>{{ org_config.sigla_app }}</h2>
     <ul>
         <li><a href="{{ url_for('index') }}"><i class="fas fa-home"></i> Página Inicial</a></li>
         <li><a href="{{ url_for('publicados2') }}"><i class="fas fa-file-alt"></i> Documentos</a></li>

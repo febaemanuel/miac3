@@ -89,3 +89,27 @@ class Usuario(db.Model):
     senha_hash = db.Column(db.String(255), nullable=False)
     nivel_acesso = db.Column(db.String(20), nullable=False, default="padrao")
     ativo = db.Column(db.Boolean, default=True, nullable=False)
+
+
+class OrganizacaoConfig(db.Model):
+    """Identidade visual e institucional. Singleton (sempre id=1)."""
+    __tablename__ = "organizacao_config"
+    id = db.Column(db.Integer, primary_key=True)
+    nome_empresa = db.Column(db.String(150), nullable=False, default="MIAC")
+    sigla_app = db.Column(db.String(30), nullable=False, default="DOC'S-UGQ")
+    cor_primaria = db.Column(db.String(7), nullable=False, default="#007bff")
+    cor_sidebar = db.Column(db.String(7), nullable=False, default="#34495e")
+    logo_path = db.Column(db.String(200), nullable=True)
+    rodape = db.Column(
+        db.String(300), nullable=False,
+        default="Versão 1.0.0 | Desenvolvido por MIAC | Suporte: suporte@miac.com.br",
+    )
+
+    @classmethod
+    def get(cls):
+        instancia = cls.query.get(1)
+        if not instancia:
+            instancia = cls(id=1)
+            db.session.add(instancia)
+            db.session.commit()
+        return instancia

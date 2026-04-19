@@ -1,8 +1,10 @@
 """Rotas de relatórios: PDF consolidado e dashboard de estatísticas."""
+import logging
 import os
-import traceback
 from datetime import datetime
 from io import BytesIO
+
+logger = logging.getLogger(__name__)
 
 import qrcode
 from flask import (
@@ -28,9 +30,9 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from app.models import Documento2
+from app.models import Documento2, OrganizacaoConfig
 from app.services.dates import converter_data, parse_data
-from app.services.pdf_service import add_watermark
+from app.services.pdf_service import build_watermark
 
 
 def _identificar_documentos_com_erro():
@@ -507,7 +509,8 @@ def _build_pdf_relatorio(documentos, abrangencia, organograma):
     )
     content.append(footer_table)
 
-    pdf_doc.build(content, onFirstPage=add_watermark, onLaterPages=add_watermark)
+    watermark = build_watermark(OrganizacaoConfig.get().logo_path)
+    pdf_doc.build(content, onFirstPage=watermark, onLaterPages=watermark)
     buffer.seek(0)
     return buffer
 
@@ -536,7 +539,7 @@ def init_routes(app):
                 mimetype="application/pdf",
             )
         except Exception as exc:
-            traceback.print_exc()
+            logger.exception("Erro ao gerar relatório PDF")
             return f"Erro ao gerar relatório: {exc}", 500
 
     @app.route("/miac/estatisticas", methods=["GET"])

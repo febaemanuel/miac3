@@ -1,8 +1,8 @@
 """Rotas do ciclo de vida de documentos: publicar, visualizar, editar, excluir, versionar."""
 import json
+import logging
 import os
 import time
-import traceback
 from datetime import datetime
 
 from flask import (
@@ -22,6 +22,8 @@ from app.extensions import db
 from app.models import Documento2
 from app.services.dates import converter_data, formatar_data_para_input
 
+logger = logging.getLogger(__name__)
+
 
 def _atualizar_status_documentos():
     """Recalcula campo `atualizado` de cada Documento2 com base no vencimento."""
@@ -32,8 +34,11 @@ def _atualizar_status_documentos():
             try:
                 data_vencimento = converter_data(documento.vencimento)
                 documento.atualizado = data_vencimento >= hoje
-            except ValueError as exc:
-                print(f"Erro ao converter data: {exc}")
+            except ValueError:
+                logger.warning(
+                    "Vencimento inválido no doc %s: %r",
+                    documento.id, documento.vencimento,
+                )
     db.session.commit()
 
 
@@ -160,15 +165,13 @@ def init_routes(app):
 
             db.session.commit()
 
-            print("\n=== LOG DE PUBLICAÇÃO ===")
             for log in log_detalhado:
-                print(log)
-            print("=========================\n")
+                logger.info("Publicação: %s", log)
 
             return jsonify({"message": "Documentos publicados com sucesso!"})
 
         except Exception as exc:
-            print(f"Erro ao publicar documentos:\n{traceback.format_exc()}")
+            logger.exception("Erro ao publicar documentos")
             return (
                 jsonify({"error": f"Erro ao publicar documentos. Detalhes: {exc}"}),
                 500,
@@ -344,7 +347,7 @@ def init_routes(app):
 
             except Exception as exc:
                 db.session.rollback()
-                traceback.print_exc()
+                logger.exception("Erro ao atualizar documento %s", doc_id)
                 flash(f"Erro ao atualizar documento: {exc}", "error")
                 return redirect(url_for("editar_documento2", doc_id=doc_id))
 
@@ -364,8 +367,8 @@ def init_routes(app):
                 key=lambda x: x["versao"],
                 reverse=True,
             )
-        except Exception as exc:
-            print(f"Erro ao ordenar histórico: {exc}")
+        except Exception:
+            logger.exception("Erro ao ordenar histórico do doc %s", doc_id)
             historico_ordenado = []
 
         dados_template = {
