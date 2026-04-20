@@ -282,23 +282,36 @@ def init_routes(app):
     @app.route("/miac/documento/<int:doc_id>", methods=["GET"])
     def documento_detalhes(doc_id):
         documento = db.session.get(Documento, doc_id)
-        if documento:
-            documento_url = url_for(
-                "static",
-                filename=f"uploads/{os.path.basename(documento.caminho)}",
-                _external=True,
-            )
-            return render_template(
-                "detalhes_documentos.html",
-                documento=documento,
-                documento_url=documento_url,
-                nivel_acesso=session.get("nivel_acesso"),
-            )
-        return "Documento não encontrado", 404
+        if not documento:
+            return "Documento não encontrado", 404
 
-    @app.route("/miac/excluir_documento/<int:doc_id>", methods=["GET"])
+        documento_url = url_for(
+            "static",
+            filename=f"uploads/{os.path.basename(documento.caminho)}",
+        )
+        pdf_antigo_url = (
+            url_for("static", filename=f"uploads/{os.path.basename(documento.pdf_antigo)}")
+            if documento.pdf_antigo
+            else None
+        )
+        campos_extras_def = (
+            CampoExtracao.query.filter_by(ativo=True)
+            .order_by(CampoExtracao.ordem, CampoExtracao.id)
+            .all()
+        )
+        return render_template(
+            "detalhes_documentos.html",
+            documento=documento,
+            documento_url=documento_url,
+            pdf_antigo_url=pdf_antigo_url,
+            campos_extras=campos_extras_def,
+            valores_extras=documento.campos_extras or {},
+            nivel_acesso=session.get("nivel_acesso"),
+        )
+
+    @app.route("/miac/excluir_documento/<int:doc_id>", methods=["POST"])
     def excluir_documento(doc_id):
-        if "username" not in session:
+        if "username" not in session or session.get("nivel_acesso") != "elevado":
             return redirect(url_for("login"))
 
         documento = db.session.get(Documento, doc_id)
@@ -432,6 +445,21 @@ def init_routes(app):
             logger.exception("Erro ao ordenar histórico do doc %s", doc_id)
             historico_ordenado = []
 
+        abrangencias_ativas = (
+            Abrangencia.query.filter_by(ativo=True)
+            .order_by(Abrangencia.ordem, Abrangencia.nome)
+            .all()
+        )
+        organogramas = Organograma.query.order_by(Organograma.nome).all()
+        tipos_documento = TipoDocumento.query.order_by(TipoDocumento.nome).all()
+
+        organogramas_por_abrangencia = {a.nome: [] for a in abrangencias_ativas}
+        for org in organogramas:
+            if org.abrangencia and org.abrangencia.nome in organogramas_por_abrangencia:
+                organogramas_por_abrangencia[org.abrangencia.nome].append(
+                    {"sigla": org.nome, "nome_completo": org.nome_completo or ""}
+                )
+
         dados_template = {
             "documento": documento,
             "versao_efetiva": documento.versao_efetiva,
@@ -440,6 +468,9 @@ def init_routes(app):
             "vencimento": formatar_data_para_input(documento.vencimento),
             "campos_extras": campos_extras_def,
             "valores_extras": documento.campos_extras or {},
+            "abrangencias": [a.nome for a in abrangencias_ativas],
+            "tipos_documento": [t.nome for t in tipos_documento],
+            "organogramas_por_abrangencia": organogramas_por_abrangencia,
         }
         return render_template("editar_documento.html", **dados_template)
 

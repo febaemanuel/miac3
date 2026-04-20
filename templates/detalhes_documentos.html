@@ -4,25 +4,65 @@
     {% include "partials/_head.html" %}
     <title>Detalhes do Documento · MIAC</title>
     <style>
-        .badge-documento-complexo {
-            background-color: var(--miac-warning);
-            color: #000;
+        .doc-header {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .doc-header__title { margin: 0; }
+        .doc-header__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .doc-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 20px;
+        }
+        @media (max-width: 960px) { .doc-grid { grid-template-columns: 1fr; } }
+
+        .info-list { margin: 0; }
+        .info-list dt {
+            font-size: .78rem;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: var(--miac-muted);
             font-weight: 600;
-            padding: 4px 10px;
-            border-radius: 5px;
-            font-size: .75rem;
-            margin-left: 6px;
+            margin-top: 10px;
+        }
+        .info-list dt:first-child { margin-top: 0; }
+        .info-list dd {
+            margin: 2px 0 0;
+            color: var(--miac-text);
+            font-size: .95rem;
+            word-break: break-word;
+        }
+        .info-list dd.empty { color: var(--miac-muted); font-style: italic; }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: .8rem;
+            font-weight: 600;
+        }
+        .status-pill--ok { background: #e6f7ed; color: #0f7a3e; }
+        .status-pill--warn { background: #fff4e0; color: #a65a00; }
+
+        .pdf-preview {
+            width: 100%;
+            height: 70vh;
+            min-height: 480px;
+            border: 1px solid var(--miac-border);
+            border-radius: var(--miac-radius);
+            background: var(--miac-light);
         }
 
-        .btn-pdf {
-            background-color: var(--miac-danger);
-            color: #fff;
-        }
-
-        .btn-pdf:hover {
-            background-color: #b71c1c;
-            color: #fff;
-        }
+        .btn-pdf { background-color: var(--miac-danger); color: #fff; }
+        .btn-pdf:hover { background-color: #b71c1c; color: #fff; }
     </style>
 </head>
 <body>
@@ -30,66 +70,125 @@
 
     <main class="main-content">
         <div class="page-container page-container--wide">
-            <h1 class="page-title"><i class="fas fa-file-alt"></i> Detalhes do Documento</h1>
-
-            <div class="btn-container" style="margin-top:0; margin-bottom:24px;">
-                <a href="/miac/static/uploads/{{ documento.caminho.split('/')[-1] }}" class="btn btn-pdf" target="_blank">
-                    <i class="fas fa-file-pdf"></i> Visualizar PDF
-                </a>
-                {% if nivel_acesso == 'elevado' %}
-                    <a href="{{ url_for('editar_documento', doc_id=documento.id) }}" class="btn btn-warning">
-                        <i class="fas fa-edit"></i> Editar
+            <div class="doc-header">
+                <h1 class="page-title doc-header__title">
+                    <i class="fas fa-file-alt"></i> {{ documento.nome }}
+                </h1>
+                <div class="doc-header__actions">
+                    <a href="{{ documento_url }}" class="btn btn-pdf" target="_blank" rel="noopener">
+                        <i class="fas fa-file-pdf"></i> Visualizar PDF
                     </a>
-                {% endif %}
-                <a href="{{ url_for('publicados') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Voltar
-                </a>
-            </div>
-
-            <div class="app-card">
-                <div class="app-card__header">
-                    <i class="fas fa-info-circle"></i> Informações Gerais
-                </div>
-                <div class="app-card__body">
-                    <p><strong>Nome:</strong> {{ documento.nome }}
-                        {% if "CH." in documento.nome or "CHUFC." in documento.nome %}
-                            <span class="badge-documento-complexo">DOCUMENTO DO COMPLEXO</span>
-                        {% endif %}
-                    </p>
-                    <p><strong>Organograma:</strong> {{ documento.organograma }}</p>
-                    <p><strong>Tipo de Documento:</strong> {{ documento.tipo_documento }}</p>
-                    <p><strong>Data de Publicação:</strong> {{ documento.data_publicacao }}</p>
-                    <p><strong>Abrangência:</strong>
-                        {% if "CH." in documento.nome or "CHUFC." in documento.nome %}
-                            COMPLEXO - CH
-                        {% else %}
-                            {{ documento.abrangencia }}
-                        {% endif %}
-                    </p>
-                    <p><strong>Atualizado:</strong> {{ 'Sim' if documento.atualizado else 'Não' }}</p>
+                    <a href="{{ documento_url }}" class="btn btn-outline-secondary"
+                       download="{{ documento.caminho.split('/')[-1] }}">
+                        <i class="fas fa-download"></i> Baixar
+                    </a>
+                    {% if nivel_acesso == 'elevado' %}
+                        <a href="{{ url_for('editar_documento', doc_id=documento.id) }}" class="btn btn-warning">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+                    {% endif %}
+                    <a href="{{ url_for('publicados') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </a>
                 </div>
             </div>
 
-            <div class="app-card">
-                <div class="app-card__header">
-                    <i class="fas fa-calendar-alt"></i> Datas e Elaboração
+            <div class="doc-grid">
+                <div>
+                    <div class="app-card">
+                        <div class="app-card__header"><i class="fas fa-info-circle"></i> Informações gerais</div>
+                        <div class="app-card__body">
+                            <dl class="info-list">
+                                <dt>Organograma</dt>
+                                <dd>{{ documento.organograma or '—' }}{% if documento.nome_completo %} <small class="text-muted">({{ documento.nome_completo }})</small>{% endif %}</dd>
+
+                                <dt>Abrangência</dt>
+                                <dd>{{ documento.abrangencia or '—' }}</dd>
+
+                                <dt>Tipo de documento</dt>
+                                <dd>{{ documento.tipo_documento or '—' }}</dd>
+
+                                {% if documento.marcador %}
+                                <dt>Marcador</dt>
+                                <dd>{{ documento.marcador }}</dd>
+                                {% endif %}
+
+                                <dt>Status</dt>
+                                <dd>
+                                    {% if documento.atualizado %}
+                                        <span class="status-pill status-pill--ok"><i class="fas fa-check"></i> Atualizado</span>
+                                    {% else %}
+                                        <span class="status-pill status-pill--warn"><i class="fas fa-exclamation-triangle"></i> Vencido</span>
+                                    {% endif %}
+                                </dd>
+
+                                <dt>Versão atual</dt>
+                                <dd>v{{ documento.versao_efetiva }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <div class="app-card">
+                        <div class="app-card__header"><i class="fas fa-calendar-alt"></i> Datas e autoria</div>
+                        <div class="app-card__body">
+                            <dl class="info-list">
+                                <dt>Data de publicação</dt>
+                                <dd>{{ documento.data_publicacao or '—' }}</dd>
+
+                                <dt>Data de elaboração</dt>
+                                <dd>{{ documento.data_elaboracao or '—' }}</dd>
+
+                                <dt>Vencimento</dt>
+                                <dd>{{ documento.vencimento or '—' }}</dd>
+
+                                <dt>Número SEI</dt>
+                                <dd {% if not documento.numero_sei %}class="empty"{% endif %}>{{ documento.numero_sei or 'Não informado' }}</dd>
+
+                                <dt>Elaboradores</dt>
+                                <dd {% if not documento.elaboradores %}class="empty"{% endif %}>{{ documento.elaboradores or 'Não informado' }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    {% if campos_extras %}
+                    <div class="app-card">
+                        <div class="app-card__header"><i class="fas fa-tags"></i> Campos adicionais</div>
+                        <div class="app-card__body">
+                            <dl class="info-list">
+                                {% for c in campos_extras %}
+                                {% set valor = valores_extras.get(c.nome) %}
+                                <dt>{{ c.rotulo }}</dt>
+                                <dd {% if not valor %}class="empty"{% endif %}>{{ valor or 'Não informado' }}</dd>
+                                {% endfor %}
+                            </dl>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if pdf_antigo_url %}
+                    <div class="app-card">
+                        <div class="app-card__header"><i class="fas fa-history"></i> Versão anterior</div>
+                        <div class="app-card__body">
+                            <a href="{{ pdf_antigo_url }}" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener">
+                                <i class="fas fa-eye"></i> Visualizar v{{ documento.versao_efetiva - 1 }}
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
-                <div class="app-card__body">
-                    <p><strong>Data de Elaboração:</strong> {{ documento.data_elaboracao }}</p>
-                    <p><strong>Data de Validade:</strong> {{ documento.vencimento }}</p>
-                    <p><strong>Número SEI:</strong> {{ documento.numero_sei }}</p>
-                    <p><strong>Elaboradores:</strong> {{ documento.elaboradores }}</p>
+
+                <div>
+                    <div class="app-card">
+                        <div class="app-card__header"><i class="fas fa-file-pdf"></i> Pré-visualização</div>
+                        <div class="app-card__body" style="padding:0;">
+                            <iframe src="{{ documento_url }}" class="pdf-preview" title="Pré-visualização do PDF"></iframe>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </main>
 
     {% include "partials/_footer.html" %}
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-        [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
-    </script>
 </body>
 </html>
