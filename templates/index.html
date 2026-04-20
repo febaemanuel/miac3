@@ -69,13 +69,13 @@
 
             <div class="button-grid">
                 {% if session.get('nivel_acesso') == 'elevado' %}
-                    <button class="btn-card" onclick="window.location.href='{{ url_for('publicar2') }}'"><i class="fas fa-upload"></i> Publicar Documento</button>
-                    <button class="btn-card btn-card-secondary" onclick="window.location.href='{{ url_for('publicados2') }}'"><i class="fas fa-file-alt"></i> Documentos</button>
+                    <button class="btn-card" onclick="window.location.href='{{ url_for('publicar_page') }}'"><i class="fas fa-upload"></i> Publicar Documento</button>
+                    <button class="btn-card btn-card-secondary" onclick="window.location.href='{{ url_for('publicados') }}'"><i class="fas fa-file-alt"></i> Documentos</button>
                     <button class="btn-card" onclick="window.location.href='/ajuda'"><i class="fas fa-question-circle"></i> Ajuda</button>
                     <button class="btn-card" onclick="window.location.href='{{ url_for('admin_panel') }}'"><i class="fas fa-list"></i> Lista Mestra</button>
                     <button class="btn-card btn-card-secondary" onclick="window.location.href='{{ url_for('estatisticas') }}'"><i class="fas fa-chart-line"></i> Relatórios</button>
                 {% else %}
-                    <button class="btn-card btn-card-secondary" onclick="window.location.href='{{ url_for('publicados2') }}'"><i class="fas fa-file-alt"></i> Documentos</button>
+                    <button class="btn-card btn-card-secondary" onclick="window.location.href='{{ url_for('publicados') }}'"><i class="fas fa-file-alt"></i> Documentos</button>
                     <button class="btn-card" onclick="window.location.href='{{ url_for('estatisticas') }}'"><i class="fas fa-chart-line"></i> Relatórios</button>
                 {% endif %}
             </div>

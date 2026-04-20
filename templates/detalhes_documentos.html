@@ -33,15 +33,15 @@
             <h1 class="page-title"><i class="fas fa-file-alt"></i> Detalhes do Documento</h1>
 
             <div class="btn-container" style="margin-top:0; margin-bottom:24px;">
-                <a href="/miac/static/uploads2/{{ documento.caminho.split('/')[-1] }}" class="btn btn-pdf" target="_blank">
+                <a href="/miac/static/uploads/{{ documento.caminho.split('/')[-1] }}" class="btn btn-pdf" target="_blank">
                     <i class="fas fa-file-pdf"></i> Visualizar PDF
                 </a>
                 {% if nivel_acesso == 'elevado' %}
-                    <a href="{{ url_for('editar_documento2', doc_id=documento.id) }}" class="btn btn-warning">
+                    <a href="{{ url_for('editar_documento', doc_id=documento.id) }}" class="btn btn-warning">
                         <i class="fas fa-edit"></i> Editar
                     </a>
                 {% endif %}
-                <a href="{{ url_for('publicados2') }}" class="btn btn-secondary">
+                <a href="{{ url_for('publicados') }}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Voltar
                 </a>
             </div>
