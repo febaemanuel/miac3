@@ -3,6 +3,8 @@ import os
 
 from werkzeug.security import generate_password_hash
 
+from sqlalchemy import inspect, text
+
 from app.extensions import db
 from app.models import (
     Abrangencia,
@@ -42,6 +44,68 @@ def _seed_organogramas():
             existentes.add(nome)
 
 
+def _enable_extensions():
+    if db.engine.dialect.name != "postgresql":
+        return
+    db.session.execute(text("CREATE EXTENSION IF NOT EXISTS unaccent"))
+
+
+def _migrate_schema():
+    """Adiciona colunas novas em bancos já existentes (idempotente)."""
+    inspector = inspect(db.engine)
+    dialect = db.engine.dialect.name
+
+    def tem_coluna(tabela, coluna):
+        return any(c["name"] == coluna for c in inspector.get_columns(tabela))
+
+    def add_col(tabela, ddl):
+        db.session.execute(text(f"ALTER TABLE {tabela} ADD COLUMN {ddl}"))
+
+    if "organograma" in inspector.get_table_names():
+        if not tem_coluna("organograma", "nome_completo"):
+            add_col("organograma", "nome_completo VARCHAR(200)")
+        if not tem_coluna("organograma", "abrangencia_id"):
+            add_col("organograma", "abrangencia_id INTEGER REFERENCES abrangencia(id)")
+
+    if "abrangencia" in inspector.get_table_names():
+        if not tem_coluna("abrangencia", "cor"):
+            default = "'#007bff'" if dialect != "postgresql" else "'#007bff'"
+            add_col("abrangencia", f"cor VARCHAR(7) NOT NULL DEFAULT {default}")
+        if not tem_coluna("abrangencia", "ordem"):
+            add_col("abrangencia", "ordem INTEGER NOT NULL DEFAULT 0")
+
+    db.session.commit()
+
+
+def _backfill_vinculos_e_nomes():
+    """Preenche organograma.abrangencia_id e nome_completo a partir dos documentos."""
+    orgs_sem_abrang = Organograma.query.filter(Organograma.abrangencia_id.is_(None)).all()
+    if orgs_sem_abrang:
+        for org in orgs_sem_abrang:
+            mais_comum = (
+                db.session.query(Documento2.abrangencia, db.func.count(Documento2.id))
+                .filter(Documento2.organograma == org.nome)
+                .filter(Documento2.abrangencia.isnot(None))
+                .group_by(Documento2.abrangencia)
+                .order_by(db.func.count(Documento2.id).desc())
+                .first()
+            )
+            if mais_comum:
+                abrang = Abrangencia.query.filter_by(nome=mais_comum[0]).first()
+                if abrang:
+                    org.abrangencia_id = abrang.id
+
+    orgs_sem_nome = Organograma.query.filter(Organograma.nome_completo.is_(None)).all()
+    for org in orgs_sem_nome:
+        doc_com_nome = (
+            Documento2.query.filter(Documento2.organograma == org.nome)
+            .filter(Documento2.nome_completo.isnot(None))
+            .first()
+        )
+        if doc_com_nome and doc_com_nome.nome_completo:
+            org.nome_completo = doc_com_nome.nome_completo
+
+
 def _seed_tipos_documento():
     existentes = {t.nome for t in TipoDocumento.query.all()}
     for (nome,) in db.session.query(Documento2.tipo_documento).distinct():
@@ -77,9 +141,12 @@ def _seed_usuarios():
 
 
 def run_seeds():
+    _enable_extensions()
+    _migrate_schema()
     _seed_abrangencias()
     _seed_organogramas()
     _seed_tipos_documento()
     _seed_usuarios()
+    _backfill_vinculos_e_nomes()
     OrganizacaoConfig.get()  # cria singleton com defaults se não existir
     db.session.commit()

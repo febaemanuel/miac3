@@ -79,10 +79,17 @@
                         <input type="text" class="form-control" id="titulo_manual" name="titulo[]" required>
                     </div>
                     <div class="mb-3">
-                        <label for="organograma_manual" class="form-label">Organograma*</label>
-                        <select class="form-control" id="organograma_manual" name="organograma[]" required>
+                        <label for="abrangencia_manual" class="form-label">Abrangência*</label>
+                        <select class="form-control" id="abrangencia_manual" name="abrangencia[]" required>
                             <option value="">Selecione...</option>
-                            {% for org in organogramas %}<option value="{{ org }}">{{ org }}</option>{% endfor %}
+                            {% for abrang in abrangencias %}<option value="{{ abrang }}">{{ abrang }}</option>{% endfor %}
+                        </select>
+                        <small class="text-muted">Selecione a abrangência primeiro para liberar os organogramas vinculados.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="organograma_manual" class="form-label">Organograma*</label>
+                        <select class="form-control" id="organograma_manual" name="organograma[]" required disabled>
+                            <option value="">Selecione a abrangência primeiro...</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -90,13 +97,6 @@
                         <select class="form-control" id="tipo_documento_manual" name="tipo_documento[]" required>
                             <option value="">Selecione...</option>
                             {% for tipo in tipos_documento %}<option value="{{ tipo }}">{{ tipo }}</option>{% endfor %}
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="abrangencia_manual" class="form-label">Abrangência*</label>
-                        <select class="form-control" id="abrangencia_manual" name="abrangencia[]" required>
-                            <option value="">Selecione...</option>
-                            {% for abrang in abrangencias %}<option value="{{ abrang }}">{{ abrang }}</option>{% endfor %}
                         </select>
                     </div>
                     <div class="mb-3">
@@ -225,7 +225,43 @@
             obter_dados: "{{ url_for('obter_dados') }}",
             publicar2: "{{ url_for('publicar2') }}"
         };
+        window.MIAC_ORGANOGRAMAS_POR_ABRANGENCIA = {{ organogramas_por_abrangencia | tojson }};
     </script>
     <script src="{{ url_for('static', filename='js/publicar2.js') }}"></script>
+    <script>
+        (function() {
+            var mapa = window.MIAC_ORGANOGRAMAS_POR_ABRANGENCIA || {};
+            var abrangSel = document.getElementById('abrangencia_manual');
+            var orgSel = document.getElementById('organograma_manual');
+            if (!abrangSel || !orgSel) return;
+
+            function atualizarOrganogramas() {
+                var abrang = abrangSel.value;
+                orgSel.innerHTML = '';
+                if (!abrang) {
+                    orgSel.disabled = true;
+                    orgSel.innerHTML = '<option value="">Selecione a abrangência primeiro...</option>';
+                    return;
+                }
+                var lista = mapa[abrang] || [];
+                orgSel.disabled = lista.length === 0;
+                var placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = lista.length
+                    ? 'Selecione...'
+                    : 'Nenhum organograma vinculado a esta abrangência';
+                orgSel.appendChild(placeholder);
+                lista.forEach(function(item) {
+                    var opt = document.createElement('option');
+                    opt.value = item.sigla;
+                    opt.textContent = item.nome_completo
+                        ? item.sigla + ' — ' + item.nome_completo
+                        : item.sigla;
+                    orgSel.appendChild(opt);
+                });
+            }
+            abrangSel.addEventListener('change', atualizarOrganogramas);
+        })();
+    </script>
 </body>
 </html>

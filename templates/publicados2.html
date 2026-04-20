@@ -14,7 +14,7 @@
         .main-content { margin-left: 290px; }
         footer { margin-left: 290px; }
 
-        /* Navegação HUWC/MEAC */
+        /* Navegação por abrangência (dinâmica) */
         .abrangencia-navigation {
             display: flex;
             flex-direction: column;
@@ -22,23 +22,25 @@
             width: 100%;
             margin-bottom: 18px;
         }
-        .abrangencia-navigation .btn {
+        .abrangencia-navigation .btn-abrang {
             width: 100%;
             font-size: .95rem;
             padding: 10px;
             border-radius: 8px;
-            transition: transform .2s, box-shadow .2s;
+            transition: transform .2s, box-shadow .2s, filter .2s;
+            color: #fff;
+            border: 2px solid transparent;
         }
-        .abrangencia-navigation .btn:hover {
+        .abrangencia-navigation .btn-abrang:hover {
             transform: translateY(-2px);
             box-shadow: var(--miac-shadow-sm);
+            filter: brightness(0.9);
+            color: #fff;
         }
-        #btn-huwc        { background-color: #007bff; border-color: #007bff; }
-        #btn-huwc:hover  { background-color: #0056b3; border-color: #0056b3; }
-        #btn-huwc.active { background-color: #0056b3; border-color: #0056b3; }
-        #btn-meac        { background-color: #28a745; border-color: #28a745; }
-        #btn-meac:hover  { background-color: #218838; border-color: #218838; }
-        #btn-meac.active { background-color: #218838; border-color: #218838; }
+        .abrangencia-navigation .btn-abrang.active {
+            filter: brightness(0.85);
+            border-color: #fff;
+        }
 
         /* Barra de pesquisa e filtros na sidebar */
         .sidebar .search-bar {
@@ -102,9 +104,6 @@
             align-items: center;
             gap: 12px;
         }
-        h1.titulo-huwc { color: #007bff; border-bottom-color: #007bff; }
-        h1.titulo-meac { color: #28a745; border-bottom-color: #28a745; }
-
         /* Lista de favoritos */
         #favoritos-lista { max-width: 900px; margin: 0 auto; }
         #favoritos-lista h5 {
@@ -158,8 +157,15 @@
         <h2>DOCUMENTOS INSTITUCIONAIS</h2>
 
         <div class="abrangencia-navigation">
-            <button class="btn btn-primary" id="btn-huwc" onclick="filterByAbrangencia('HUWC')">HUWC E CH</button>
-            <button class="btn btn-primary" id="btn-meac" onclick="filterByAbrangencia('MEAC')">MEAC</button>
+            {% for a in abrangencias %}
+            <button type="button"
+                    class="btn btn-abrang{% if a.nome == abrangencia_selecionada %} active{% endif %}"
+                    data-abrang="{{ a.nome }}"
+                    data-cor="{{ a.cor }}"
+                    style="background-color: {{ a.cor }}; border-color: {{ a.cor }};">
+                {{ a.nome }}
+            </button>
+            {% endfor %}
         </div>
 
         <ul>
@@ -238,7 +244,7 @@
         });
 
         $(document).ready(function () {
-            let currentAbrangencia = 'HUWC';
+            let currentAbrangencia = {{ abrangencia_selecionada | tojson }};
 
             $('#apenas-complexo').on('change', atualizarResultados);
 
@@ -286,37 +292,28 @@
                     error: function () { alert('Erro ao buscar documentos. Tente novamente.'); }
                 });
 
-                if (abrangencia === 'HUWC') {
-                    $('h1').removeClass('titulo-meac').addClass('titulo-huwc');
-                    $('h1').html('<i class="fas fa-file-invoice"></i> DOCUMENTOS (HUWC E CH)');
-                } else if (abrangencia === 'MEAC') {
-                    $('h1').removeClass('titulo-huwc').addClass('titulo-meac');
-                    $('h1').html('<i class="fas fa-file-invoice"></i> DOCUMENTOS (MEAC)');
-                }
+                const btnAtivo = $('.btn-abrang[data-abrang="' + abrangencia + '"]');
+                const corAtiva = btnAtivo.data('cor') || 'var(--miac-accent)';
+                $('.btn-abrang').removeClass('active');
+                btnAtivo.addClass('active');
+
+                $('h1.page-title--documentos')
+                    .css({ color: corAtiva, 'border-bottom-color': corAtiva })
+                    .html('<i class="fas fa-file-invoice"></i> DOCUMENTOS (' + abrangencia + ')');
             };
 
-            $('#btn-huwc').on('click', function () {
-                filterByAbrangencia('HUWC');
-                $(this).addClass('active');
-                $('#btn-meac').removeClass('active');
+            $('.btn-abrang').on('click', function () {
+                const abrang = $(this).data('abrang');
+                filterByAbrangencia(abrang);
+                sessionStorage.setItem("lastAbrangencia", abrang);
             });
 
-            $('#btn-meac').on('click', function () {
-                filterByAbrangencia('MEAC');
-                $(this).addClass('active');
-                $('#btn-huwc').removeClass('active');
-            });
-
-            if (sessionStorage.getItem("lastAbrangencia")) {
-                currentAbrangencia = sessionStorage.getItem("lastAbrangencia");
+            const salva = sessionStorage.getItem("lastAbrangencia");
+            if (salva && $('.btn-abrang[data-abrang="' + salva + '"]').length) {
+                currentAbrangencia = salva;
+            }
+            if (currentAbrangencia) {
                 filterByAbrangencia(currentAbrangencia);
-                if (currentAbrangencia === 'HUWC') {
-                    $('#btn-huwc').addClass('active');
-                    $('#btn-meac').removeClass('active');
-                } else {
-                    $('#btn-meac').addClass('active');
-                    $('#btn-huwc').removeClass('active');
-                }
             }
 
             function searchDocuments(page = 1) {
@@ -649,12 +646,8 @@
                 });
             });
 
-            $('.abrangencia-navigation .btn').on('click', function () {
-                sessionStorage.setItem("lastAbrangencia", currentAbrangencia);
-            });
-
             window.gerarRelatorio = function (organograma) {
-                if (!currentAbrangencia) currentAbrangencia = 'HUWC';
+                if (!currentAbrangencia) return;
                 window.location.href = `/miac/gerar_relatorio/${currentAbrangencia}/${organograma}`;
             };
         });

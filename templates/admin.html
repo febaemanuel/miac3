@@ -311,14 +311,14 @@
 
                         {% if abrangencias %}
                             {% for a in abrangencias %}
+                            {% set areas_da_abrang = organogramas_por_abrangencia.get(a.id, []) %}
                             <details class="tree-node">
                                 <summary>
                                     <i class="fas fa-chevron-right tree-node__chevron"></i>
-                                    <span class="tree-node__icon"><i class="fas fa-hospital"></i></span>
+                                    <span class="tree-node__icon" style="background: {{ a.cor }};"><i class="fas fa-sitemap"></i></span>
                                     <span class="tree-node__title">{{ a.nome }}</span>
                                     <span class="tree-node__meta">
-                                        {% set qtd_sin = sinonimos | selectattr('para_id', 'equalto', a.id) | list | length %}
-                                        {% if qtd_sin %}{{ qtd_sin }} sinônimo{{ 's' if qtd_sin != 1 else '' }}{% endif %}
+                                        {{ areas_da_abrang | length }} área{{ 's' if areas_da_abrang | length != 1 else '' }}
                                     </span>
                                     <span class="badge {% if a.ativo %}bg-success{% else %}bg-secondary{% endif %}">
                                         {% if a.ativo %}Ativo{% else %}Inativo{% endif %}
@@ -329,7 +329,7 @@
                                             <input type="hidden" name="id" value="{{ a.id }}">
                                             <button type="submit" class="icon-btn" title="Ativar/desativar"><i class="fas fa-power-off"></i></button>
                                         </form>
-                                        <form method="POST" action="{{ url_for('admin_abrangencia') }}" class="d-inline" onclick="event.stopPropagation()" onsubmit="return confirm('Remover {{ a.nome }} e seus sinônimos?')">
+                                        <form method="POST" action="{{ url_for('admin_abrangencia') }}" class="d-inline" onclick="event.stopPropagation()" onsubmit="return confirm('Remover {{ a.nome }}? As áreas vinculadas ficarão sem abrangência.')">
                                             <input type="hidden" name="acao" value="remove">
                                             <input type="hidden" name="id" value="{{ a.id }}">
                                             <button type="submit" class="icon-btn icon-btn--danger" title="Remover"><i class="fas fa-trash"></i></button>
@@ -337,6 +337,41 @@
                                     </span>
                                 </summary>
                                 <div class="tree-node__body">
+                                    <div class="tree-branch">
+                                        <div class="tree-branch__label"><i class="fas fa-palette"></i> Cor do botão</div>
+                                        <form method="POST" action="{{ url_for('admin_abrangencia') }}" class="quick-add" style="margin-top:4px;">
+                                            <input type="hidden" name="acao" value="update">
+                                            <input type="hidden" name="id" value="{{ a.id }}">
+                                            <input type="color" name="cor" class="form-control form-control-color" value="{{ a.cor }}" style="flex:0 0 60px;">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">Salvar cor</button>
+                                        </form>
+                                    </div>
+
+                                    <div class="tree-branch">
+                                        <div class="tree-branch__label"><i class="fas fa-sitemap"></i> Organogramas (áreas vinculadas)</div>
+                                        {% if areas_da_abrang %}
+                                            {% for o in areas_da_abrang %}
+                                            <span class="tag-pill" title="{{ o.nome_completo or '' }}">
+                                                {{ o.nome }}{% if o.nome_completo %} — <small class="text-muted">{{ o.nome_completo }}</small>{% endif %}
+                                                <form method="POST" action="{{ url_for('admin_organograma') }}" onsubmit="return confirm('Remover {{ o.nome }}?')">
+                                                    <input type="hidden" name="acao" value="remove">
+                                                    <input type="hidden" name="id" value="{{ o.id }}">
+                                                    <button type="submit" class="tag-pill__remove"><i class="fas fa-times"></i></button>
+                                                </form>
+                                            </span>
+                                            {% endfor %}
+                                        {% else %}
+                                            <small class="text-muted">Nenhuma área vinculada ainda.</small>
+                                        {% endif %}
+                                        <form method="POST" action="{{ url_for('admin_organograma') }}" class="quick-add">
+                                            <input type="hidden" name="acao" value="add">
+                                            <input type="hidden" name="abrangencia_id" value="{{ a.id }}">
+                                            <input type="text" name="nome" class="form-control form-control-sm" placeholder="Sigla (ex.: DIVGP)" required>
+                                            <input type="text" name="nome_completo" class="form-control form-control-sm" placeholder="Nome completo (opcional)">
+                                            <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-plus"></i></button>
+                                        </form>
+                                    </div>
+
                                     <div class="tree-branch">
                                         <div class="tree-branch__label"><i class="fas fa-tags"></i> Sinônimos</div>
                                         {% set lista_sin = sinonimos | selectattr('para_id', 'equalto', a.id) | list %}
@@ -374,37 +409,42 @@
                         <form method="POST" action="{{ url_for('admin_abrangencia') }}" class="quick-add mt-3">
                             <input type="hidden" name="acao" value="add">
                             <input type="text" name="nome" class="form-control" placeholder="Nova abrangência (ex.: HUWC)" required>
+                            <input type="color" name="cor" value="#007bff" class="form-control form-control-color" style="flex:0 0 60px;" title="Cor do botão">
                             <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Adicionar abrangência</button>
                         </form>
 
+                        {% if organogramas_orfaos %}
                         <hr class="section-divider">
 
-                        <div class="config-section__title" style="font-size:1.15rem;">Áreas (Organogramas)</div>
+                        <div class="config-section__title" style="font-size:1.15rem;">Áreas sem abrangência (Organogramas)</div>
                         <p class="config-section__subtitle">
-                            Siglas das áreas/setores da organização. Em uma próxima versão, cada área poderá ser vinculada a uma abrangência específica.
+                            Estas áreas ainda não estão vinculadas a nenhuma abrangência. Você pode vinculá-las abaixo.
                         </p>
 
                         <div class="flat-card">
-                            {% if organogramas %}
-                                {% for o in organogramas %}
-                                <span class="tag-pill">
-                                    {{ o.nome }}
-                                    <form method="POST" action="{{ url_for('admin_organograma') }}" onsubmit="return confirm('Remover {{ o.nome }}?')">
-                                        <input type="hidden" name="acao" value="remove">
-                                        <input type="hidden" name="id" value="{{ o.id }}">
-                                        <button type="submit" class="tag-pill__remove"><i class="fas fa-times"></i></button>
-                                    </form>
-                                </span>
-                                {% endfor %}
-                            {% else %}
-                                <small class="text-muted">Nenhuma área cadastrada.</small>
-                            {% endif %}
-                            <form method="POST" action="{{ url_for('admin_organograma') }}" class="quick-add">
-                                <input type="hidden" name="acao" value="add">
-                                <input type="text" name="nome" class="form-control form-control-sm" placeholder="Nova sigla (ex.: DIVGP)" required>
-                                <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-plus"></i></button>
-                            </form>
+                            {% for o in organogramas_orfaos %}
+                            <div class="quick-add" style="align-items:center; margin-bottom:8px;">
+                                <strong style="min-width:100px;">{{ o.nome }}</strong>
+                                <form method="POST" action="{{ url_for('admin_organograma') }}" class="quick-add" style="margin:0; flex:1;">
+                                    <input type="hidden" name="acao" value="update">
+                                    <input type="hidden" name="id" value="{{ o.id }}">
+                                    <select name="abrangencia_id" class="form-select form-select-sm">
+                                        <option value="">-- Sem abrangência --</option>
+                                        {% for a in abrangencias %}
+                                        <option value="{{ a.id }}">{{ a.nome }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">Vincular</button>
+                                </form>
+                                <form method="POST" action="{{ url_for('admin_organograma') }}" onsubmit="return confirm('Remover {{ o.nome }}?')">
+                                    <input type="hidden" name="acao" value="remove">
+                                    <input type="hidden" name="id" value="{{ o.id }}">
+                                    <button type="submit" class="icon-btn icon-btn--danger"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </div>
+                            {% endfor %}
                         </div>
+                        {% endif %}
 
                         <hr class="section-divider">
 

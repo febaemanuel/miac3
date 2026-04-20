@@ -19,7 +19,7 @@ from sqlalchemy.ext.mutable import MutableList
 from werkzeug.utils import secure_filename
 
 from app.extensions import db
-from app.models import Documento2
+from app.models import Abrangencia, Documento2, Organograma, TipoDocumento
 from app.services.dates import converter_data, formatar_data_para_input
 
 logger = logging.getLogger(__name__)
@@ -48,15 +48,27 @@ def init_routes(app):
         if "username" not in session:
             return redirect(url_for("login"))
 
-        organogramas = db.session.query(Documento2.organograma).distinct().all()
-        tipos_documento = db.session.query(Documento2.tipo_documento).distinct().all()
-        abrangencias = db.session.query(Documento2.abrangencia).distinct().all()
+        abrangencias = (
+            Abrangencia.query.filter_by(ativo=True)
+            .order_by(Abrangencia.ordem, Abrangencia.nome)
+            .all()
+        )
+        organogramas = Organograma.query.order_by(Organograma.nome).all()
+        tipos_documento = TipoDocumento.query.order_by(TipoDocumento.nome).all()
+
+        organogramas_por_abrangencia = {a.nome: [] for a in abrangencias}
+        for org in organogramas:
+            if org.abrangencia and org.abrangencia.nome in organogramas_por_abrangencia:
+                organogramas_por_abrangencia[org.abrangencia.nome].append(
+                    {"sigla": org.nome, "nome_completo": org.nome_completo or ""}
+                )
 
         return render_template(
             "publicar2.html",
-            organogramas=[org[0] for org in organogramas if org[0]],
-            tipos_documento=[tipo[0] for tipo in tipos_documento if tipo[0]],
-            abrangencias=[abrang[0] for abrang in abrangencias if abrang[0]],
+            abrangencias=[a.nome for a in abrangencias],
+            organogramas=[o.nome for o in organogramas],
+            organogramas_por_abrangencia=organogramas_por_abrangencia,
+            tipos_documento=[t.nome for t in tipos_documento],
         )
 
     @app.route("/miac/publicar2", methods=["POST"])
@@ -181,7 +193,13 @@ def init_routes(app):
     def publicados2():
         _atualizar_status_documentos()
 
-        abrangencia_selecionada = request.args.get("abrangencia", "HUWC")
+        abrangencias_ativas = (
+            Abrangencia.query.filter_by(ativo=True)
+            .order_by(Abrangencia.ordem, Abrangencia.nome)
+            .all()
+        )
+        default_abrang = abrangencias_ativas[0].nome if abrangencias_ativas else ""
+        abrangencia_selecionada = request.args.get("abrangencia", default_abrang)
         organograma_filtro = request.args.get("organograma", "").strip()
         tipo_documento_filtro = request.args.get("tipo_documento", "").strip()
 
@@ -228,6 +246,7 @@ def init_routes(app):
             organogramas=organogramas_formatados,
             tipos_documento=tipos_documento_list,
             abrangencia_selecionada=abrangencia_selecionada,
+            abrangencias=abrangencias_ativas,
             organograma_filtro=organograma_filtro,
             tipo_documento_filtro=tipo_documento_filtro,
         )
