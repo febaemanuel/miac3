@@ -19,7 +19,13 @@ from sqlalchemy.ext.mutable import MutableList
 from werkzeug.utils import secure_filename
 
 from app.extensions import db
-from app.models import Abrangencia, Documento, Organograma, TipoDocumento
+from app.models import (
+    Abrangencia,
+    CampoExtracao,
+    Documento,
+    Organograma,
+    TipoDocumento,
+)
 from app.services.dates import converter_data, formatar_data_para_input
 
 logger = logging.getLogger(__name__)
@@ -55,6 +61,11 @@ def init_routes(app):
         )
         organogramas = Organograma.query.order_by(Organograma.nome).all()
         tipos_documento = TipoDocumento.query.order_by(TipoDocumento.nome).all()
+        campos_extras = (
+            CampoExtracao.query.filter_by(ativo=True)
+            .order_by(CampoExtracao.ordem, CampoExtracao.id)
+            .all()
+        )
 
         organogramas_por_abrangencia = {a.nome: [] for a in abrangencias}
         for org in organogramas:
@@ -69,6 +80,7 @@ def init_routes(app):
             organogramas=[o.nome for o in organogramas],
             organogramas_por_abrangencia=organogramas_por_abrangencia,
             tipos_documento=[t.nome for t in tipos_documento],
+            campos_extras=campos_extras,
         )
 
     @app.route("/miac/publicar", methods=["POST"])
@@ -88,6 +100,16 @@ def init_routes(app):
             numeros_sei = request.form.getlist("numero_sei[]")
             vencimentos = request.form.getlist("vencimento[]")
             datas_elaboracao = request.form.getlist("data_elaboracao[]")
+
+            campos_extras_def = (
+                CampoExtracao.query.filter_by(ativo=True)
+                .order_by(CampoExtracao.ordem, CampoExtracao.id)
+                .all()
+            )
+            extras_por_campo = {
+                c.nome: request.form.getlist(f"extra_{c.nome}[]")
+                for c in campos_extras_def
+            }
 
             if len(titulos) != len(files):
                 return (
@@ -157,6 +179,11 @@ def init_routes(app):
                 if documento_com_nome and documento_com_nome.nome_completo:
                     nome_completo = documento_com_nome.nome_completo
 
+                extras_doc = {}
+                for nome_campo, valores in extras_por_campo.items():
+                    if index < len(valores) and valores[index].strip():
+                        extras_doc[nome_campo] = valores[index].strip()
+
                 documento = Documento(
                     nome=titulos[index],
                     organograma=organogramas[index],
@@ -171,6 +198,7 @@ def init_routes(app):
                     data_publicacao=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     marcador=marcador,
                     nome_completo=nome_completo,
+                    campos_extras=extras_doc,
                 )
                 db.session.add(documento)
                 log_detalhado.append(f"{titulos[index]} salvo como {file_name}")
@@ -293,6 +321,12 @@ def init_routes(app):
 
         upload_folder = current_app.config["UPLOAD_FOLDER"]
 
+        campos_extras_def = (
+            CampoExtracao.query.filter_by(ativo=True)
+            .order_by(CampoExtracao.ordem, CampoExtracao.id)
+            .all()
+        )
+
         if request.method == "POST":
             try:
                 documento.nome = request.form.get("nome", documento.nome)
@@ -318,6 +352,17 @@ def init_routes(app):
                 documento.elaboradores = request.form.get(
                     "elaboradores", documento.elaboradores
                 )
+
+                extras = dict(documento.campos_extras or {})
+                for c in campos_extras_def:
+                    key = f"extra_{c.nome}"
+                    if key in request.form:
+                        valor = request.form[key].strip()
+                        if valor:
+                            extras[c.nome] = valor
+                        else:
+                            extras.pop(c.nome, None)
+                documento.campos_extras = extras
 
                 if (
                     "novo_pdf" in request.files
@@ -393,6 +438,8 @@ def init_routes(app):
             "historico_efetivo": historico_ordenado,
             "data_elaboracao": formatar_data_para_input(documento.data_elaboracao),
             "vencimento": formatar_data_para_input(documento.vencimento),
+            "campos_extras": campos_extras_def,
+            "valores_extras": documento.campos_extras or {},
         }
         return render_template("editar_documento.html", **dados_template)
 

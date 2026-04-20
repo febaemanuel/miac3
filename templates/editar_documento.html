@@ -64,6 +64,34 @@
                     </div>
                 </div>
 
+                {% if campos_extras %}
+                <div class="app-card">
+                    <div class="app-card__header">
+                        <i class="fas fa-tags"></i> Campos adicionais
+                    </div>
+                    <div class="app-card__body">
+                        {% for c in campos_extras %}
+                        <div class="mb-3">
+                            <label for="extra_{{ c.nome }}" class="form-label">{{ c.rotulo }}{% if c.obrigatorio %}*{% endif %}</label>
+                            {% if c.tipo == 'select' %}
+                                <select class="form-control" id="extra_{{ c.nome }}" name="extra_{{ c.nome }}" {% if c.obrigatorio %}required{% endif %}>
+                                    <option value="">Selecione...</option>
+                                    {% for op in (c.opcoes or []) %}
+                                    <option value="{{ op }}" {% if valores_extras.get(c.nome) == op %}selected{% endif %}>{{ op }}</option>
+                                    {% endfor %}
+                                </select>
+                            {% else %}
+                                <input type="{{ {'data':'date','numero':'number','texto':'text'}[c.tipo] }}"
+                                       class="form-control" id="extra_{{ c.nome }}" name="extra_{{ c.nome }}"
+                                       value="{{ valores_extras.get(c.nome, '') }}"
+                                       {% if c.obrigatorio %}required{% endif %}>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
                 <div class="app-card">
                     <div class="app-card__header">
                         <i class="fas fa-file-upload"></i> Atualizar Versão

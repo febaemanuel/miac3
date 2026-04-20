@@ -8,6 +8,7 @@ from werkzeug.utils import secure_filename
 
 logger = logging.getLogger(__name__)
 
+from app.models import CampoExtracao, IaConfig
 from app.services.ia_service import (
     send_to_deepseek_with_retry,
     send_to_gpt_with_retry,
@@ -23,7 +24,17 @@ from app.services.vocabulario import (
 )
 
 
-def _build_prompt(pdf_text):
+PROMPT_PADRAO = (
+    "Extraia as seguintes informações do texto de forma literal. "
+    "Retorne apenas o valor encontrado ou 'Não localizado' se não houver correspondência. "
+    "Não use alternativas aproximadas.\n"
+    "{campos_fixos}"
+    "{campos_extras}"
+    "\nTexto:\n{texto_pdf}"
+)
+
+
+def _campos_fixos_instrucoes():
     abrangencias = listar_abrangencias()
     organogramas = listar_organogramas()
     tipos = listar_tipos_documento()
@@ -36,9 +47,6 @@ def _build_prompt(pdf_text):
         )
 
     return (
-        "Extraia as seguintes informações do texto de forma literal. "
-        "Retorne apenas o valor encontrado ou 'Não localizado' se não houver correspondência. "
-        "Não use alternativas aproximadas.\n"
         "Data de Elaboração (formato dd/mm/aaaa):\n"
         "Vencimento (também pode ser 'Revisão'; formato dd/mm/aaaa; "
         "se não houver, use data de elaboração + 2 anos):\n"
@@ -49,11 +57,30 @@ def _build_prompt(pdf_text):
         "Título do Documento:\n"
         "Número SEI (ex.: 23533.003368/2023-10):\n"
         "Elaboradores (separe por vírgula se mais de um):\n"
-        f"\nTexto:\n{pdf_text}"
     )
 
 
-def _parse_gpt_response(response_text, filename):
+def _campos_extras_instrucoes(campos):
+    if not campos:
+        return ""
+    linhas = []
+    for c in campos:
+        instrucao = f" ({c.instrucao_ia})" if c.instrucao_ia else ""
+        linhas.append(f"{c.rotulo}{instrucao}:\n")
+    return "".join(linhas)
+
+
+def _build_prompt(pdf_text, campos_extras):
+    config = IaConfig.get()
+    template = config.prompt_extracao or PROMPT_PADRAO
+    return template.format(
+        campos_fixos=_campos_fixos_instrucoes(),
+        campos_extras=_campos_extras_instrucoes(campos_extras),
+        texto_pdf=pdf_text,
+    )
+
+
+def _parse_gpt_response(response_text, filename, campos_extras):
     extracted = {
         "data_elaboracao": "Não localizado",
         "vencimento": "Não localizado",
@@ -65,6 +92,8 @@ def _parse_gpt_response(response_text, filename):
         "titulo_documento": filename,
         "elaboradores": "Não localizado",
     }
+    extras_extraidos = {c.nome: "Não localizado" for c in campos_extras}
+
     campos = {
         "Data de Elaboração:": "data_elaboracao",
         "Número SEI:": "numero_sei",
@@ -74,6 +103,8 @@ def _parse_gpt_response(response_text, filename):
         "Código do Documento:": "codigo_documento",
         "Título do Documento:": "titulo_documento",
     }
+    rotulos_extras = {f"{c.rotulo}:": c.nome for c in campos_extras}
+
     for line in (ln.strip() for ln in response_text.split("\n") if ln.strip()):
         matched = False
         for prefixo, chave in campos.items():
@@ -83,11 +114,19 @@ def _parse_gpt_response(response_text, filename):
                 break
         if matched:
             continue
+        for prefixo, chave in rotulos_extras.items():
+            if prefixo in line:
+                extras_extraidos[chave] = line.split(":", 1)[1].strip()
+                matched = True
+                break
+        if matched:
+            continue
         if "Vencimento:" in line or "Revisão:" in line:
             extracted["vencimento"] = line.split(":", 1)[1].strip()
         elif "Elaboradores:" in line:
             elaboradores = line.split(":", 1)[1].strip()
             extracted["elaboradores"] = [e.strip() for e in elaboradores.split(",")]
+    extracted["campos_extras"] = extras_extraidos
     return extracted
 
 
@@ -98,12 +137,18 @@ def init_routes(app):
             return jsonify({"error": "Usuário não autenticado"}), 403
 
         upload_folder = current_app.config["UPLOAD_FOLDER"]
-        deepseek_key = current_app.config["DEEPSEEK_API_KEY"]
-        openai_key = current_app.config["OPENAI_API_KEY"]
+        ia_config = IaConfig.get()
+        deepseek_key = ia_config.deepseek_api_key or current_app.config["DEEPSEEK_API_KEY"]
+        openai_key = ia_config.openai_api_key or current_app.config["OPENAI_API_KEY"]
+        campos_extras_ativos = (
+            CampoExtracao.query.filter_by(ativo=True)
+            .order_by(CampoExtracao.ordem, CampoExtracao.id)
+            .all()
+        )
 
         try:
             files = request.files.getlist("pdf_file")
-            modelo_ia = request.form.get("modelo_ia", "deepseek")
+            modelo_ia = request.form.get("modelo_ia") or ia_config.modelo_padrao
             if not files:
                 return jsonify({"error": "Nenhum arquivo enviado."}), 400
 
@@ -133,7 +178,7 @@ def init_routes(app):
                                 f"Texto não encontrado ou insuficiente no PDF: {file.filename}"
                             )
 
-                        prompt = _build_prompt(pdf_text)
+                        prompt = _build_prompt(pdf_text, campos_extras_ativos)
                         if modelo_ia == "deepseek":
                             gpt_response = send_to_deepseek_with_retry(
                                 prompt, deepseek_key
@@ -148,7 +193,9 @@ def init_routes(app):
                                 f"Erro ao comunicar com a API de IA para: {file.filename}"
                             )
 
-                        extracted = _parse_gpt_response(gpt_response, file.filename)
+                        extracted = _parse_gpt_response(
+                            gpt_response, file.filename, campos_extras_ativos
+                        )
 
                         extracted["abrangencia"] = (
                             resolver_abrangencia(extracted["abrangencia"])
@@ -194,6 +241,7 @@ def init_routes(app):
                                     ),
                                 },
                                 "elaboradores": elaboradores,
+                                "campos_extras": extracted["campos_extras"],
                                 "status": "sucesso",
                             }
                         )

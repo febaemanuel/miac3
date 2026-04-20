@@ -10,6 +10,7 @@ from app.models import (
     Abrangencia,
     AbrangenciaSinonimo,
     Documento,
+    IaConfig,
     Organograma,
     OrganizacaoConfig,
     TipoDocumento,
@@ -131,6 +132,11 @@ def _migrate_schema():
         if not tem_coluna("abrangencia", "ordem"):
             add_col("abrangencia", "ordem INTEGER NOT NULL DEFAULT 0")
 
+    if "documento" in inspector.get_table_names():
+        if not tem_coluna("documento", "campos_extras"):
+            tipo = "JSONB" if dialect == "postgresql" else "JSON"
+            add_col("documento", f"campos_extras {tipo}")
+
     db.session.commit()
 
     _atualizar_caminhos_uploads()
@@ -208,4 +214,5 @@ def run_seeds():
     _seed_usuarios()
     _backfill_vinculos_e_nomes()
     OrganizacaoConfig.get()  # cria singleton com defaults se não existir
+    IaConfig.get()
     db.session.commit()

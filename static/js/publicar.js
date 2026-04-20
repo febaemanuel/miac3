@@ -306,6 +306,11 @@ $(document).ready(function () {
             formData.append('numero_sei[]', dados.gpt_response.numero_sei);
             formData.append('vencimento[]', dados.gpt_response.vencimento);
             formData.append('data_elaboracao[]', dados.gpt_response.data_elaboracao);
+            const extras = dados.campos_extras || {};
+            Object.keys(extras).forEach(function (k) {
+                const v = extras[k];
+                formData.append('extra_' + k + '[]', (v && v !== 'Não localizado') ? v : '');
+            });
         });
 
         $.ajax({
@@ -373,6 +378,10 @@ function publicarManual(event) {
     formData.append('vencimento[]', $('#vencimento_manual').val());
     formData.append('numero_sei[]', $('#numero_sei_manual').val());
     formData.append('elaboradores[]', $('#elaboradores_manual').val());
+
+    $('#form-manual [name^="extra_"]').each(function () {
+        formData.append(this.name, $(this).val());
+    });
 
     $('#publicar-loading').show();
 
