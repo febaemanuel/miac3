@@ -1,5 +1,6 @@
 """Rotas principais: index, lista, buscas e relações."""
 from flask import (
+    current_app,
     jsonify,
     redirect,
     render_template,
@@ -200,4 +201,4 @@ def init_routes(app):
 
     @app.route("/miac/static/<path:filename>")
     def static_files(filename):
-        return send_from_directory("static", filename)
+        return send_from_directory(current_app.static_folder, filename)
