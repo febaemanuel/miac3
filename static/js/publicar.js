@@ -1,4 +1,4 @@
-/* publicar2.js — lógica da tela de publicação com fila de processamento por IA.
+/* publicar.js — lógica da tela de publicação com fila de processamento por IA.
    URLs injetadas via window.MIAC_URLS no template. */
 
 let arquivosProcessados = [];
@@ -309,7 +309,7 @@ $(document).ready(function () {
         });
 
         $.ajax({
-            url: window.MIAC_URLS.publicar2,
+            url: window.MIAC_URLS.publicar,
             type: 'POST',
             data: formData,
             processData: false,
@@ -377,7 +377,7 @@ function publicarManual(event) {
     $('#publicar-loading').show();
 
     $.ajax({
-        url: window.MIAC_URLS.publicar2,
+        url: window.MIAC_URLS.publicar,
         type: 'POST',
         data: formData,
         processData: false,

@@ -19,15 +19,15 @@ from sqlalchemy.ext.mutable import MutableList
 from werkzeug.utils import secure_filename
 
 from app.extensions import db
-from app.models import Abrangencia, Documento2, Organograma, TipoDocumento
+from app.models import Abrangencia, Documento, Organograma, TipoDocumento
 from app.services.dates import converter_data, formatar_data_para_input
 
 logger = logging.getLogger(__name__)
 
 
 def _atualizar_status_documentos():
-    """Recalcula campo `atualizado` de cada Documento2 com base no vencimento."""
-    documentos = Documento2.query.all()
+    """Recalcula campo `atualizado` de cada documento com base no vencimento."""
+    documentos = Documento.query.all()
     hoje = datetime.now().date()
     for documento in documentos:
         if documento.vencimento:
@@ -43,8 +43,8 @@ def _atualizar_status_documentos():
 
 
 def init_routes(app):
-    @app.route("/miac/publicar2", methods=["GET"])
-    def publicar2_page():
+    @app.route("/miac/publicar", methods=["GET"])
+    def publicar_page():
         if "username" not in session:
             return redirect(url_for("login"))
 
@@ -64,15 +64,15 @@ def init_routes(app):
                 )
 
         return render_template(
-            "publicar2.html",
+            "publicar.html",
             abrangencias=[a.nome for a in abrangencias],
             organogramas=[o.nome for o in organogramas],
             organogramas_por_abrangencia=organogramas_por_abrangencia,
             tipos_documento=[t.nome for t in tipos_documento],
         )
 
-    @app.route("/miac/publicar2", methods=["POST"])
-    def publicar2():
+    @app.route("/miac/publicar", methods=["POST"])
+    def publicar():
         if "username" not in session:
             return jsonify({"error": "Usuário não autenticado"}), 403
 
@@ -143,7 +143,7 @@ def init_routes(app):
                 file.save(file_path)
 
                 marcador = None
-                documento_existente = Documento2.query.filter_by(
+                documento_existente = Documento.query.filter_by(
                     organograma=organogramas[index],
                     abrangencia=abrangencias[index],
                 ).first()
@@ -151,13 +151,13 @@ def init_routes(app):
                     marcador = documento_existente.marcador
 
                 nome_completo = None
-                documento_com_nome = Documento2.query.filter_by(
+                documento_com_nome = Documento.query.filter_by(
                     organograma=organogramas[index]
                 ).first()
                 if documento_com_nome and documento_com_nome.nome_completo:
                     nome_completo = documento_com_nome.nome_completo
 
-                documento = Documento2(
+                documento = Documento(
                     nome=titulos[index],
                     organograma=organogramas[index],
                     tipo_documento=tipos_documento[index],
@@ -189,8 +189,8 @@ def init_routes(app):
                 500,
             )
 
-    @app.route("/miac/publicados2", methods=["GET"])
-    def publicados2():
+    @app.route("/miac/publicados", methods=["GET"])
+    def publicados():
         _atualizar_status_documentos()
 
         abrangencias_ativas = (
@@ -203,11 +203,11 @@ def init_routes(app):
         organograma_filtro = request.args.get("organograma", "").strip()
         tipo_documento_filtro = request.args.get("tipo_documento", "").strip()
 
-        query = Documento2.query.filter_by(abrangencia=abrangencia_selecionada)
+        query = Documento.query.filter_by(abrangencia=abrangencia_selecionada)
         if organograma_filtro:
-            query = query.filter(Documento2.organograma == organograma_filtro)
+            query = query.filter(Documento.organograma == organograma_filtro)
         if tipo_documento_filtro:
-            query = query.filter(Documento2.tipo_documento == tipo_documento_filtro)
+            query = query.filter(Documento.tipo_documento == tipo_documento_filtro)
 
         documentos = query.all()
 
@@ -227,7 +227,7 @@ def init_routes(app):
                 tipos_documento_unicos.add(documento.tipo_documento)
 
         organogramas_completos = (
-            db.session.query(Documento2.organograma, Documento2.nome_completo)
+            db.session.query(Documento.organograma, Documento.nome_completo)
             .distinct()
             .all()
         )
@@ -241,7 +241,7 @@ def init_routes(app):
         tipos_documento_list = sorted(tipos_documento_unicos)
 
         return render_template(
-            "publicados2.html",
+            "publicados.html",
             documentos_agrupados=documentos_agrupados,
             organogramas=organogramas_formatados,
             tipos_documento=tipos_documento_list,
@@ -251,46 +251,43 @@ def init_routes(app):
             tipo_documento_filtro=tipo_documento_filtro,
         )
 
-    @app.route("/miac/documento2/<int:doc_id>", methods=["GET"])
-    def documento2_detalhes(doc_id):
-        documento = db.session.get(Documento2, doc_id)
+    @app.route("/miac/documento/<int:doc_id>", methods=["GET"])
+    def documento_detalhes(doc_id):
+        documento = db.session.get(Documento, doc_id)
         if documento:
             documento_url = url_for(
                 "static",
-                filename=f"uploads2/{os.path.basename(documento.caminho)}",
+                filename=f"uploads/{os.path.basename(documento.caminho)}",
                 _external=True,
             )
             return render_template(
-                "detalhes2_documentos.html",
+                "detalhes_documentos.html",
                 documento=documento,
                 documento_url=documento_url,
                 nivel_acesso=session.get("nivel_acesso"),
             )
         return "Documento não encontrado", 404
 
-    @app.route("/miac/excluir_documento/<int:doc_id>/<tipo>", methods=["GET"])
-    def excluir_documento(doc_id, tipo):
+    @app.route("/miac/excluir_documento/<int:doc_id>", methods=["GET"])
+    def excluir_documento(doc_id):
         if "username" not in session:
             return redirect(url_for("login"))
 
-        if tipo != "documento2":
-            return "Tipo de documento inválido", 400
-
-        documento = db.session.get(Documento2, doc_id)
+        documento = db.session.get(Documento, doc_id)
         if documento is None:
             return "Documento não encontrado", 404
 
         db.session.delete(documento)
         db.session.commit()
         flash("Documento excluído com sucesso!", "success")
-        return redirect(url_for("publicados2"))
+        return redirect(url_for("publicados"))
 
-    @app.route("/miac/editar_documento2/<int:doc_id>", methods=["GET", "POST"])
-    def editar_documento2(doc_id):
+    @app.route("/miac/editar_documento/<int:doc_id>", methods=["GET", "POST"])
+    def editar_documento(doc_id):
         if "username" not in session or session.get("nivel_acesso") != "elevado":
             return redirect(url_for("login"))
 
-        documento = db.session.get(Documento2, doc_id)
+        documento = db.session.get(Documento, doc_id)
         if not documento:
             return "Documento não encontrado", 404
 
@@ -362,13 +359,13 @@ def init_routes(app):
 
                 db.session.commit()
                 flash("Documento atualizado com sucesso!", "success")
-                return redirect(url_for("documento2_detalhes", doc_id=doc_id))
+                return redirect(url_for("documento_detalhes", doc_id=doc_id))
 
             except Exception as exc:
                 db.session.rollback()
                 logger.exception("Erro ao atualizar documento %s", doc_id)
                 flash(f"Erro ao atualizar documento: {exc}", "error")
-                return redirect(url_for("editar_documento2", doc_id=doc_id))
+                return redirect(url_for("editar_documento", doc_id=doc_id))
 
         historico = []
         if documento.historico_versoes:
@@ -397,14 +394,14 @@ def init_routes(app):
             "data_elaboracao": formatar_data_para_input(documento.data_elaboracao),
             "vencimento": formatar_data_para_input(documento.vencimento),
         }
-        return render_template("editar_documento2.html", **dados_template)
+        return render_template("editar_documento.html", **dados_template)
 
     @app.route("/miac/restaurar_versao/<int:doc_id>/<int:versao>", methods=["POST"])
     def restaurar_versao(doc_id, versao):
         if "username" not in session or session.get("nivel_acesso") != "elevado":
             return jsonify({"success": False, "error": "Acesso negado"}), 403
 
-        documento = db.session.get(Documento2, doc_id)
+        documento = db.session.get(Documento, doc_id)
         if not documento:
             return jsonify({"success": False, "error": "Documento não encontrado"}), 404
 

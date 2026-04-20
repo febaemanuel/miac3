@@ -223,11 +223,11 @@
     <script>
         window.MIAC_URLS = {
             obter_dados: "{{ url_for('obter_dados') }}",
-            publicar2: "{{ url_for('publicar2') }}"
+            publicar: "{{ url_for('publicar') }}"
         };
         window.MIAC_ORGANOGRAMAS_POR_ABRANGENCIA = {{ organogramas_por_abrangencia | tojson }};
     </script>
-    <script src="{{ url_for('static', filename='js/publicar2.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/publicar.js') }}"></script>
     <script>
         (function() {
             var mapa = window.MIAC_ORGANOGRAMAS_POR_ABRANGENCIA || {};

@@ -38,15 +38,15 @@ def create_app(config_class=Config):
 
     with app.app_context():
         inspector = inspect(db.engine)
-        if not inspector.has_table("documento") or not inspector.has_table("documento2"):
+        if not inspector.has_table("documento"):
             db.create_all()
             app.logger.info("Banco de dados e tabelas criados.")
         else:
-            db.create_all()
             app.logger.info("Banco de dados já existente; garantindo tabelas novas.")
 
         from app.seed import run_seeds
         run_seeds()
+        db.create_all()
 
     app.add_template_filter(expired_duration_filter, name="expired_duration")
 

@@ -20,7 +20,7 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    UPLOAD_FOLDER = os.path.join("static", "uploads2")
+    UPLOAD_FOLDER = os.path.join("static", "uploads")
 
     DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")

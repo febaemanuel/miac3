@@ -231,7 +231,7 @@
         <h1 class="page-title--documentos"><i class="fas fa-file-invoice"></i> DOCUMENTOS</h1>
 
         <div class="row" id="organograma-grid">
-            {% include 'partials/document_list2.html' %}
+            {% include 'partials/document_list.html' %}
         </div>
     </main>
 
@@ -258,7 +258,7 @@
                 $('#organograma-grid').html('<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>');
 
                 $.ajax({
-                    url: "{{ url_for('buscar2') }}",
+                    url: "{{ url_for('buscar') }}",
                     type: "GET",
                     data: {
                         nome, organograma, tipo_documento: tipoDocumento,
@@ -281,7 +281,7 @@
                 currentAbrangencia = abrangencia;
                 $('#organograma-grid').html('<p>Carregando...</p>');
                 $.ajax({
-                    url: "{{ url_for('buscar2') }}",
+                    url: "{{ url_for('buscar') }}",
                     method: 'GET',
                     data: { abrangencia: abrangencia },
                     success: function (response) {
@@ -323,7 +323,7 @@
                 const apenas_complexo = $('#apenas-complexo').is(':checked');
 
                 $.ajax({
-                    url: "{{ url_for('buscar2') }}",
+                    url: "{{ url_for('buscar') }}",
                     method: 'GET',
                     data: { nome, organograma, tipo_documento, abrangencia: currentAbrangencia, page, apenas_complexo },
                     success: function (response) { $('#organograma-grid').html(response); },
@@ -539,7 +539,7 @@
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 <div>
                                     <strong>${doc.nome}</strong><br>
-                                    <a href="/miac/documento2/${doc.id}">Detalhes</a> |
+                                    <a href="/miac/documento/${doc.id}">Detalhes</a> |
                                     <a href="/miac/${doc.caminho || ''}" target="_blank">Visualizar PDF</a>
                                 </div>
                                 <button class="btn btn-sm btn-outline-danger" data-remover-fav="${doc.id}">

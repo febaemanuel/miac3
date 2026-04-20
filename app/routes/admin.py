@@ -18,7 +18,7 @@ from app.extensions import db
 from app.models import (
     Abrangencia,
     AbrangenciaSinonimo,
-    Documento2,
+    Documento,
     Organograma,
     OrganizacaoConfig,
     TipoDocumento,
@@ -41,16 +41,16 @@ def init_routes(app):
 
         siglas = (
             db.session.query(
-                Documento2.organograma,
-                db.func.max(Documento2.nome_completo).label("nome_completo"),
-                db.func.count(Documento2.id).label("total_documentos"),
+                Documento.organograma,
+                db.func.max(Documento.nome_completo).label("nome_completo"),
+                db.func.count(Documento.id).label("total_documentos"),
             )
-            .group_by(Documento2.organograma)
+            .group_by(Documento.organograma)
             .all()
         )
         marcadores = (
             db.session.query(
-                Documento2.organograma, Documento2.abrangencia, Documento2.marcador
+                Documento.organograma, Documento.abrangencia, Documento.marcador
             )
             .distinct()
             .all()
@@ -196,7 +196,7 @@ def init_routes(app):
         sigla = (request.form.get("sigla") or "").strip().upper()
         nome_completo = (request.form.get("nome_completo") or "").strip()
         if sigla:
-            Documento2.query.filter_by(organograma=sigla).update(
+            Documento.query.filter_by(organograma=sigla).update(
                 {"nome_completo": nome_completo}
             )
             db.session.commit()
@@ -211,7 +211,7 @@ def init_routes(app):
         for key, value in request.form.items():
             if key.startswith("marcador_"):
                 _, organograma_nome, abrangencia_nome = key.split("_", 2)
-                Documento2.query.filter_by(
+                Documento.query.filter_by(
                     organograma=organograma_nome, abrangencia=abrangencia_nome
                 ).update({"marcador": value})
         db.session.commit()

@@ -30,14 +30,14 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from app.models import Documento2, OrganizacaoConfig
+from app.models import Documento, OrganizacaoConfig
 from app.services.dates import converter_data, parse_data
 from app.services.pdf_service import build_watermark
 
 
 def _identificar_documentos_com_erro():
     com_erro = []
-    for documento in Documento2.query.all():
+    for documento in Documento.query.all():
         erros = []
         if documento.vencimento:
             try:
@@ -263,7 +263,7 @@ def _build_pdf_relatorio(documentos, abrangencia, organograma):
         else:
             status_text += status_info["detalhes"]
 
-        documento_url = f"https://hg.huwc.ufc.br/miac/documento2/{documento.id}"
+        documento_url = f"https://hg.huwc.ufc.br/miac/documento/{documento.id}"
         link_documento = f'<a href="{documento_url}" color="blue">Abrir</a>'
 
         text_style = (
@@ -519,7 +519,7 @@ def init_routes(app):
     @app.route("/miac/gerar_relatorio/<abrangencia>/<organograma>")
     def gerar_relatorio(abrangencia, organograma):
         try:
-            documentos = Documento2.query.filter_by(
+            documentos = Documento.query.filter_by(
                 organograma=organograma, abrangencia=abrangencia
             ).all()
             if not documentos:
@@ -552,17 +552,17 @@ def init_routes(app):
         tipo_documento_filtro = request.args.get("tipo_documento", "").strip()
         status_filtro = request.args.get("status", "").strip()
 
-        query = Documento2.query
+        query = Documento.query
         if abrangencia_filtro:
-            query = query.filter(Documento2.abrangencia == abrangencia_filtro)
+            query = query.filter(Documento.abrangencia == abrangencia_filtro)
         if organograma_filtro:
-            query = query.filter(Documento2.organograma == organograma_filtro)
+            query = query.filter(Documento.organograma == organograma_filtro)
         if tipo_documento_filtro:
-            query = query.filter(Documento2.tipo_documento == tipo_documento_filtro)
+            query = query.filter(Documento.tipo_documento == tipo_documento_filtro)
         if status_filtro == "atualizado":
-            query = query.filter(Documento2.atualizado.is_(True))
+            query = query.filter(Documento.atualizado.is_(True))
         elif status_filtro == "desatualizado":
-            query = query.filter(Documento2.atualizado.is_(False))
+            query = query.filter(Documento.atualizado.is_(False))
 
         documentos = query.all()
         stats = {
@@ -594,7 +594,7 @@ def init_routes(app):
                     bucket["desatualizados"] += 1
 
         notificacoes = []
-        for doc in Documento2.query.filter(Documento2.vencimento.isnot(None)).all():
+        for doc in Documento.query.filter(Documento.vencimento.isnot(None)).all():
             try:
                 data_venc = parse_data(doc.vencimento).date()
                 dias = (data_venc - datetime.now().date()).days
@@ -616,13 +616,13 @@ def init_routes(app):
             stats=stats,
             notificacoes=notificacoes,
             documentos_com_erro=documentos_com_erro,
-            abrangencias=Documento2.query.with_entities(
-                Documento2.abrangencia
+            abrangencias=Documento.query.with_entities(
+                Documento.abrangencia
             ).distinct(),
-            organogramas=Documento2.query.with_entities(
-                Documento2.organograma
+            organogramas=Documento.query.with_entities(
+                Documento.organograma
             ).distinct(),
-            tipos_documento=Documento2.query.with_entities(
-                Documento2.tipo_documento
+            tipos_documento=Documento.query.with_entities(
+                Documento.tipo_documento
             ).distinct(),
         )
