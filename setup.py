@@ -86,6 +86,8 @@ def inicializar_banco():
 
 
 def main():
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
     print("=" * 50)
     print("       Setup MIAC — Configuração inicial")
     print("=" * 50)
