@@ -90,11 +90,11 @@ def main():
     print("       Setup MIAC — Configuração inicial")
     print("=" * 50)
 
-    criar_env()
-
     instalar = input("\nInstalar dependências do requirements.txt? (S/n): ").strip().lower()
     if instalar != "n":
         instalar_deps()
+
+    criar_env()
 
     print("\n--- Criando diretórios necessários ---")
     criar_diretorios()
