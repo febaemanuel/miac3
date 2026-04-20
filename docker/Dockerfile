@@ -1,7 +1,7 @@
 # start by pulling the python image
 FROM python:3.12.9-alpine
 
-# Instala os pacotes necessários para compilar o psycopg2
+# Pacotes para compilar wheels nativos quando necessário
 RUN apk add --no-cache \
     postgresql-dev \
     gcc \
