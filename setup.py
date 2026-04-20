@@ -111,4 +111,14 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import traceback
+    try:
+        main()
+    except Exception:
+        print("\n" + "=" * 50)
+        print("ERRO durante o setup:")
+        print("=" * 50)
+        traceback.print_exc()
+        print("=" * 50)
+    finally:
+        input("\nPressione Enter para sair...")
