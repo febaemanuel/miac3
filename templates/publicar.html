@@ -115,6 +115,23 @@
                         <label for="elaboradores_manual" class="form-label">Elaboradores</label>
                         <input type="text" class="form-control" id="elaboradores_manual" name="elaboradores[]" placeholder="Separe por vírgula">
                     </div>
+                    {% for c in campos_extras %}
+                    <div class="mb-3">
+                        <label for="extra_{{ c.nome }}_manual" class="form-label">
+                            {{ c.rotulo }}{% if c.obrigatorio %}*{% endif %}
+                        </label>
+                        {% if c.tipo == 'select' %}
+                            <select class="form-control" id="extra_{{ c.nome }}_manual" name="extra_{{ c.nome }}[]" {% if c.obrigatorio %}required{% endif %}>
+                                <option value="">Selecione...</option>
+                                {% for op in (c.opcoes or []) %}<option value="{{ op }}">{{ op }}</option>{% endfor %}
+                            </select>
+                        {% else %}
+                            <input type="{{ {'data':'date','numero':'number','texto':'text'}[c.tipo] }}"
+                                   class="form-control" id="extra_{{ c.nome }}_manual"
+                                   name="extra_{{ c.nome }}[]" {% if c.obrigatorio %}required{% endif %}>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
                 </div>
 
                 <div class="btn-container">

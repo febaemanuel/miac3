@@ -47,7 +47,7 @@
     <script>
         function excluirDocumento(doc_id) {
             if (confirm('Tem certeza que deseja excluir este documento?')) {
-                fetch(`/miac/excluir_documento/${doc_id}`, { method: 'GET' })
+                fetch(`/miac/excluir_documento/${doc_id}`, { method: 'POST' })
                     .then(response => {
                         if (response.ok) window.location.reload();
                         else alert('Erro ao excluir o documento.');

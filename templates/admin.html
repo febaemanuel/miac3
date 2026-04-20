@@ -295,6 +295,9 @@
                     <button type="button" class="config-nav__item" data-section="identidade">
                         <i class="fas fa-palette"></i> Identidade
                     </button>
+                    <button type="button" class="config-nav__item" data-section="ia">
+                        <i class="fas fa-robot"></i> IA
+                    </button>
                     <button type="button" class="config-nav__item" data-section="dados">
                         <i class="fas fa-database"></i> Dados
                     </button>
@@ -592,6 +595,214 @@
                         </div>
                     </section>
 
+                    <!-- IA -->
+                    <section class="config-section" id="section-ia">
+                        <div class="config-section__title">Inteligência Artificial</div>
+                        <p class="config-section__subtitle">
+                            Configure o modelo padrão, as chaves de API e os campos extraídos dos documentos.
+                        </p>
+
+                        <div class="flat-card">
+                            <h3 style="font-size:1.05rem; margin-top:0;">Geral</h3>
+                            <form method="POST" action="{{ url_for('admin_ia') }}">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Modelo padrão</label>
+                                        <select name="modelo_padrao" class="form-select">
+                                            <option value="deepseek" {% if ia_config.modelo_padrao == 'deepseek' %}selected{% endif %}>DeepSeek</option>
+                                            <option value="chatgpt" {% if ia_config.modelo_padrao == 'chatgpt' %}selected{% endif %}>ChatGPT (OpenAI)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">
+                                            Chave DeepSeek
+                                            {% if ia_config.deepseek_api_key %}<span class="badge bg-success">configurada</span>{% else %}<span class="badge bg-secondary">vazia</span>{% endif %}
+                                        </label>
+                                        <input type="password" name="deepseek_api_key" class="form-control"
+                                               placeholder="{% if ia_config.deepseek_api_key %}••••••••••••  (em branco = manter){% else %}cole a chave{% endif %}">
+                                        {% if ia_config.deepseek_api_key %}
+                                        <div class="form-check mt-1">
+                                            <input type="checkbox" name="limpar_deepseek" value="1" class="form-check-input" id="limpar-ds">
+                                            <label for="limpar-ds" class="form-check-label small text-muted">Remover chave</label>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">
+                                            Chave OpenAI
+                                            {% if ia_config.openai_api_key %}<span class="badge bg-success">configurada</span>{% else %}<span class="badge bg-secondary">vazia</span>{% endif %}
+                                        </label>
+                                        <input type="password" name="openai_api_key" class="form-control"
+                                               placeholder="{% if ia_config.openai_api_key %}••••••••••••  (em branco = manter){% else %}cole a chave{% endif %}">
+                                        {% if ia_config.openai_api_key %}
+                                        <div class="form-check mt-1">
+                                            <input type="checkbox" name="limpar_openai" value="1" class="form-check-input" id="limpar-oa">
+                                            <label for="limpar-oa" class="form-check-label small text-muted">Remover chave</label>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <details class="mt-3">
+                                    <summary style="cursor:pointer; font-weight:600;"><i class="fas fa-sliders-h"></i> Avançado — prompt de extração</summary>
+                                    <div class="mt-2">
+                                        <p class="small text-muted mb-1">
+                                            Variáveis disponíveis:
+                                            <code>{% raw %}{campos_fixos}{% endraw %}</code>,
+                                            <code>{% raw %}{campos_extras}{% endraw %}</code>,
+                                            <code>{% raw %}{texto_pdf}{% endraw %}</code>.
+                                            Deixe em branco para usar o padrão.
+                                        </p>
+                                        <textarea name="prompt_extracao" class="form-control" rows="10"
+                                                  placeholder="{{ prompt_padrao }}">{{ ia_config.prompt_extracao or '' }}</textarea>
+                                        <details class="mt-2">
+                                            <summary class="small text-muted" style="cursor:pointer;">Ver prompt padrão</summary>
+                                            <pre class="small bg-light p-2 mt-1" style="white-space:pre-wrap;">{{ prompt_padrao }}</pre>
+                                        </details>
+                                    </div>
+                                </details>
+
+                                <button type="submit" class="btn btn-primary mt-3"><i class="fas fa-save"></i> Salvar</button>
+                            </form>
+                        </div>
+
+                        <h3 style="font-size:1.05rem; margin-top:24px;">Campos extraídos</h3>
+                        <p class="config-section__subtitle" style="margin-bottom:12px;">
+                            Campos adicionais que a IA deve extrair e que aparecem no formulário de publicação. Os campos fixos (título, datas, organograma, etc.) não entram aqui.
+                        </p>
+
+                        {% if campos_extras %}
+                            {% for c in campos_extras %}
+                            <details class="tree-node">
+                                <summary>
+                                    <i class="fas fa-chevron-right tree-node__chevron"></i>
+                                    <span class="tree-node__icon"><i class="fas fa-tag"></i></span>
+                                    <span class="tree-node__title">{{ c.rotulo }} <small class="text-muted">({{ c.nome }})</small></span>
+                                    <span class="tree-node__meta">{{ c.tipo }}{% if c.obrigatorio %} · obrigatório{% endif %}</span>
+                                    <span class="badge {% if c.ativo %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {% if c.ativo %}Ativo{% else %}Inativo{% endif %}
+                                    </span>
+                                    <span class="tree-actions">
+                                        <form method="POST" action="{{ url_for('admin_campo_extracao') }}" class="d-inline" onclick="event.stopPropagation()">
+                                            <input type="hidden" name="acao" value="mover">
+                                            <input type="hidden" name="direcao" value="cima">
+                                            <input type="hidden" name="id" value="{{ c.id }}">
+                                            <button type="submit" class="icon-btn" title="Mover para cima"><i class="fas fa-arrow-up"></i></button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('admin_campo_extracao') }}" class="d-inline" onclick="event.stopPropagation()">
+                                            <input type="hidden" name="acao" value="mover">
+                                            <input type="hidden" name="direcao" value="baixo">
+                                            <input type="hidden" name="id" value="{{ c.id }}">
+                                            <button type="submit" class="icon-btn" title="Mover para baixo"><i class="fas fa-arrow-down"></i></button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('admin_campo_extracao') }}" class="d-inline" onclick="event.stopPropagation()">
+                                            <input type="hidden" name="acao" value="toggle">
+                                            <input type="hidden" name="id" value="{{ c.id }}">
+                                            <button type="submit" class="icon-btn" title="Ativar/desativar"><i class="fas fa-power-off"></i></button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('admin_campo_extracao') }}" class="d-inline" onclick="event.stopPropagation()" onsubmit="return confirm('Remover {{ c.rotulo }}? Documentos existentes manterão o valor salvo, mas o campo não aparecerá mais no formulário.')">
+                                            <input type="hidden" name="acao" value="remove">
+                                            <input type="hidden" name="id" value="{{ c.id }}">
+                                            <button type="submit" class="icon-btn icon-btn--danger" title="Remover"><i class="fas fa-trash"></i></button>
+                                        </form>
+                                    </span>
+                                </summary>
+                                <div class="tree-node__body">
+                                    <form method="POST" action="{{ url_for('admin_campo_extracao') }}" class="row g-2">
+                                        <input type="hidden" name="acao" value="update">
+                                        <input type="hidden" name="id" value="{{ c.id }}">
+                                        <div class="col-md-6">
+                                            <label class="form-label small">Rótulo (label do form)</label>
+                                            <input type="text" name="rotulo" class="form-control form-control-sm" value="{{ c.rotulo }}">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label small">Tipo</label>
+                                            <select name="tipo" class="form-select form-select-sm">
+                                                <option value="texto" {% if c.tipo == 'texto' %}selected{% endif %}>Texto</option>
+                                                <option value="data" {% if c.tipo == 'data' %}selected{% endif %}>Data</option>
+                                                <option value="numero" {% if c.tipo == 'numero' %}selected{% endif %}>Número</option>
+                                                <option value="select" {% if c.tipo == 'select' %}selected{% endif %}>Lista</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3 d-flex align-items-end gap-3">
+                                            <div class="form-check">
+                                                <input type="checkbox" name="obrigatorio" class="form-check-input" id="obr-{{ c.id }}" {% if c.obrigatorio %}checked{% endif %}>
+                                                <label for="obr-{{ c.id }}" class="form-check-label small">Obrigatório</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input type="checkbox" name="mostrar_na_listagem" class="form-check-input" id="mos-{{ c.id }}" {% if c.mostrar_na_listagem %}checked{% endif %}>
+                                                <label for="mos-{{ c.id }}" class="form-check-label small">Listagem</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label small">Opções (apenas tipo "Lista", separe por vírgula)</label>
+                                            <input type="text" name="opcoes" class="form-control form-control-sm"
+                                                   value="{% if c.opcoes %}{{ c.opcoes | join(', ') }}{% endif %}"
+                                                   placeholder="ex.: Baixo, Médio, Alto">
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label small">Instrução para a IA</label>
+                                            <textarea name="instrucao_ia" class="form-control form-control-sm" rows="2"
+                                                      placeholder="ex.: extraia o código CID-10 se mencionado no cabeçalho">{{ c.instrucao_ia or '' }}</textarea>
+                                        </div>
+                                        <div class="col-12">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">Salvar alterações</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </details>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-state">
+                                <i class="fas fa-inbox"></i>
+                                Nenhum campo personalizado ainda.
+                            </div>
+                        {% endif %}
+
+                        <div class="flat-card mt-3">
+                            <h4 style="font-size:.95rem; margin-top:0;"><i class="fas fa-plus"></i> Novo campo</h4>
+                            <form method="POST" action="{{ url_for('admin_campo_extracao') }}" class="row g-2">
+                                <input type="hidden" name="acao" value="add">
+                                <div class="col-md-3">
+                                    <label class="form-label small">Nome técnico</label>
+                                    <input type="text" name="nome" class="form-control form-control-sm" placeholder="ex.: cid10" required pattern="[a-z0-9_]+" title="só letras minúsculas, números e underscore">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">Rótulo visível</label>
+                                    <input type="text" name="rotulo" class="form-control form-control-sm" placeholder="ex.: CID-10" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small">Tipo</label>
+                                    <select name="tipo" class="form-select form-select-sm">
+                                        <option value="texto">Texto</option>
+                                        <option value="data">Data</option>
+                                        <option value="numero">Número</option>
+                                        <option value="select">Lista</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 d-flex align-items-end gap-2">
+                                    <div class="form-check">
+                                        <input type="checkbox" name="obrigatorio" class="form-check-input" id="novo-obr">
+                                        <label for="novo-obr" class="form-check-label small">Obrigatório</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input type="checkbox" name="mostrar_na_listagem" class="form-check-input" id="novo-mos">
+                                        <label for="novo-mos" class="form-check-label small">Listagem</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="text" name="opcoes" class="form-control form-control-sm" placeholder="Opções (só tipo lista, separe por vírgula)">
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="text" name="instrucao_ia" class="form-control form-control-sm" placeholder="Instrução para a IA (opcional)">
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Adicionar campo</button>
+                                </div>
+                            </form>
+                        </div>
+                    </section>
+
                     <!-- DADOS -->
                     <section class="config-section" id="section-dados">
                         <div class="config-section__title">Dados</div>
@@ -680,7 +891,7 @@
             navItems.forEach(n => n.addEventListener('click', () => activate(n.dataset.section)));
 
             const hash = (window.location.hash || '').replace('#', '');
-            const valid = ['estrutura', 'usuarios', 'identidade', 'dados'];
+            const valid = ['estrutura', 'usuarios', 'identidade', 'ia', 'dados'];
             if (valid.includes(hash)) activate(hash);
             else if (['organogramas', 'abrangencias', 'tipos'].includes(hash)) activate('estrutura');
             else if (hash === 'siglas' || hash === 'marcadores') activate('dados');

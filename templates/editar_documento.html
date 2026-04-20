@@ -3,217 +3,294 @@
 <head>
     {% include "partials/_head.html" %}
     <title>Editar Documento · MIAC</title>
+    <style>
+        .edit-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 20px;
+            align-items: start;
+        }
+        @media (max-width: 960px) { .edit-layout { grid-template-columns: 1fr; } }
+
+        .pdf-preview {
+            width: 100%;
+            height: 75vh;
+            min-height: 480px;
+            border: 1px solid var(--miac-border);
+            border-radius: var(--miac-radius);
+            background: var(--miac-light);
+        }
+
+        .version-table th, .version-table td { vertical-align: middle; }
+
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        @media (max-width: 600px) { .form-grid-2 { grid-template-columns: 1fr; } }
+    </style>
 </head>
 <body>
     {% include "partials/_sidebar.html" %}
 
     <main class="main-content">
         <div class="page-container page-container--wide">
-            <h1 class="page-title"><i class="fas fa-edit"></i> Editar Documento v{{ versao_efetiva }}</h1>
+            <h1 class="page-title"><i class="fas fa-edit"></i> Editar Documento <small class="text-muted">v{{ versao_efetiva }}</small></h1>
 
-            <form method="POST" enctype="multipart/form-data">
-                <div class="app-card">
-                    <div class="app-card__header">
-                        <i class="fas fa-info-circle"></i> Informações Gerais
-                    </div>
-                    <div class="app-card__body">
-                        <div class="mb-3">
-                            <label for="nome" class="form-label">Nome</label>
-                            <input type="text" class="form-control" id="nome" name="nome" value="{{ documento.nome }}" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="organograma" class="form-label">Organograma</label>
-                            <input type="text" class="form-control" id="organograma" name="organograma" value="{{ documento.organograma }}" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="tipo_documento" class="form-label">Tipo de Documento</label>
-                            <input type="text" class="form-control" id="tipo_documento" name="tipo_documento" value="{{ documento.tipo_documento }}" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="abrangencia" class="form-label">Abrangência</label>
-                            <input type="text" class="form-control" id="abrangencia" name="abrangencia" value="{{ documento.abrangencia }}" required>
-                        </div>
-                        <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="atualizado" name="atualizado" {% if documento.atualizado %}checked{% endif %}>
-                            <label class="form-check-label" for="atualizado">Atualizado</label>
-                        </div>
-                    </div>
-                </div>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for cat, msg in messages %}
+                    <div class="alert alert-{{ 'danger' if cat == 'error' else cat }}">{{ msg }}</div>
+                {% endfor %}
+            {% endwith %}
 
-                <div class="app-card">
-                    <div class="app-card__header">
-                        <i class="fas fa-calendar-alt"></i> Datas e Elaboração
-                    </div>
-                    <div class="app-card__body">
-                        <div class="mb-3">
-                            <label for="data_elaboracao" class="form-label">Data de Elaboração</label>
-                            <input type="date" class="form-control" id="data_elaboracao" name="data_elaboracao" value="{{ data_elaboracao }}">
-                        </div>
-                        <div class="mb-3">
-                            <label for="vencimento" class="form-label">Data de Validade</label>
-                            <input type="date" class="form-control" id="vencimento" name="vencimento" value="{{ vencimento }}">
-                        </div>
-                        <div class="mb-3">
-                            <label for="numero_sei" class="form-label">Número SEI</label>
-                            <input type="text" class="form-control" id="numero_sei" name="numero_sei" value="{{ documento.numero_sei }}">
-                        </div>
-                        <div class="mb-3">
-                            <label for="elaboradores" class="form-label">Elaboradores</label>
-                            <input type="text" class="form-control" id="elaboradores" name="elaboradores" value="{{ documento.elaboradores }}">
-                        </div>
-                    </div>
-                </div>
+            <div class="edit-layout">
+                <form method="POST" enctype="multipart/form-data" id="form-editar">
+                    <div class="app-card">
+                        <div class="app-card__header"><i class="fas fa-info-circle"></i> Informações gerais</div>
+                        <div class="app-card__body">
+                            <div class="mb-3">
+                                <label for="nome" class="form-label">Nome</label>
+                                <input type="text" class="form-control" id="nome" name="nome" value="{{ documento.nome }}" required>
+                            </div>
 
-                <div class="app-card">
-                    <div class="app-card__header">
-                        <i class="fas fa-file-upload"></i> Atualizar Versão
-                    </div>
-                    <div class="app-card__body">
-                        <div class="mb-3">
-                            <label for="novo_pdf" class="form-label">Nova Versão (PDF)</label>
-                            <input type="file" class="form-control" id="novo_pdf" name="novo_pdf" accept=".pdf">
-                            <small class="text-muted">Ao enviar, a versão atual será arquivada no histórico</small>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Versão Atual (v{{ versao_efetiva }}):</label>
-                                    <a href="{{ url_for('static', filename='uploads/' + documento.caminho.split('/')[-1]) }}"
-                               class="btn btn-sm btn-primary" target="_blank">
-                                <i class="fas fa-download"></i> Baixar
-                            </a>
-                        </div>
-
-                        {% if documento.pdf_antigo %}
-                        <div class="mb-3">
-                            <label class="form-label">Versão Anterior (v{{ versao_efetiva - 1 }}):</label>
-                            <a href="{{ url_for('static', filename='uploads/' + documento.pdf_antigo.split('/')[-1]) }}"
-                               class="btn btn-sm btn-secondary" target="_blank">
-                                <i class="fas fa-history"></i> Visualizar
-                            </a>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div class="app-card">
-                    <div class="app-card__header">
-                        <i class="fas fa-history"></i> Histórico de Versões
-                    </div>
-                    <div class="app-card__body">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle">
-                                <thead>
-                                    <tr>
-                                        <th>Versão</th>
-                                        <th>Data</th>
-                                        <th>Responsável</th>
-                                        <th class="text-end">Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for versao in historico_efetivo|sort(attribute='versao', reverse=True) %}
-                                    <tr>
-                                        <td>v{{ versao.versao }}</td>
-                                        <td>{{ versao.data }}</td>
-                                        <td>{{ versao.responsavel }}</td>
-                                        <td class="text-end">
-                                            <div class="btn-group btn-group-sm">
-                                                <a href="{{ url_for('static', filename='uploads/' + versao.nome_arquivo) }}"
-                                                   class="btn btn-outline-primary" target="_blank">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
-                                                <button type="button" class="btn btn-outline-warning"
-                                                        onclick="restaurarVersao({{ versao.versao }})">
-                                                    <i class="fas fa-undo"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {% else %}
-                                    <tr>
-                                        <td colspan="4" class="text-center text-muted">Nenhuma versão anterior registrada</td>
-                                    </tr>
+                            <div class="mb-3">
+                                <label for="abrangencia" class="form-label">Abrangência</label>
+                                <select class="form-control" id="abrangencia" name="abrangencia" required>
+                                    <option value="">Selecione...</option>
+                                    {% for a in abrangencias %}
+                                    <option value="{{ a }}" {% if documento.abrangencia == a %}selected{% endif %}>{{ a }}</option>
                                     {% endfor %}
-                                </tbody>
-                            </table>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="organograma" class="form-label">Organograma</label>
+                                <select class="form-control" id="organograma" name="organograma" required>
+                                    <option value="{{ documento.organograma }}" selected>{{ documento.organograma }}</option>
+                                </select>
+                                <small class="text-muted">Trocar a abrangência recarrega a lista.</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="tipo_documento" class="form-label">Tipo de documento</label>
+                                <select class="form-control" id="tipo_documento" name="tipo_documento" required>
+                                    <option value="">Selecione...</option>
+                                    {% for t in tipos_documento %}
+                                    <option value="{{ t }}" {% if documento.tipo_documento == t %}selected{% endif %}>{{ t }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="atualizado" name="atualizado" {% if documento.atualizado %}checked{% endif %}>
+                                <label class="form-check-label" for="atualizado">Marcar como atualizado</label>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="btn-container">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Salvar Alterações
-                    </button>
-                    <a href="{{ url_for('documento_detalhes', doc_id=documento.id) }}" class="btn btn-secondary">
-                        <i class="fas fa-times"></i> Cancelar
-                    </a>
-                    <a href="{{ url_for('excluir_documento', doc_id=documento.id) }}" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja excluir este documento e todas suas versões?');">
-                        <i class="fas fa-trash"></i> Excluir
-                    </a>
-                </div>
-            </form>
-        </div>
-    </main>
+                    <div class="app-card">
+                        <div class="app-card__header"><i class="fas fa-calendar-alt"></i> Datas e autoria</div>
+                        <div class="app-card__body">
+                            <div class="form-grid-2">
+                                <div>
+                                    <label for="data_elaboracao" class="form-label">Data de elaboração</label>
+                                    <input type="date" class="form-control" id="data_elaboracao" name="data_elaboracao" value="{{ data_elaboracao }}">
+                                </div>
+                                <div>
+                                    <label for="vencimento" class="form-label">Vencimento</label>
+                                    <input type="date" class="form-control" id="vencimento" name="vencimento" value="{{ vencimento }}">
+                                </div>
+                            </div>
+                            <div class="mb-3 mt-3">
+                                <label for="numero_sei" class="form-label">Número SEI</label>
+                                <input type="text" class="form-control" id="numero_sei" name="numero_sei" value="{{ documento.numero_sei or '' }}">
+                            </div>
+                            <div class="mb-0">
+                                <label for="elaboradores" class="form-label">Elaboradores</label>
+                                <input type="text" class="form-control" id="elaboradores" name="elaboradores" value="{{ documento.elaboradores or '' }}" placeholder="Separe por vírgula">
+                            </div>
+                        </div>
+                    </div>
 
-    <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Confirmar Restauração</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p id="modalMessage">Deseja realmente restaurar esta versão?</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-warning" id="confirmRestore">Restaurar Versão</button>
+                    {% if campos_extras %}
+                    <div class="app-card">
+                        <div class="app-card__header"><i class="fas fa-tags"></i> Campos adicionais</div>
+                        <div class="app-card__body">
+                            {% for c in campos_extras %}
+                            <div class="mb-3">
+                                <label for="extra_{{ c.nome }}" class="form-label">{{ c.rotulo }}{% if c.obrigatorio %} *{% endif %}</label>
+                                {% if c.tipo == 'select' %}
+                                    <select class="form-control" id="extra_{{ c.nome }}" name="extra_{{ c.nome }}" {% if c.obrigatorio %}required{% endif %}>
+                                        <option value="">Selecione...</option>
+                                        {% for op in (c.opcoes or []) %}
+                                        <option value="{{ op }}" {% if valores_extras.get(c.nome) == op %}selected{% endif %}>{{ op }}</option>
+                                        {% endfor %}
+                                    </select>
+                                {% else %}
+                                    <input type="{{ {'data':'date','numero':'number','texto':'text'}[c.tipo] }}"
+                                           class="form-control" id="extra_{{ c.nome }}" name="extra_{{ c.nome }}"
+                                           value="{{ valores_extras.get(c.nome, '') }}"
+                                           {% if c.obrigatorio %}required{% endif %}>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="app-card">
+                        <div class="app-card__header"><i class="fas fa-file-upload"></i> Atualizar versão</div>
+                        <div class="app-card__body">
+                            <div class="mb-3">
+                                <label for="novo_pdf" class="form-label">Nova versão (PDF)</label>
+                                <input type="file" class="form-control" id="novo_pdf" name="novo_pdf" accept=".pdf">
+                                <small class="text-muted">Ao enviar, a versão atual será movida para o histórico.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if historico_efetivo %}
+                    <div class="app-card">
+                        <div class="app-card__header"><i class="fas fa-history"></i> Histórico de versões</div>
+                        <div class="app-card__body" style="padding:0;">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle version-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Versão</th>
+                                            <th>Data</th>
+                                            <th>Responsável</th>
+                                            <th class="text-end">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for versao in historico_efetivo %}
+                                        <tr>
+                                            <td>v{{ versao.versao }}</td>
+                                            <td>{{ versao.data }}</td>
+                                            <td>{{ versao.responsavel }}</td>
+                                            <td class="text-end">
+                                                <div class="btn-group btn-group-sm">
+                                                    {% if versao.nome_arquivo %}
+                                                    <a href="{{ url_for('static', filename='uploads/' + versao.nome_arquivo) }}"
+                                                       class="btn btn-outline-primary" target="_blank" rel="noopener" title="Visualizar">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    {% endif %}
+                                                    <button type="button" class="btn btn-outline-warning"
+                                                            onclick="restaurarVersao({{ versao.versao }})" title="Restaurar">
+                                                        <i class="fas fa-undo"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="btn-container">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Salvar alterações
+                        </button>
+                        <a href="{{ url_for('documento_detalhes', doc_id=documento.id) }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+
+                <div>
+                    <div class="app-card" style="position: sticky; top: 24px;">
+                        <div class="app-card__header">
+                            <i class="fas fa-file-pdf"></i> Pré-visualização (v{{ versao_efetiva }})
+                            <a href="{{ url_for('static', filename='uploads/' + documento.caminho.split('/')[-1]) }}"
+                               class="btn btn-sm btn-outline-secondary float-end" target="_blank" rel="noopener">
+                                <i class="fas fa-external-link-alt"></i> Abrir
+                            </a>
+                        </div>
+                        <div class="app-card__body" style="padding:0;">
+                            <iframe src="{{ url_for('static', filename='uploads/' + documento.caminho.split('/')[-1]) }}"
+                                    class="pdf-preview" title="Pré-visualização do PDF"></iframe>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('excluir_documento', doc_id=documento.id) }}"
+                          onsubmit="return confirm('Excluir este documento e todas as versões? Essa ação é irreversível.');">
+                        <button type="submit" class="btn btn-danger w-100 mt-3">
+                            <i class="fas fa-trash"></i> Excluir documento
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 
     {% include "partials/_footer.html" %}
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const formatDate = (dateStr) => {
-                if (!dateStr) return '';
-                const parts = dateStr.split('/');
-                if (parts.length === 3) {
-                    return `${parts[2]}-${parts[1]}-${parts[0]}`;
-                }
-                return dateStr;
-            };
-            document.getElementById('data_elaboracao').value = formatDate("{{ documento.data_elaboracao }}");
-            document.getElementById('vencimento').value = formatDate("{{ documento.vencimento }}");
-        });
-
-        function restaurarVersao(versao) {
-            const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
-            document.getElementById('modalMessage').textContent =
-                `Deseja realmente restaurar a versão ${versao} como atual? A versão atual será movida para o histórico.`;
-
-            document.getElementById('confirmRestore').onclick = function() {
-                fetch(`/miac/restaurar_versao/{{ documento.id }}/${versao}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        window.location.reload();
-                    } else {
-                        alert(`Erro: ${data.error}`);
-                    }
-                });
-                modal.hide();
-            };
-
-            modal.show();
-        }
+        window.MIAC_ORGANOGRAMAS_POR_ABRANGENCIA = {{ organogramas_por_abrangencia | tojson }};
+        window.MIAC_ORGANOGRAMA_ATUAL = {{ (documento.organograma or '') | tojson }};
+        window.MIAC_URLS = {
+            restaurar_versao: "{{ url_for('restaurar_versao', doc_id=documento.id, versao=0) }}".replace(/\/0$/, '')
+        };
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        (function () {
+            const mapa = window.MIAC_ORGANOGRAMAS_POR_ABRANGENCIA || {};
+            const abrangSel = document.getElementById('abrangencia');
+            const orgSel = document.getElementById('organograma');
+            if (!abrangSel || !orgSel) return;
+
+            function popular(abrang, manterAtual) {
+                const lista = mapa[abrang] || [];
+                orgSel.innerHTML = '';
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = lista.length ? 'Selecione...' : 'Nenhum organograma vinculado';
+                orgSel.appendChild(placeholder);
+                let matched = false;
+                lista.forEach(function (item) {
+                    const opt = document.createElement('option');
+                    opt.value = item.sigla;
+                    opt.textContent = item.nome_completo ? item.sigla + ' — ' + item.nome_completo : item.sigla;
+                    if (manterAtual && item.sigla === window.MIAC_ORGANOGRAMA_ATUAL) {
+                        opt.selected = true;
+                        matched = true;
+                    }
+                    orgSel.appendChild(opt);
+                });
+                if (manterAtual && !matched && window.MIAC_ORGANOGRAMA_ATUAL) {
+                    const opt = document.createElement('option');
+                    opt.value = window.MIAC_ORGANOGRAMA_ATUAL;
+                    opt.textContent = window.MIAC_ORGANOGRAMA_ATUAL + ' (sem vínculo)';
+                    opt.selected = true;
+                    orgSel.appendChild(opt);
+                }
+                orgSel.disabled = lista.length === 0 && !window.MIAC_ORGANOGRAMA_ATUAL;
+            }
+
+            popular(abrangSel.value, true);
+            abrangSel.addEventListener('change', function () {
+                popular(abrangSel.value, false);
+            });
+        })();
+
+        function restaurarVersao(versao) {
+            if (!confirm('Restaurar a versão ' + versao + ' como atual? A versão atual vai para o histórico.')) return;
+            fetch(window.MIAC_URLS.restaurar_versao + '/' + versao, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) window.location.reload();
+                    else alert('Erro: ' + (data.error || 'falha ao restaurar'));
+                })
+                .catch(() => alert('Erro de rede ao restaurar versão.'));
+        }
+    </script>
 </body>
 </html>

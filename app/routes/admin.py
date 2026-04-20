@@ -18,7 +18,9 @@ from app.extensions import db
 from app.models import (
     Abrangencia,
     AbrangenciaSinonimo,
+    CampoExtracao,
     Documento,
+    IaConfig,
     Organograma,
     OrganizacaoConfig,
     TipoDocumento,
@@ -68,6 +70,8 @@ def init_routes(app):
             else:
                 organogramas_orfaos.append(org)
 
+        from app.routes.api import PROMPT_PADRAO
+
         return render_template(
             "admin.html",
             organogramas=organogramas,
@@ -79,6 +83,11 @@ def init_routes(app):
             usuarios=Usuario.query.order_by(Usuario.username).all(),
             siglas=siglas,
             marcadores=marcadores,
+            ia_config=IaConfig.get(),
+            campos_extras=CampoExtracao.query.order_by(
+                CampoExtracao.ordem, CampoExtracao.id
+            ).all(),
+            prompt_padrao=PROMPT_PADRAO,
         )
 
     @app.route("/miac/admin/organograma", methods=["POST"])
@@ -284,3 +293,110 @@ def init_routes(app):
         db.session.commit()
         flash("Identidade atualizada.", "success")
         return redirect(url_for("admin_panel") + "#identidade")
+
+    @app.route("/miac/admin/ia", methods=["POST"])
+    def admin_ia():
+        guard = _require_admin()
+        if guard:
+            return guard
+
+        cfg = IaConfig.get()
+        modelo = (request.form.get("modelo_padrao") or "").strip()
+        if modelo in ("deepseek", "chatgpt"):
+            cfg.modelo_padrao = modelo
+
+        deepseek = request.form.get("deepseek_api_key", "")
+        if deepseek.strip():
+            cfg.deepseek_api_key = deepseek.strip()
+        elif request.form.get("limpar_deepseek") == "1":
+            cfg.deepseek_api_key = None
+
+        openai = request.form.get("openai_api_key", "")
+        if openai.strip():
+            cfg.openai_api_key = openai.strip()
+        elif request.form.get("limpar_openai") == "1":
+            cfg.openai_api_key = None
+
+        prompt = request.form.get("prompt_extracao")
+        if prompt is not None:
+            prompt = prompt.strip()
+            cfg.prompt_extracao = prompt or None
+
+        db.session.commit()
+        flash("Configuração de IA atualizada.", "success")
+        return redirect(url_for("admin_panel") + "#ia")
+
+    @app.route("/miac/admin/campo_extracao", methods=["POST"])
+    def admin_campo_extracao():
+        guard = _require_admin()
+        if guard:
+            return guard
+
+        acao = request.form.get("acao")
+        if acao == "add":
+            nome = (request.form.get("nome") or "").strip().lower()
+            rotulo = (request.form.get("rotulo") or "").strip()
+            tipo = request.form.get("tipo", "texto")
+            if tipo not in ("texto", "data", "numero", "select"):
+                tipo = "texto"
+            opcoes_raw = (request.form.get("opcoes") or "").strip()
+            opcoes = (
+                [o.strip() for o in opcoes_raw.split(",") if o.strip()]
+                if tipo == "select" and opcoes_raw
+                else None
+            )
+            if nome and rotulo and not CampoExtracao.query.filter_by(nome=nome).first():
+                ordem = (
+                    db.session.query(db.func.max(CampoExtracao.ordem)).scalar() or 0
+                ) + 1
+                db.session.add(CampoExtracao(
+                    nome=nome,
+                    rotulo=rotulo,
+                    tipo=tipo,
+                    opcoes=opcoes,
+                    obrigatorio=request.form.get("obrigatorio") == "on",
+                    mostrar_na_listagem=request.form.get("mostrar_na_listagem") == "on",
+                    ordem=ordem,
+                    instrucao_ia=(request.form.get("instrucao_ia") or "").strip() or None,
+                ))
+        elif acao == "update":
+            campo = CampoExtracao.query.get(request.form.get("id"))
+            if campo:
+                if "rotulo" in request.form:
+                    campo.rotulo = request.form["rotulo"].strip() or campo.rotulo
+                if "tipo" in request.form:
+                    novo_tipo = request.form["tipo"]
+                    if novo_tipo in ("texto", "data", "numero", "select"):
+                        campo.tipo = novo_tipo
+                if "opcoes" in request.form:
+                    raw = request.form["opcoes"].strip()
+                    campo.opcoes = (
+                        [o.strip() for o in raw.split(",") if o.strip()] if raw else None
+                    )
+                if "instrucao_ia" in request.form:
+                    campo.instrucao_ia = request.form["instrucao_ia"].strip() or None
+                campo.obrigatorio = request.form.get("obrigatorio") == "on"
+                campo.mostrar_na_listagem = (
+                    request.form.get("mostrar_na_listagem") == "on"
+                )
+        elif acao == "toggle":
+            campo = CampoExtracao.query.get(request.form.get("id"))
+            if campo:
+                campo.ativo = not campo.ativo
+        elif acao == "mover":
+            campo = CampoExtracao.query.get(request.form.get("id"))
+            direcao = request.form.get("direcao")
+            if campo and direcao in ("cima", "baixo"):
+                delta = -1 if direcao == "cima" else 1
+                vizinho = (
+                    CampoExtracao.query.filter(CampoExtracao.ordem == campo.ordem + delta)
+                    .first()
+                )
+                if vizinho:
+                    vizinho.ordem, campo.ordem = campo.ordem, vizinho.ordem
+        elif acao == "remove":
+            campo = CampoExtracao.query.get(request.form.get("id"))
+            if campo:
+                db.session.delete(campo)
+        db.session.commit()
+        return redirect(url_for("admin_panel") + "#ia")
