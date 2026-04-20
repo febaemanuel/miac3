@@ -3,6 +3,8 @@ import os
 
 from werkzeug.security import generate_password_hash
 
+from sqlalchemy import text
+
 from app.extensions import db
 from app.models import (
     Abrangencia,
@@ -76,7 +78,14 @@ def _seed_usuarios():
         ))
 
 
+def _enable_extensions():
+    if db.engine.dialect.name != "postgresql":
+        return
+    db.session.execute(text("CREATE EXTENSION IF NOT EXISTS unaccent"))
+
+
 def run_seeds():
+    _enable_extensions()
     _seed_abrangencias()
     _seed_organogramas()
     _seed_tipos_documento()
