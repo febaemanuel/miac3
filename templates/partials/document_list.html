@@ -94,10 +94,6 @@
     <i class="fas fa-star"></i> Favorito
 </button>
 
-
-                    {% if "CH." in documento.nome or "CHUFC." in documento.nome %}
-                        <span class="badge-documento-complexo">DOCUMENTO DO COMPLEXO</span>
-                    {% endif %}
                 </div>
                 <span class="status-indicator">
                     {% if documento.atualizado %}
@@ -118,18 +114,6 @@
     text-align: center;
     margin: 30px 0; /* Reduzi a margem para ficar mais compacto */
 }
-
-.badge-documento-complexo {
-    background-color: #ffc107; /* Amarelo semelhante ao badge-warning do Bootstrap */
-    color: #000; /* Texto preto para melhor visibilidade */
-    font-weight: bold;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 12px;
-    display: inline-block;
-    margin-left: 5px;
-}
-
 
 /* Estilos para o marcador */
 .marcador {

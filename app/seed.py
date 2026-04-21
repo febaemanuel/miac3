@@ -6,7 +6,7 @@ from werkzeug.security import generate_password_hash
 from sqlalchemy import text
 
 from app.extensions import db
-from app.models import IaConfig, OrganizacaoConfig, Usuario
+from app.models import FiltroPublicados, IaConfig, OrganizacaoConfig, Usuario
 
 
 def _enable_extensions():
@@ -41,9 +41,30 @@ def _seed_usuarios():
         ))
 
 
+def _seed_filtros_publicados():
+    if FiltroPublicados.query.first():
+        return
+    padroes = [
+        ("Buscar por nome", "nome", "fa-search", 0),
+        ("Organograma", "organograma", "fa-filter", 1),
+        ("Tipo de documento", "tipo_documento", "fa-file-alt", 2),
+        ("Buscar por organograma", "search_organograma", "fa-sitemap", 3),
+    ]
+    for rotulo, ref, icone, ordem in padroes:
+        db.session.add(FiltroPublicados(
+            rotulo=rotulo,
+            tipo="padrao",
+            campo_ref=ref,
+            ordem=ordem,
+            ativo=True,
+            icone=icone,
+        ))
+
+
 def run_seeds():
     _enable_extensions()
     _seed_usuarios()
     OrganizacaoConfig.get()
     IaConfig.get()
+    _seed_filtros_publicados()
     db.session.commit()

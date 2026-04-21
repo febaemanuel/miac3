@@ -141,3 +141,15 @@ class CampoExtracao(db.Model):
     ativo = db.Column(db.Boolean, nullable=False, default=True)
     mostrar_na_listagem = db.Column(db.Boolean, nullable=False, default=False)
     instrucao_ia = db.Column(db.Text, nullable=True)
+
+
+class FiltroPublicados(db.Model):
+    """Filtro configurável da sidebar da página de documentos publicados."""
+    __tablename__ = "filtro_publicados"
+    id = db.Column(db.Integer, primary_key=True)
+    rotulo = db.Column(db.String(120), nullable=False)
+    tipo = db.Column(db.String(20), nullable=False, default="padrao")  # padrao | extra
+    campo_ref = db.Column(db.String(60), nullable=False)
+    ordem = db.Column(db.Integer, nullable=False, default=0)
+    ativo = db.Column(db.Boolean, nullable=False, default=True)
+    icone = db.Column(db.String(40), nullable=True)

@@ -20,6 +20,7 @@ from app.models import (
     AbrangenciaSinonimo,
     CampoExtracao,
     Documento,
+    FiltroPublicados,
     IaConfig,
     Organograma,
     OrganizacaoConfig,
@@ -86,6 +87,12 @@ def init_routes(app):
             ia_config=IaConfig.get(),
             campos_extras=CampoExtracao.query.order_by(
                 CampoExtracao.ordem, CampoExtracao.id
+            ).all(),
+            filtros_publicados=FiltroPublicados.query.order_by(
+                FiltroPublicados.ordem, FiltroPublicados.id
+            ).all(),
+            campos_extras_disponiveis=CampoExtracao.query.filter_by(ativo=True).order_by(
+                CampoExtracao.ordem
             ).all(),
             prompt_padrao=PROMPT_PADRAO,
         )
@@ -400,3 +407,58 @@ def init_routes(app):
                 db.session.delete(campo)
         db.session.commit()
         return redirect(url_for("admin_panel") + "#ia")
+
+    @app.route("/miac/admin/filtro_publicados", methods=["POST"])
+    def admin_filtro_publicados():
+        guard = _require_admin()
+        if guard:
+            return guard
+
+        acao = request.form.get("acao")
+        if acao == "add":
+            campo_id = request.form.get("campo_extra_id")
+            if campo_id:
+                campo = CampoExtracao.query.get(int(campo_id))
+                if campo and not FiltroPublicados.query.filter_by(
+                    tipo="extra", campo_ref=campo.nome
+                ).first():
+                    ordem = (
+                        db.session.query(db.func.max(FiltroPublicados.ordem)).scalar()
+                        or 0
+                    ) + 1
+                    db.session.add(FiltroPublicados(
+                        rotulo=campo.rotulo,
+                        tipo="extra",
+                        campo_ref=campo.nome,
+                        ordem=ordem,
+                        ativo=True,
+                        icone="fa-tag",
+                    ))
+        elif acao == "toggle":
+            filtro = FiltroPublicados.query.get(request.form.get("id"))
+            if filtro:
+                filtro.ativo = not filtro.ativo
+        elif acao == "mover":
+            filtro = FiltroPublicados.query.get(request.form.get("id"))
+            direcao = request.form.get("direcao")
+            if filtro and direcao in ("cima", "baixo"):
+                delta = -1 if direcao == "cima" else 1
+                vizinho = (
+                    FiltroPublicados.query.filter(
+                        FiltroPublicados.ordem == filtro.ordem + delta
+                    ).first()
+                )
+                if vizinho:
+                    vizinho.ordem, filtro.ordem = filtro.ordem, vizinho.ordem
+        elif acao == "remove":
+            filtro = FiltroPublicados.query.get(request.form.get("id"))
+            if filtro and filtro.tipo == "extra":
+                db.session.delete(filtro)
+        elif acao == "update_rotulo":
+            filtro = FiltroPublicados.query.get(request.form.get("id"))
+            if filtro:
+                novo = (request.form.get("rotulo") or "").strip()
+                if novo:
+                    filtro.rotulo = novo
+        db.session.commit()
+        return redirect(url_for("admin_panel") + "#publicados")

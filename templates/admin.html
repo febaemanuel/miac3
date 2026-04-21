@@ -419,6 +419,264 @@
             white-space: pre-wrap;
             margin: 0;
         }
+
+        /* Cabeçalho da lista de campos com botão de adicionar */
+        .campos-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .campos-header h3 { margin: 0; font-size: 1.05rem; }
+        .btn-add-campo {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            color: #fff;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, .3);
+            transition: transform .15s, box-shadow .15s;
+        }
+        .btn-add-campo:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, .4);
+        }
+
+        /* Wizard modal */
+        .wizard-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, .6);
+            z-index: 1060;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .wizard-modal.open { display: flex; }
+        .wizard-modal__box {
+            background: #fff;
+            border-radius: 14px;
+            width: 100%;
+            max-width: 720px;
+            max-height: 92vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .35);
+        }
+        .wizard-modal__header {
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            color: #fff;
+            padding: 18px 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .wizard-modal__header h2 { margin: 0; font-size: 1.15rem; font-weight: 600; }
+        .wizard-modal__close {
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 1.4rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .wizard-steps {
+            display: flex;
+            gap: 8px;
+            padding: 14px 22px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .wizard-steps__dot {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #e2e8f0;
+            transition: background .2s;
+        }
+        .wizard-steps__dot.active { background: #2563eb; }
+        .wizard-steps__dot.done { background: #10b981; }
+        .wizard-modal__body {
+            padding: 22px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .wizard-step { display: none; }
+        .wizard-step.active { display: block; }
+        .wizard-step__title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin: 0 0 6px;
+            color: #0f172a;
+        }
+        .wizard-step__hint {
+            color: #64748b;
+            font-size: .88rem;
+            margin-bottom: 16px;
+        }
+        .wizard-field { margin-bottom: 14px; }
+        .wizard-field label {
+            display: block;
+            font-size: .85rem;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 6px;
+        }
+        .wizard-field input[type="text"],
+        .wizard-field textarea {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: .92rem;
+        }
+        .wizard-field input:focus,
+        .wizard-field textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, .15);
+        }
+        .wizard-field__hint {
+            font-size: .78rem;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        .wizard-types {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .wizard-type {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 14px;
+            cursor: pointer;
+            transition: border-color .15s, background .15s;
+            background: #fff;
+        }
+        .wizard-type:hover { border-color: #93c5fd; }
+        .wizard-type.selected {
+            border-color: #2563eb;
+            background: #eff6ff;
+        }
+        .wizard-type__icon {
+            font-size: 1.3rem;
+            color: #2563eb;
+            margin-bottom: 6px;
+        }
+        .wizard-type__name { font-weight: 600; font-size: .95rem; }
+        .wizard-type__desc { font-size: .78rem; color: #64748b; }
+        .wizard-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            min-height: 44px;
+            background: #fff;
+        }
+        .wizard-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #eff6ff;
+            color: #1e40af;
+            padding: 4px 10px;
+            border-radius: 14px;
+            font-size: .85rem;
+        }
+        .wizard-chip__remove {
+            background: transparent;
+            border: none;
+            color: #1e40af;
+            cursor: pointer;
+            padding: 0;
+            font-size: 1rem;
+            line-height: 1;
+        }
+        .wizard-chip-input {
+            border: none;
+            outline: none;
+            flex: 1;
+            min-width: 100px;
+            font-size: .9rem;
+        }
+        .wizard-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+        .wizard-toggle input { margin: 0; }
+        .wizard-toggle__label {
+            flex: 1;
+            font-size: .9rem;
+            color: #0f172a;
+        }
+        .wizard-toggle__hint {
+            display: block;
+            font-size: .76rem;
+            color: #64748b;
+            font-weight: 400;
+        }
+        .wizard-preview {
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 10px;
+            padding: 14px;
+            font-size: .88rem;
+        }
+        .wizard-preview__row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .wizard-preview__row:last-child { border-bottom: none; }
+        .wizard-preview__key { color: #64748b; font-weight: 500; }
+        .wizard-preview__val { color: #0f172a; font-weight: 600; text-align: right; }
+        .wizard-modal__footer {
+            padding: 14px 22px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            background: #f8fafc;
+        }
+        .wizard-btn {
+            padding: 9px 18px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: .9rem;
+        }
+        .wizard-btn--ghost {
+            background: transparent;
+            color: #64748b;
+            border: 1px solid #cbd5e1;
+        }
+        .wizard-btn--primary {
+            background: #2563eb;
+            color: #fff;
+        }
+        .wizard-btn--primary:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -447,6 +705,9 @@
                     </button>
                     <button type="button" class="config-nav__item" data-section="ia">
                         <i class="fas fa-robot"></i> IA
+                    </button>
+                    <button type="button" class="config-nav__item" data-section="publicados">
+                        <i class="fas fa-filter"></i> Página de documentos
                     </button>
                     <button type="button" class="config-nav__item" data-section="dados">
                         <i class="fas fa-database"></i> Dados
@@ -545,7 +806,7 @@
                                         <form method="POST" action="{{ url_for('admin_abrangencia_sinonimo') }}" class="quick-add">
                                             <input type="hidden" name="acao" value="add">
                                             <input type="hidden" name="para_id" value="{{ a.id }}">
-                                            <input type="text" name="de" class="form-control form-control-sm" placeholder="Nova sigla sinônima (ex.: CHUFC)" required>
+                                            <input type="text" name="de" class="form-control form-control-sm" placeholder="Nova sigla sinônima" required>
                                             <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-plus"></i></button>
                                         </form>
                                     </div>
@@ -561,7 +822,7 @@
 
                         <form method="POST" action="{{ url_for('admin_abrangencia') }}" class="quick-add mt-3">
                             <input type="hidden" name="acao" value="add">
-                            <input type="text" name="nome" class="form-control" placeholder="Nova abrangência (ex.: HUWC)" required>
+                            <input type="text" name="nome" class="form-control" placeholder="Nova abrangência" required>
                             <input type="color" name="cor" value="#007bff" class="form-control form-control-color" style="flex:0 0 60px;" title="Cor do botão">
                             <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Adicionar abrangência</button>
                         </form>
@@ -859,10 +1120,17 @@
                             </form>
                         </div>
 
-                        <h3 style="font-size:1.05rem; margin-top:24px;">Campos extraídos</h3>
-                        <p class="config-section__subtitle" style="margin-bottom:12px;">
-                            Campos adicionais que a IA deve extrair e que aparecem no formulário de publicação. Os campos fixos (título, datas, organograma, etc.) não entram aqui.
-                        </p>
+                        <div class="campos-header" style="margin-top:24px;">
+                            <div>
+                                <h3>Campos extraídos</h3>
+                                <p class="config-section__subtitle" style="margin:4px 0 0;">
+                                    Campos adicionais que a IA deve extrair e que aparecem no formulário de publicação. Os campos fixos (título, datas, organograma, etc.) não entram aqui.
+                                </p>
+                            </div>
+                            <button type="button" class="btn-add-campo" id="btn-abrir-wizard">
+                                <i class="fas fa-plus"></i> Adicionar campo
+                            </button>
+                        </div>
 
                         {% if campos_extras %}
                             {% for c in campos_extras %}
@@ -952,47 +1220,103 @@
                             </div>
                         {% endif %}
 
+                    </section>
+
+                    <!-- PÁGINA DE DOCUMENTOS -->
+                    <section class="config-section" id="section-publicados">
+                        <div class="config-section__title">Página de documentos</div>
+                        <p class="config-section__subtitle">
+                            Gerencie os filtros que aparecem na barra lateral da página de documentos publicados.
+                            Filtros padrão podem ser ativados/desativados; filtros extras são vinculados a campos personalizados.
+                        </p>
+
+                        <h3 style="font-size:1.05rem; margin-top:20px;">Filtros ativos</h3>
+                        {% if filtros_publicados %}
+                            {% for f in filtros_publicados %}
+                            <details class="tree-node">
+                                <summary>
+                                    <i class="fas fa-chevron-right tree-node__chevron"></i>
+                                    <span class="tree-node__icon"><i class="fas {{ f.icone or 'fa-filter' }}"></i></span>
+                                    <span class="tree-node__title">{{ f.rotulo }} <small class="text-muted">({{ f.campo_ref }})</small></span>
+                                    <span class="tree-node__meta">{{ 'padrão' if f.tipo == 'padrao' else 'extra' }}</span>
+                                    <span class="badge {% if f.ativo %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {% if f.ativo %}Ativo{% else %}Inativo{% endif %}
+                                    </span>
+                                    <span class="tree-actions">
+                                        <form method="POST" action="{{ url_for('admin_filtro_publicados') }}" class="d-inline" onclick="event.stopPropagation()">
+                                            <input type="hidden" name="acao" value="mover">
+                                            <input type="hidden" name="direcao" value="cima">
+                                            <input type="hidden" name="id" value="{{ f.id }}">
+                                            <button type="submit" class="icon-btn" title="Mover para cima"><i class="fas fa-arrow-up"></i></button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('admin_filtro_publicados') }}" class="d-inline" onclick="event.stopPropagation()">
+                                            <input type="hidden" name="acao" value="mover">
+                                            <input type="hidden" name="direcao" value="baixo">
+                                            <input type="hidden" name="id" value="{{ f.id }}">
+                                            <button type="submit" class="icon-btn" title="Mover para baixo"><i class="fas fa-arrow-down"></i></button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('admin_filtro_publicados') }}" class="d-inline" onclick="event.stopPropagation()">
+                                            <input type="hidden" name="acao" value="toggle">
+                                            <input type="hidden" name="id" value="{{ f.id }}">
+                                            <button type="submit" class="icon-btn" title="Ativar/desativar"><i class="fas fa-power-off"></i></button>
+                                        </form>
+                                        {% if f.tipo == 'extra' %}
+                                        <form method="POST" action="{{ url_for('admin_filtro_publicados') }}" class="d-inline" onclick="event.stopPropagation()" onsubmit="return confirm('Remover filtro {{ f.rotulo }}?')">
+                                            <input type="hidden" name="acao" value="remove">
+                                            <input type="hidden" name="id" value="{{ f.id }}">
+                                            <button type="submit" class="icon-btn icon-btn--danger" title="Remover"><i class="fas fa-trash"></i></button>
+                                        </form>
+                                        {% endif %}
+                                    </span>
+                                </summary>
+                                <div class="tree-node__body">
+                                    <form method="POST" action="{{ url_for('admin_filtro_publicados') }}" class="row g-2">
+                                        <input type="hidden" name="acao" value="update_rotulo">
+                                        <input type="hidden" name="id" value="{{ f.id }}">
+                                        <div class="col-md-8">
+                                            <label class="form-label small">Rótulo exibido</label>
+                                            <input type="text" name="rotulo" class="form-control form-control-sm" value="{{ f.rotulo }}" required>
+                                        </div>
+                                        <div class="col-md-4 d-flex align-items-end">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">Salvar rótulo</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </details>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-state">
+                                <i class="fas fa-inbox"></i>
+                                Nenhum filtro configurado.
+                            </div>
+                        {% endif %}
+
                         <div class="flat-card mt-3">
-                            <h4 style="font-size:.95rem; margin-top:0;"><i class="fas fa-plus"></i> Novo campo</h4>
-                            <form method="POST" action="{{ url_for('admin_campo_extracao') }}" class="row g-2">
+                            <h4 style="font-size:.95rem; margin-top:0;"><i class="fas fa-plus"></i> Adicionar filtro de campo personalizado</h4>
+                            <p class="config-section__subtitle" style="margin-bottom:12px;">
+                                Vincula um campo personalizado (cadastrado em <em>IA → Campos extraídos</em>) como filtro na sidebar.
+                            </p>
+                            {% if campos_extras_disponiveis %}
+                            <form method="POST" action="{{ url_for('admin_filtro_publicados') }}" class="row g-2">
                                 <input type="hidden" name="acao" value="add">
-                                <div class="col-md-3">
-                                    <label class="form-label small">Nome técnico</label>
-                                    <input type="text" name="nome" class="form-control form-control-sm" placeholder="ex.: cid10" required pattern="[a-z0-9_]+" title="só letras minúsculas, números e underscore">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label small">Rótulo visível</label>
-                                    <input type="text" name="rotulo" class="form-control form-control-sm" placeholder="ex.: CID-10" required>
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label small">Tipo</label>
-                                    <select name="tipo" class="form-select form-select-sm">
-                                        <option value="texto">Texto</option>
-                                        <option value="data">Data</option>
-                                        <option value="numero">Número</option>
-                                        <option value="select">Lista</option>
+                                <div class="col-md-8">
+                                    <select name="campo_extra_id" class="form-select form-select-sm" required>
+                                        <option value="">Selecione um campo…</option>
+                                        {% for c in campos_extras_disponiveis %}
+                                            <option value="{{ c.id }}">{{ c.rotulo }} ({{ c.nome }})</option>
+                                        {% endfor %}
                                     </select>
                                 </div>
-                                <div class="col-md-3 d-flex align-items-end gap-2">
-                                    <div class="form-check">
-                                        <input type="checkbox" name="obrigatorio" class="form-check-input" id="novo-obr">
-                                        <label for="novo-obr" class="form-check-label small">Obrigatório</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input type="checkbox" name="mostrar_na_listagem" class="form-check-input" id="novo-mos">
-                                        <label for="novo-mos" class="form-check-label small">Listagem</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <input type="text" name="opcoes" class="form-control form-control-sm" placeholder="Opções (só tipo lista, separe por vírgula)">
-                                </div>
-                                <div class="col-md-6">
-                                    <input type="text" name="instrucao_ia" class="form-control form-control-sm" placeholder="Instrução para a IA (opcional)">
-                                </div>
-                                <div class="col-12">
-                                    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Adicionar campo</button>
+                                <div class="col-md-4">
+                                    <button type="submit" class="btn btn-primary btn-sm w-100"><i class="fas fa-plus"></i> Adicionar</button>
                                 </div>
                             </form>
+                            {% else %}
+                            <div class="empty-state">
+                                <i class="fas fa-inbox"></i>
+                                Nenhum campo personalizado ativo. Cadastre um em <em>IA → Campos extraídos</em>.
+                            </div>
+                            {% endif %}
                         </div>
                     </section>
 
@@ -1067,6 +1391,104 @@
         </div>
     </main>
 
+    <div class="wizard-modal" id="wizard-campo" role="dialog" aria-modal="true" aria-labelledby="wizard-title">
+        <div class="wizard-modal__box">
+            <div class="wizard-modal__header">
+                <h2 id="wizard-title"><i class="fas fa-magic"></i> Novo campo personalizado</h2>
+                <button type="button" class="wizard-modal__close" id="wizard-close" aria-label="Fechar">&times;</button>
+            </div>
+            <div class="wizard-steps">
+                <div class="wizard-steps__dot active" data-dot="1"></div>
+                <div class="wizard-steps__dot" data-dot="2"></div>
+                <div class="wizard-steps__dot" data-dot="3"></div>
+            </div>
+            <form method="POST" action="{{ url_for('admin_campo_extracao') }}" id="wizard-form" class="wizard-modal__body">
+                <input type="hidden" name="acao" value="add">
+                <input type="hidden" name="nome" id="wizard-nome">
+                <input type="hidden" name="tipo" id="wizard-tipo" value="texto">
+                <input type="hidden" name="opcoes" id="wizard-opcoes">
+                <input type="hidden" name="obrigatorio" id="wizard-obrigatorio" value="on" disabled>
+                <input type="hidden" name="mostrar_na_listagem" id="wizard-listagem" value="on" disabled>
+
+                <div class="wizard-step active" data-step="1">
+                    <h3 class="wizard-step__title">1. Como esse campo se chama?</h3>
+                    <p class="wizard-step__hint">Dê um rótulo que o usuário veja e uma breve instrução para a IA extrair esse dado do PDF.</p>
+                    <div class="wizard-field">
+                        <label for="wizard-rotulo">Rótulo visível</label>
+                        <input type="text" id="wizard-rotulo" name="rotulo" placeholder="ex.: CID-10" required>
+                        <div class="wizard-field__hint">Nome técnico gerado: <code id="wizard-nome-preview">—</code></div>
+                    </div>
+                    <div class="wizard-field">
+                        <label for="wizard-instrucao">Instrução para a IA (opcional)</label>
+                        <textarea id="wizard-instrucao" name="instrucao_ia" rows="3" placeholder="ex.: código CID-10 mencionado no documento"></textarea>
+                        <div class="wizard-field__hint">Descreva o que a IA deve procurar no texto do PDF.</div>
+                    </div>
+                </div>
+
+                <div class="wizard-step" data-step="2">
+                    <h3 class="wizard-step__title">2. Qual o tipo desse campo?</h3>
+                    <p class="wizard-step__hint">Isso determina como ele aparece no formulário e como é exibido na listagem.</p>
+                    <div class="wizard-types" id="wizard-types">
+                        <div class="wizard-type selected" data-tipo="texto">
+                            <div class="wizard-type__icon"><i class="fas fa-font"></i></div>
+                            <div class="wizard-type__name">Texto</div>
+                            <div class="wizard-type__desc">Campo livre de texto.</div>
+                        </div>
+                        <div class="wizard-type" data-tipo="numero">
+                            <div class="wizard-type__icon"><i class="fas fa-hashtag"></i></div>
+                            <div class="wizard-type__name">Número</div>
+                            <div class="wizard-type__desc">Somente valores numéricos.</div>
+                        </div>
+                        <div class="wizard-type" data-tipo="data">
+                            <div class="wizard-type__icon"><i class="fas fa-calendar"></i></div>
+                            <div class="wizard-type__name">Data</div>
+                            <div class="wizard-type__desc">Campo com seletor de data.</div>
+                        </div>
+                        <div class="wizard-type" data-tipo="select">
+                            <div class="wizard-type__icon"><i class="fas fa-list"></i></div>
+                            <div class="wizard-type__name">Lista</div>
+                            <div class="wizard-type__desc">Opções pré-definidas.</div>
+                        </div>
+                    </div>
+                    <div class="wizard-field" id="wizard-opcoes-wrap" style="display:none; margin-top:14px;">
+                        <label>Opções da lista</label>
+                        <div class="wizard-chips" id="wizard-chips">
+                            <input type="text" class="wizard-chip-input" id="wizard-chip-input" placeholder="Digite e pressione Enter">
+                        </div>
+                        <div class="wizard-field__hint">Pressione Enter ou vírgula para adicionar cada opção.</div>
+                    </div>
+                </div>
+
+                <div class="wizard-step" data-step="3">
+                    <h3 class="wizard-step__title">3. Regras e confirmação</h3>
+                    <p class="wizard-step__hint">Defina se o campo é obrigatório e se deve aparecer na listagem de documentos.</p>
+                    <label class="wizard-toggle">
+                        <input type="checkbox" id="wizard-obr-check">
+                        <span class="wizard-toggle__label">
+                            Obrigatório
+                            <small class="wizard-toggle__hint">Impede publicar sem preencher.</small>
+                        </span>
+                    </label>
+                    <label class="wizard-toggle">
+                        <input type="checkbox" id="wizard-lis-check">
+                        <span class="wizard-toggle__label">
+                            Mostrar na listagem
+                            <small class="wizard-toggle__hint">Campo aparece nos cartões de documento.</small>
+                        </span>
+                    </label>
+                    <div class="wizard-preview" id="wizard-preview" style="margin-top:14px;"></div>
+                </div>
+            </form>
+            <div class="wizard-modal__footer">
+                <button type="button" class="wizard-btn wizard-btn--ghost" id="wizard-back">Voltar</button>
+                <div style="display:flex; gap:8px;">
+                    <button type="button" class="wizard-btn wizard-btn--ghost" id="wizard-cancel">Cancelar</button>
+                    <button type="button" class="wizard-btn wizard-btn--primary" id="wizard-next">Avançar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {% include "partials/_footer.html" %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -1084,7 +1506,7 @@
             navItems.forEach(n => n.addEventListener('click', () => activate(n.dataset.section)));
 
             const hash = (window.location.hash || '').replace('#', '');
-            const valid = ['estrutura', 'usuarios', 'identidade', 'ia', 'dados'];
+            const valid = ['estrutura', 'usuarios', 'identidade', 'ia', 'publicados', 'dados'];
             if (valid.includes(hash)) activate(hash);
             else if (['organogramas', 'abrangencias', 'tipos'].includes(hash)) activate('estrutura');
             else if (hash === 'siglas' || hash === 'marcadores') activate('dados');
@@ -1129,6 +1551,158 @@
                 textarea.value = defaultEl.textContent.trim();
                 updateCount();
                 textarea.focus();
+            });
+        })();
+
+        (function () {
+            const modal = document.getElementById('wizard-campo');
+            if (!modal) return;
+            const openBtn = document.getElementById('btn-abrir-wizard');
+            const closeBtn = document.getElementById('wizard-close');
+            const cancelBtn = document.getElementById('wizard-cancel');
+            const backBtn = document.getElementById('wizard-back');
+            const nextBtn = document.getElementById('wizard-next');
+            const form = document.getElementById('wizard-form');
+            const dots = modal.querySelectorAll('.wizard-steps__dot');
+            const steps = modal.querySelectorAll('.wizard-step');
+
+            const rotulo = document.getElementById('wizard-rotulo');
+            const nomeHidden = document.getElementById('wizard-nome');
+            const nomePreview = document.getElementById('wizard-nome-preview');
+            const instrucao = document.getElementById('wizard-instrucao');
+            const tiposEl = document.getElementById('wizard-types');
+            const tipoHidden = document.getElementById('wizard-tipo');
+            const opcoesWrap = document.getElementById('wizard-opcoes-wrap');
+            const chipsEl = document.getElementById('wizard-chips');
+            const chipInput = document.getElementById('wizard-chip-input');
+            const opcoesHidden = document.getElementById('wizard-opcoes');
+            const obrCheck = document.getElementById('wizard-obr-check');
+            const lisCheck = document.getElementById('wizard-lis-check');
+            const obrHidden = document.getElementById('wizard-obrigatorio');
+            const lisHidden = document.getElementById('wizard-listagem');
+            const preview = document.getElementById('wizard-preview');
+
+            let currentStep = 1;
+            let chips = [];
+
+            const slugify = (s) => (s || '')
+                .normalize('NFD').replace(/[̀-ͯ]/g, '')
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '_')
+                .replace(/^_+|_+$/g, '')
+                .slice(0, 40);
+
+            const showStep = (n) => {
+                currentStep = n;
+                steps.forEach(s => s.classList.toggle('active', Number(s.dataset.step) === n));
+                dots.forEach((d, i) => {
+                    d.classList.toggle('active', i + 1 === n);
+                    d.classList.toggle('done', i + 1 < n);
+                });
+                backBtn.style.visibility = n === 1 ? 'hidden' : 'visible';
+                nextBtn.textContent = n === 3 ? 'Adicionar campo' : 'Avançar';
+                if (n === 3) renderPreview();
+            };
+
+            const renderPreview = () => {
+                const tipo = tipoHidden.value;
+                preview.innerHTML = `
+                    <div class="wizard-preview__row"><span class="wizard-preview__key">Rótulo</span><span class="wizard-preview__val">${rotulo.value || '—'}</span></div>
+                    <div class="wizard-preview__row"><span class="wizard-preview__key">Nome técnico</span><span class="wizard-preview__val">${nomeHidden.value || '—'}</span></div>
+                    <div class="wizard-preview__row"><span class="wizard-preview__key">Tipo</span><span class="wizard-preview__val">${tipo}</span></div>
+                    ${tipo === 'select' ? `<div class="wizard-preview__row"><span class="wizard-preview__key">Opções</span><span class="wizard-preview__val">${chips.join(', ') || '—'}</span></div>` : ''}
+                    <div class="wizard-preview__row"><span class="wizard-preview__key">Obrigatório</span><span class="wizard-preview__val">${obrCheck.checked ? 'Sim' : 'Não'}</span></div>
+                    <div class="wizard-preview__row"><span class="wizard-preview__key">Na listagem</span><span class="wizard-preview__val">${lisCheck.checked ? 'Sim' : 'Não'}</span></div>
+                `;
+            };
+
+            const renderChips = () => {
+                chipsEl.querySelectorAll('.wizard-chip').forEach(c => c.remove());
+                chips.forEach((c, i) => {
+                    const chip = document.createElement('span');
+                    chip.className = 'wizard-chip';
+                    chip.innerHTML = `${c}<button type="button" class="wizard-chip__remove" data-i="${i}">&times;</button>`;
+                    chipsEl.insertBefore(chip, chipInput);
+                });
+                opcoesHidden.value = chips.join(',');
+            };
+
+            const openModal = () => {
+                form.reset();
+                chips = [];
+                currentStep = 1;
+                tipoHidden.value = 'texto';
+                tiposEl.querySelectorAll('.wizard-type').forEach(t => t.classList.toggle('selected', t.dataset.tipo === 'texto'));
+                opcoesWrap.style.display = 'none';
+                renderChips();
+                nomePreview.textContent = '—';
+                obrHidden.disabled = true;
+                lisHidden.disabled = true;
+                showStep(1);
+                modal.classList.add('open');
+                setTimeout(() => rotulo.focus(), 50);
+            };
+
+            const closeModal = () => modal.classList.remove('open');
+
+            openBtn.addEventListener('click', openModal);
+            closeBtn.addEventListener('click', closeModal);
+            cancelBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && modal.classList.contains('open')) closeModal();
+            });
+
+            rotulo.addEventListener('input', () => {
+                nomeHidden.value = slugify(rotulo.value);
+                nomePreview.textContent = nomeHidden.value || '—';
+            });
+
+            tiposEl.addEventListener('click', (e) => {
+                const card = e.target.closest('.wizard-type');
+                if (!card) return;
+                tiposEl.querySelectorAll('.wizard-type').forEach(t => t.classList.remove('selected'));
+                card.classList.add('selected');
+                tipoHidden.value = card.dataset.tipo;
+                opcoesWrap.style.display = card.dataset.tipo === 'select' ? 'block' : 'none';
+            });
+
+            chipInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault();
+                    const v = chipInput.value.trim();
+                    if (v && !chips.includes(v)) { chips.push(v); renderChips(); }
+                    chipInput.value = '';
+                } else if (e.key === 'Backspace' && !chipInput.value && chips.length) {
+                    chips.pop(); renderChips();
+                }
+            });
+
+            chipsEl.addEventListener('click', (e) => {
+                const btn = e.target.closest('.wizard-chip__remove');
+                if (!btn) return;
+                chips.splice(Number(btn.dataset.i), 1);
+                renderChips();
+            });
+
+            obrCheck.addEventListener('change', () => { obrHidden.disabled = !obrCheck.checked; });
+            lisCheck.addEventListener('change', () => { lisHidden.disabled = !lisCheck.checked; });
+
+            backBtn.addEventListener('click', () => { if (currentStep > 1) showStep(currentStep - 1); });
+            nextBtn.addEventListener('click', () => {
+                if (currentStep === 1) {
+                    if (!rotulo.value.trim()) { rotulo.focus(); return; }
+                    if (!nomeHidden.value) { alert('Não foi possível gerar um nome técnico a partir do rótulo.'); return; }
+                    showStep(2);
+                } else if (currentStep === 2) {
+                    if (tipoHidden.value === 'select' && chips.length === 0) {
+                        alert('Adicione pelo menos uma opção para a lista.');
+                        return;
+                    }
+                    showStep(3);
+                } else {
+                    form.submit();
+                }
             });
         })();
     </script>

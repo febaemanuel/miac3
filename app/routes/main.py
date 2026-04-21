@@ -11,7 +11,7 @@ from flask import (
 from sqlalchemy import or_
 
 from app.extensions import db
-from app.models import Documento
+from app.models import CampoExtracao, Documento, FiltroPublicados
 from app.services.dates import normalizar_texto
 
 
@@ -35,7 +35,6 @@ def init_routes(app):
         organograma = request.args.get("organograma", "").strip()
         tipo_documento = request.args.get("tipo_documento", "").strip()
         abrangencia = request.args.get("abrangencia", "").strip()
-        apenas_complexo = request.args.get("apenas_complexo", "false") == "true"
         search_organograma = request.args.get("search_organograma", "").strip().lower()
 
         query = Documento.query
@@ -64,14 +63,6 @@ def init_routes(app):
         if abrangencia:
             query = query.filter(Documento.abrangencia == abrangencia)
 
-        if apenas_complexo:
-            query = query.filter(
-                or_(
-                    Documento.nome.like("%CH.%"),
-                    Documento.nome.like("%CHUFC.%"),
-                )
-            )
-
         documentos = query.all()
 
         if search_organograma:
@@ -87,9 +78,32 @@ def init_routes(app):
                 )
             ]
 
+        filtros_extras_ativos = (
+            FiltroPublicados.query.filter_by(ativo=True, tipo="extra").all()
+        )
+        campos_extras_valores = {}
+        for f in filtros_extras_ativos:
+            valor = request.args.get(f"extra_{f.campo_ref}", "").strip()
+            if valor:
+                campos_extras_valores[f.campo_ref] = valor
+
+        if campos_extras_valores:
+            documentos = [
+                doc
+                for doc in documentos
+                if all(
+                    str((doc.campos_extras or {}).get(campo, "")) == valor
+                    for campo, valor in campos_extras_valores.items()
+                )
+            ]
+
         documentos_agrupados = {}
         filtro_ativo = bool(
-            nome or organograma or tipo_documento or search_organograma or apenas_complexo
+            nome
+            or organograma
+            or tipo_documento
+            or search_organograma
+            or campos_extras_valores
         )
         if not filtro_ativo:
             for doc in documentos:

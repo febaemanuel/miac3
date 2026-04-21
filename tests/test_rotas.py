@@ -52,6 +52,35 @@ def test_logged_client_cria_abrangencia(logged_client):
     assert b"NOVO" in follow.data
 
 
+def test_publicados_renderiza_com_filtros_padrao(logged_client):
+    resp = logged_client.get("/miac/publicados")
+    assert resp.status_code == 200
+    # Filtros padrão foram semeados
+    assert b"Organograma" in resp.data
+    assert b"Tipo de documento" in resp.data
+
+
+def test_admin_filtro_publicados_toggle(logged_client, app):
+    from app.models import FiltroPublicados
+
+    with app.app_context():
+        filtro = FiltroPublicados.query.filter_by(campo_ref="organograma").first()
+        assert filtro is not None
+        fid = filtro.id
+        ativo_antes = filtro.ativo
+
+    resp = logged_client.post(
+        "/miac/admin/filtro_publicados",
+        data={"acao": "toggle", "id": fid},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 302
+
+    with app.app_context():
+        filtro = FiltroPublicados.query.get(fid)
+        assert filtro.ativo != ativo_antes
+
+
 def test_identidade_persiste_cores_e_nome(logged_client, app):
     from app.models import OrganizacaoConfig
 
