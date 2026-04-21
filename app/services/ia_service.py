@@ -28,8 +28,14 @@ def _post_with_retry(url, api_key, model, prompt, retries=3, delay=2):
     for i in range(retries):
         try:
             response = requests.post(url, headers=headers, json=data, timeout=30)
+            logger.info(
+                "[IA] %s tentativa %d status=%s body=%s",
+                url, i + 1, response.status_code, response.text[:800],
+            )
             if response.status_code == 200:
-                return response.json()["choices"][0]["message"]["content"]
+                content = response.json()["choices"][0]["message"]["content"]
+                logger.info("[IA] conteúdo retornado (%d chars):\n%s", len(content), content)
+                return content
             logger.warning(
                 "Tentativa %d falhou (%s): %s %s",
                 i + 1, url, response.status_code, response.text,
