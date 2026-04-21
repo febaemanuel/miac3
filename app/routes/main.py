@@ -1,6 +1,6 @@
-"""Rotas principais: index, lista, buscas e relações."""
+"""Rotas principais: index, buscas e relações."""
 from flask import (
-    jsonify,
+    current_app,
     redirect,
     render_template,
     request,
@@ -11,7 +11,7 @@ from flask import (
 from sqlalchemy import or_
 
 from app.extensions import db
-from app.models import Documento, Documento2
+from app.models import Documento
 from app.services.dates import normalizar_texto
 
 
@@ -20,102 +20,55 @@ def init_routes(app):
     def index():
         if "username" not in session:
             return redirect(url_for("login"))
-
-        titulo = request.args.get("titulo", "")
-        autor_id = request.args.get("autor", "")
-        data = request.args.get("data", "")
-
-        query = Documento.query
-        if titulo:
-            query = query.filter(Documento.titulo.ilike(f"%{titulo}%"))
-        if autor_id:
-            query = query.filter(Documento.elaboradores.ilike(f"%{autor_id}%"))
-        if data:
-            query = query.filter(Documento.data_publicacao == data)
-
-        documentos = query.all()
-        return render_template("index.html", documentos=documentos)
-
-    @app.route("/miac/lista")
-    def lista():
-        if "username" not in session:
-            return redirect(url_for("login"))
-        return render_template("lista.html")
-
-    @app.route("/miac/relacao")
-    def relacao():
-        if "username" not in session:
-            return redirect(url_for("login"))
-        documentos = Documento.query.all()
-        return render_template("relacao.html", documentos=documentos)
+        return render_template("index.html")
 
     @app.route("/miac/relacao_documentos")
     def relacao_documentos():
         if "username" not in session:
             return redirect(url_for("login"))
-        documentos = Documento2.query.all()
+        documentos = Documento.query.all()
         return render_template("relacao_documentos.html", documentos=documentos)
 
     @app.route("/miac/buscar", methods=["GET"])
     def buscar():
-        if "username" not in session:
-            return jsonify({"error": "Usuário não autenticado"}), 403
-
-        titulo = request.args.get("titulo", "").strip()
-        autor = request.args.get("autor", "").strip()
-        data = request.args.get("data", "").strip()
-
-        query = Documento.query
-        if titulo:
-            query = query.filter(Documento.titulo.ilike(f"%{titulo}%"))
-        if autor:
-            query = query.filter(Documento.elaboradores.ilike(f"%{autor}%"))
-        if data:
-            query = query.filter(Documento.data_publicacao == data)
-
-        documentos = query.all()
-        return render_template("partials/document_list.html", documentos=documentos)
-
-    @app.route("/miac/buscar2", methods=["GET"])
-    def buscar2():
         nome = request.args.get("nome", "").strip()
         organograma = request.args.get("organograma", "").strip()
         tipo_documento = request.args.get("tipo_documento", "").strip()
-        abrangencia = request.args.get("abrangencia", "HUWC").strip()
+        abrangencia = request.args.get("abrangencia", "").strip()
         apenas_complexo = request.args.get("apenas_complexo", "false") == "true"
         search_organograma = request.args.get("search_organograma", "").strip().lower()
 
-        query = Documento2.query
+        query = Documento.query
 
         if nome:
             termo_busca = normalizar_texto(nome)
             query = query.filter(
-                db.func.unaccent(Documento2.nome).ilike(f"%{termo_busca}%")
+                db.func.unaccent(Documento.nome).ilike(f"%{termo_busca}%")
             )
 
         if organograma:
             termo_busca = normalizar_texto(organograma)
             query = query.filter(
                 or_(
-                    db.func.unaccent(Documento2.organograma).ilike(f"%{termo_busca}%"),
-                    db.func.unaccent(Documento2.nome_completo).ilike(f"%{termo_busca}%"),
+                    db.func.unaccent(Documento.organograma).ilike(f"%{termo_busca}%"),
+                    db.func.unaccent(Documento.nome_completo).ilike(f"%{termo_busca}%"),
                 )
             )
 
         if tipo_documento:
             termo_busca = normalizar_texto(tipo_documento)
             query = query.filter(
-                db.func.unaccent(Documento2.tipo_documento).ilike(f"%{termo_busca}%")
+                db.func.unaccent(Documento.tipo_documento).ilike(f"%{termo_busca}%")
             )
 
         if abrangencia:
-            query = query.filter(Documento2.abrangencia == abrangencia)
+            query = query.filter(Documento.abrangencia == abrangencia)
 
         if apenas_complexo:
             query = query.filter(
                 or_(
-                    Documento2.nome.like("%CH.%"),
-                    Documento2.nome.like("%CHUFC.%"),
+                    Documento.nome.like("%CH.%"),
+                    Documento.nome.like("%CHUFC.%"),
                 )
             )
 
@@ -151,7 +104,7 @@ def init_routes(app):
                 ].append(doc)
 
         organogramas_completos = (
-            db.session.query(Documento2.organograma, Documento2.nome_completo)
+            db.session.query(Documento.organograma, Documento.nome_completo)
             .distinct()
             .all()
         )
@@ -168,7 +121,7 @@ def init_routes(app):
         tipos_documento_list = sorted(tipos_documento_unicos)
 
         return render_template(
-            "partials/document_list2.html",
+            "partials/document_list.html",
             documentos_agrupados=documentos_agrupados,
             documentos=documentos,
             exibir_lista=filtro_ativo,
@@ -182,9 +135,9 @@ def init_routes(app):
     @app.route("/miac/carregar_documentos_modal", methods=["GET"])
     def carregar_documentos_modal():
         organograma = request.args.get("organograma", "").strip()
-        abrangencia = request.args.get("abrangencia", "HUWC").strip()
+        abrangencia = request.args.get("abrangencia", "").strip()
 
-        documentos = Documento2.query.filter_by(
+        documentos = Documento.query.filter_by(
             organograma=organograma, abrangencia=abrangencia
         ).all()
 
@@ -200,4 +153,4 @@ def init_routes(app):
 
     @app.route("/miac/static/<path:filename>")
     def static_files(filename):
-        return send_from_directory("static", filename)
+        return send_from_directory(current_app.static_folder, filename)

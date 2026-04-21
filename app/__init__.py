@@ -2,7 +2,6 @@
 import logging
 
 from flask import Flask
-from sqlalchemy import inspect
 
 from app.config import Config, validate
 from app.extensions import db
@@ -33,18 +32,10 @@ def create_app(config_class=Config):
 
     db.init_app(app)
 
-    # Importa modelos antes de create_all para registrá-los no metadata.
     from app import models  # noqa: F401
 
     with app.app_context():
-        inspector = inspect(db.engine)
-        if not inspector.has_table("documento") or not inspector.has_table("documento2"):
-            db.create_all()
-            app.logger.info("Banco de dados e tabelas criados.")
-        else:
-            db.create_all()
-            app.logger.info("Banco de dados já existente; garantindo tabelas novas.")
-
+        db.create_all()
         from app.seed import run_seeds
         run_seeds()
 

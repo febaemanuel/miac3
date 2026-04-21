@@ -11,8 +11,8 @@ instance/
 *.sqlite
 *.db
 
-static/uploads2/*
-!static/uploads2/.gitkeep
+static/uploads/*
+!static/uploads/.gitkeep
 
 .venv/
 venv/

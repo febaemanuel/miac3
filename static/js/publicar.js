@@ -1,4 +1,4 @@
-/* publicar2.js — lógica da tela de publicação com fila de processamento por IA.
+/* publicar.js — lógica da tela de publicação com fila de processamento por IA.
    URLs injetadas via window.MIAC_URLS no template. */
 
 let arquivosProcessados = [];
@@ -306,10 +306,15 @@ $(document).ready(function () {
             formData.append('numero_sei[]', dados.gpt_response.numero_sei);
             formData.append('vencimento[]', dados.gpt_response.vencimento);
             formData.append('data_elaboracao[]', dados.gpt_response.data_elaboracao);
+            const extras = dados.campos_extras || {};
+            Object.keys(extras).forEach(function (k) {
+                const v = extras[k];
+                formData.append('extra_' + k + '[]', (v && v !== 'Não localizado') ? v : '');
+            });
         });
 
         $.ajax({
-            url: window.MIAC_URLS.publicar2,
+            url: window.MIAC_URLS.publicar,
             type: 'POST',
             data: formData,
             processData: false,
@@ -374,10 +379,14 @@ function publicarManual(event) {
     formData.append('numero_sei[]', $('#numero_sei_manual').val());
     formData.append('elaboradores[]', $('#elaboradores_manual').val());
 
+    $('#form-manual [name^="extra_"]').each(function () {
+        formData.append(this.name, $(this).val());
+    });
+
     $('#publicar-loading').show();
 
     $.ajax({
-        url: window.MIAC_URLS.publicar2,
+        url: window.MIAC_URLS.publicar,
         type: 'POST',
         data: formData,
         processData: false,

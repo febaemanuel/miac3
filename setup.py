@@ -65,7 +65,7 @@ def instalar_deps():
 
 def criar_diretorios():
     dirs = [
-        os.path.join("static", "uploads2"),
+        os.path.join("static", "uploads"),
         os.path.join("static", "branding"),
     ]
     for d in dirs:
@@ -86,6 +86,8 @@ def inicializar_banco():
 
 
 def main():
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
     print("=" * 50)
     print("       Setup MIAC — Configuração inicial")
     print("=" * 50)

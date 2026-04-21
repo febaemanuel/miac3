@@ -19,15 +19,21 @@ from sqlalchemy.ext.mutable import MutableList
 from werkzeug.utils import secure_filename
 
 from app.extensions import db
-from app.models import Documento2
+from app.models import (
+    Abrangencia,
+    CampoExtracao,
+    Documento,
+    Organograma,
+    TipoDocumento,
+)
 from app.services.dates import converter_data, formatar_data_para_input
 
 logger = logging.getLogger(__name__)
 
 
 def _atualizar_status_documentos():
-    """Recalcula campo `atualizado` de cada Documento2 com base no vencimento."""
-    documentos = Documento2.query.all()
+    """Recalcula campo `atualizado` de cada documento com base no vencimento."""
+    documentos = Documento.query.all()
     hoje = datetime.now().date()
     for documento in documentos:
         if documento.vencimento:
@@ -43,24 +49,42 @@ def _atualizar_status_documentos():
 
 
 def init_routes(app):
-    @app.route("/miac/publicar2", methods=["GET"])
-    def publicar2_page():
+    @app.route("/miac/publicar", methods=["GET"])
+    def publicar_page():
         if "username" not in session:
             return redirect(url_for("login"))
 
-        organogramas = db.session.query(Documento2.organograma).distinct().all()
-        tipos_documento = db.session.query(Documento2.tipo_documento).distinct().all()
-        abrangencias = db.session.query(Documento2.abrangencia).distinct().all()
-
-        return render_template(
-            "publicar2.html",
-            organogramas=[org[0] for org in organogramas if org[0]],
-            tipos_documento=[tipo[0] for tipo in tipos_documento if tipo[0]],
-            abrangencias=[abrang[0] for abrang in abrangencias if abrang[0]],
+        abrangencias = (
+            Abrangencia.query.filter_by(ativo=True)
+            .order_by(Abrangencia.ordem, Abrangencia.nome)
+            .all()
+        )
+        organogramas = Organograma.query.order_by(Organograma.nome).all()
+        tipos_documento = TipoDocumento.query.order_by(TipoDocumento.nome).all()
+        campos_extras = (
+            CampoExtracao.query.filter_by(ativo=True)
+            .order_by(CampoExtracao.ordem, CampoExtracao.id)
+            .all()
         )
 
-    @app.route("/miac/publicar2", methods=["POST"])
-    def publicar2():
+        organogramas_por_abrangencia = {a.nome: [] for a in abrangencias}
+        for org in organogramas:
+            if org.abrangencia and org.abrangencia.nome in organogramas_por_abrangencia:
+                organogramas_por_abrangencia[org.abrangencia.nome].append(
+                    {"sigla": org.nome, "nome_completo": org.nome_completo or ""}
+                )
+
+        return render_template(
+            "publicar.html",
+            abrangencias=[a.nome for a in abrangencias],
+            organogramas=[o.nome for o in organogramas],
+            organogramas_por_abrangencia=organogramas_por_abrangencia,
+            tipos_documento=[t.nome for t in tipos_documento],
+            campos_extras=campos_extras,
+        )
+
+    @app.route("/miac/publicar", methods=["POST"])
+    def publicar():
         if "username" not in session:
             return jsonify({"error": "Usuário não autenticado"}), 403
 
@@ -76,6 +100,16 @@ def init_routes(app):
             numeros_sei = request.form.getlist("numero_sei[]")
             vencimentos = request.form.getlist("vencimento[]")
             datas_elaboracao = request.form.getlist("data_elaboracao[]")
+
+            campos_extras_def = (
+                CampoExtracao.query.filter_by(ativo=True)
+                .order_by(CampoExtracao.ordem, CampoExtracao.id)
+                .all()
+            )
+            extras_por_campo = {
+                c.nome: request.form.getlist(f"extra_{c.nome}[]")
+                for c in campos_extras_def
+            }
 
             if len(titulos) != len(files):
                 return (
@@ -131,7 +165,7 @@ def init_routes(app):
                 file.save(file_path)
 
                 marcador = None
-                documento_existente = Documento2.query.filter_by(
+                documento_existente = Documento.query.filter_by(
                     organograma=organogramas[index],
                     abrangencia=abrangencias[index],
                 ).first()
@@ -139,13 +173,18 @@ def init_routes(app):
                     marcador = documento_existente.marcador
 
                 nome_completo = None
-                documento_com_nome = Documento2.query.filter_by(
+                documento_com_nome = Documento.query.filter_by(
                     organograma=organogramas[index]
                 ).first()
                 if documento_com_nome and documento_com_nome.nome_completo:
                     nome_completo = documento_com_nome.nome_completo
 
-                documento = Documento2(
+                extras_doc = {}
+                for nome_campo, valores in extras_por_campo.items():
+                    if index < len(valores) and valores[index].strip():
+                        extras_doc[nome_campo] = valores[index].strip()
+
+                documento = Documento(
                     nome=titulos[index],
                     organograma=organogramas[index],
                     tipo_documento=tipos_documento[index],
@@ -159,6 +198,7 @@ def init_routes(app):
                     data_publicacao=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     marcador=marcador,
                     nome_completo=nome_completo,
+                    campos_extras=extras_doc,
                 )
                 db.session.add(documento)
                 log_detalhado.append(f"{titulos[index]} salvo como {file_name}")
@@ -177,19 +217,25 @@ def init_routes(app):
                 500,
             )
 
-    @app.route("/miac/publicados2", methods=["GET"])
-    def publicados2():
+    @app.route("/miac/publicados", methods=["GET"])
+    def publicados():
         _atualizar_status_documentos()
 
-        abrangencia_selecionada = request.args.get("abrangencia", "HUWC")
+        abrangencias_ativas = (
+            Abrangencia.query.filter_by(ativo=True)
+            .order_by(Abrangencia.ordem, Abrangencia.nome)
+            .all()
+        )
+        default_abrang = abrangencias_ativas[0].nome if abrangencias_ativas else ""
+        abrangencia_selecionada = request.args.get("abrangencia", default_abrang)
         organograma_filtro = request.args.get("organograma", "").strip()
         tipo_documento_filtro = request.args.get("tipo_documento", "").strip()
 
-        query = Documento2.query.filter_by(abrangencia=abrangencia_selecionada)
+        query = Documento.query.filter_by(abrangencia=abrangencia_selecionada)
         if organograma_filtro:
-            query = query.filter(Documento2.organograma == organograma_filtro)
+            query = query.filter(Documento.organograma == organograma_filtro)
         if tipo_documento_filtro:
-            query = query.filter(Documento2.tipo_documento == tipo_documento_filtro)
+            query = query.filter(Documento.tipo_documento == tipo_documento_filtro)
 
         documentos = query.all()
 
@@ -209,7 +255,7 @@ def init_routes(app):
                 tipos_documento_unicos.add(documento.tipo_documento)
 
         organogramas_completos = (
-            db.session.query(Documento2.organograma, Documento2.nome_completo)
+            db.session.query(Documento.organograma, Documento.nome_completo)
             .distinct()
             .all()
         )
@@ -223,59 +269,76 @@ def init_routes(app):
         tipos_documento_list = sorted(tipos_documento_unicos)
 
         return render_template(
-            "publicados2.html",
+            "publicados.html",
             documentos_agrupados=documentos_agrupados,
             organogramas=organogramas_formatados,
             tipos_documento=tipos_documento_list,
             abrangencia_selecionada=abrangencia_selecionada,
+            abrangencias=abrangencias_ativas,
             organograma_filtro=organograma_filtro,
             tipo_documento_filtro=tipo_documento_filtro,
         )
 
-    @app.route("/miac/documento2/<int:doc_id>", methods=["GET"])
-    def documento2_detalhes(doc_id):
-        documento = db.session.get(Documento2, doc_id)
-        if documento:
-            documento_url = url_for(
-                "static",
-                filename=f"uploads2/{os.path.basename(documento.caminho)}",
-                _external=True,
-            )
-            return render_template(
-                "detalhes2_documentos.html",
-                documento=documento,
-                documento_url=documento_url,
-                nivel_acesso=session.get("nivel_acesso"),
-            )
-        return "Documento não encontrado", 404
+    @app.route("/miac/documento/<int:doc_id>", methods=["GET"])
+    def documento_detalhes(doc_id):
+        documento = db.session.get(Documento, doc_id)
+        if not documento:
+            return "Documento não encontrado", 404
 
-    @app.route("/miac/excluir_documento/<int:doc_id>/<tipo>", methods=["GET"])
-    def excluir_documento(doc_id, tipo):
-        if "username" not in session:
+        documento_url = url_for(
+            "static",
+            filename=f"uploads/{os.path.basename(documento.caminho)}",
+        )
+        pdf_antigo_url = (
+            url_for("static", filename=f"uploads/{os.path.basename(documento.pdf_antigo)}")
+            if documento.pdf_antigo
+            else None
+        )
+        campos_extras_def = (
+            CampoExtracao.query.filter_by(ativo=True)
+            .order_by(CampoExtracao.ordem, CampoExtracao.id)
+            .all()
+        )
+        return render_template(
+            "detalhes_documentos.html",
+            documento=documento,
+            documento_url=documento_url,
+            pdf_antigo_url=pdf_antigo_url,
+            campos_extras=campos_extras_def,
+            valores_extras=documento.campos_extras or {},
+            nivel_acesso=session.get("nivel_acesso"),
+        )
+
+    @app.route("/miac/excluir_documento/<int:doc_id>", methods=["POST"])
+    def excluir_documento(doc_id):
+        if "username" not in session or session.get("nivel_acesso") != "elevado":
             return redirect(url_for("login"))
 
-        if tipo != "documento2":
-            return "Tipo de documento inválido", 400
-
-        documento = db.session.get(Documento2, doc_id)
+        documento = db.session.get(Documento, doc_id)
         if documento is None:
             return "Documento não encontrado", 404
 
         db.session.delete(documento)
         db.session.commit()
         flash("Documento excluído com sucesso!", "success")
-        return redirect(url_for("publicados2"))
+        return redirect(url_for("publicados"))
 
-    @app.route("/miac/editar_documento2/<int:doc_id>", methods=["GET", "POST"])
-    def editar_documento2(doc_id):
+    @app.route("/miac/editar_documento/<int:doc_id>", methods=["GET", "POST"])
+    def editar_documento(doc_id):
         if "username" not in session or session.get("nivel_acesso") != "elevado":
             return redirect(url_for("login"))
 
-        documento = db.session.get(Documento2, doc_id)
+        documento = db.session.get(Documento, doc_id)
         if not documento:
             return "Documento não encontrado", 404
 
         upload_folder = current_app.config["UPLOAD_FOLDER"]
+
+        campos_extras_def = (
+            CampoExtracao.query.filter_by(ativo=True)
+            .order_by(CampoExtracao.ordem, CampoExtracao.id)
+            .all()
+        )
 
         if request.method == "POST":
             try:
@@ -302,6 +365,17 @@ def init_routes(app):
                 documento.elaboradores = request.form.get(
                     "elaboradores", documento.elaboradores
                 )
+
+                extras = dict(documento.campos_extras or {})
+                for c in campos_extras_def:
+                    key = f"extra_{c.nome}"
+                    if key in request.form:
+                        valor = request.form[key].strip()
+                        if valor:
+                            extras[c.nome] = valor
+                        else:
+                            extras.pop(c.nome, None)
+                documento.campos_extras = extras
 
                 if (
                     "novo_pdf" in request.files
@@ -343,13 +417,13 @@ def init_routes(app):
 
                 db.session.commit()
                 flash("Documento atualizado com sucesso!", "success")
-                return redirect(url_for("documento2_detalhes", doc_id=doc_id))
+                return redirect(url_for("documento_detalhes", doc_id=doc_id))
 
             except Exception as exc:
                 db.session.rollback()
                 logger.exception("Erro ao atualizar documento %s", doc_id)
                 flash(f"Erro ao atualizar documento: {exc}", "error")
-                return redirect(url_for("editar_documento2", doc_id=doc_id))
+                return redirect(url_for("editar_documento", doc_id=doc_id))
 
         historico = []
         if documento.historico_versoes:
@@ -371,21 +445,41 @@ def init_routes(app):
             logger.exception("Erro ao ordenar histórico do doc %s", doc_id)
             historico_ordenado = []
 
+        abrangencias_ativas = (
+            Abrangencia.query.filter_by(ativo=True)
+            .order_by(Abrangencia.ordem, Abrangencia.nome)
+            .all()
+        )
+        organogramas = Organograma.query.order_by(Organograma.nome).all()
+        tipos_documento = TipoDocumento.query.order_by(TipoDocumento.nome).all()
+
+        organogramas_por_abrangencia = {a.nome: [] for a in abrangencias_ativas}
+        for org in organogramas:
+            if org.abrangencia and org.abrangencia.nome in organogramas_por_abrangencia:
+                organogramas_por_abrangencia[org.abrangencia.nome].append(
+                    {"sigla": org.nome, "nome_completo": org.nome_completo or ""}
+                )
+
         dados_template = {
             "documento": documento,
             "versao_efetiva": documento.versao_efetiva,
             "historico_efetivo": historico_ordenado,
             "data_elaboracao": formatar_data_para_input(documento.data_elaboracao),
             "vencimento": formatar_data_para_input(documento.vencimento),
+            "campos_extras": campos_extras_def,
+            "valores_extras": documento.campos_extras or {},
+            "abrangencias": [a.nome for a in abrangencias_ativas],
+            "tipos_documento": [t.nome for t in tipos_documento],
+            "organogramas_por_abrangencia": organogramas_por_abrangencia,
         }
-        return render_template("editar_documento2.html", **dados_template)
+        return render_template("editar_documento.html", **dados_template)
 
     @app.route("/miac/restaurar_versao/<int:doc_id>/<int:versao>", methods=["POST"])
     def restaurar_versao(doc_id, versao):
         if "username" not in session or session.get("nivel_acesso") != "elevado":
             return jsonify({"success": False, "error": "Acesso negado"}), 403
 
-        documento = db.session.get(Documento2, doc_id)
+        documento = db.session.get(Documento, doc_id)
         if not documento:
             return jsonify({"success": False, "error": "Documento não encontrado"}), 404
 

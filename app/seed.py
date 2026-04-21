@@ -1,53 +1,18 @@
-"""Povoamento inicial de tabelas de vocabulário e usuários."""
+"""Povoamento inicial de usuários e singletons de configuração."""
 import os
 
 from werkzeug.security import generate_password_hash
 
+from sqlalchemy import text
+
 from app.extensions import db
-from app.models import (
-    Abrangencia,
-    AbrangenciaSinonimo,
-    Documento2,
-    Organograma,
-    OrganizacaoConfig,
-    TipoDocumento,
-    Usuario,
-)
+from app.models import IaConfig, OrganizacaoConfig, Usuario
 
 
-SINONIMOS_EBSERH = {"CHUFC": "HUWC", "CH": "HUWC"}
-
-
-def _seed_abrangencias():
-    existentes = {a.nome for a in Abrangencia.query.all()}
-    for (nome,) in db.session.query(Documento2.abrangencia).distinct():
-        if nome and nome not in existentes:
-            db.session.add(Abrangencia(nome=nome))
-            existentes.add(nome)
-    db.session.flush()
-
-    for de, para in SINONIMOS_EBSERH.items():
-        alvo = Abrangencia.query.filter_by(nome=para).first()
-        if not alvo:
-            continue
-        if not AbrangenciaSinonimo.query.filter_by(de=de).first():
-            db.session.add(AbrangenciaSinonimo(de=de, para_id=alvo.id))
-
-
-def _seed_organogramas():
-    existentes = {o.nome for o in Organograma.query.all()}
-    for (nome,) in db.session.query(Documento2.organograma).distinct():
-        if nome and nome not in existentes:
-            db.session.add(Organograma(nome=nome))
-            existentes.add(nome)
-
-
-def _seed_tipos_documento():
-    existentes = {t.nome for t in TipoDocumento.query.all()}
-    for (nome,) in db.session.query(Documento2.tipo_documento).distinct():
-        if nome and nome not in existentes:
-            db.session.add(TipoDocumento(nome=nome))
-            existentes.add(nome)
+def _enable_extensions():
+    if db.engine.dialect.name != "postgresql":
+        return
+    db.session.execute(text("CREATE EXTENSION IF NOT EXISTS unaccent"))
 
 
 def _seed_usuarios():
@@ -77,9 +42,8 @@ def _seed_usuarios():
 
 
 def run_seeds():
-    _seed_abrangencias()
-    _seed_organogramas()
-    _seed_tipos_documento()
+    _enable_extensions()
     _seed_usuarios()
-    OrganizacaoConfig.get()  # cria singleton com defaults se não existir
+    OrganizacaoConfig.get()
+    IaConfig.get()
     db.session.commit()

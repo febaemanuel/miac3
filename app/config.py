@@ -16,11 +16,11 @@ class Config:
     _db_name = os.getenv("DB_NAME")
 
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://{_db_user}:{_db_password}@{_db_host}:{_db_port}/{_db_name}"
+        f"postgresql+psycopg://{_db_user}:{_db_password}@{_db_host}:{_db_port}/{_db_name}"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    UPLOAD_FOLDER = os.path.join("static", "uploads2")
+    UPLOAD_FOLDER = os.path.join("static", "uploads")
 
     DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")

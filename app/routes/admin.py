@@ -18,7 +18,9 @@ from app.extensions import db
 from app.models import (
     Abrangencia,
     AbrangenciaSinonimo,
-    Documento2,
+    CampoExtracao,
+    Documento,
+    IaConfig,
     Organograma,
     OrganizacaoConfig,
     TipoDocumento,
@@ -41,30 +43,51 @@ def init_routes(app):
 
         siglas = (
             db.session.query(
-                Documento2.organograma,
-                db.func.max(Documento2.nome_completo).label("nome_completo"),
-                db.func.count(Documento2.id).label("total_documentos"),
+                Documento.organograma,
+                db.func.max(Documento.nome_completo).label("nome_completo"),
+                db.func.count(Documento.id).label("total_documentos"),
             )
-            .group_by(Documento2.organograma)
+            .group_by(Documento.organograma)
             .all()
         )
         marcadores = (
             db.session.query(
-                Documento2.organograma, Documento2.abrangencia, Documento2.marcador
+                Documento.organograma, Documento.abrangencia, Documento.marcador
             )
             .distinct()
             .all()
         )
 
+        abrangencias = (
+            Abrangencia.query.order_by(Abrangencia.ordem, Abrangencia.nome).all()
+        )
+        organogramas = Organograma.query.order_by(Organograma.nome).all()
+        organogramas_por_abrangencia = {a.id: [] for a in abrangencias}
+        organogramas_orfaos = []
+        for org in organogramas:
+            if org.abrangencia_id and org.abrangencia_id in organogramas_por_abrangencia:
+                organogramas_por_abrangencia[org.abrangencia_id].append(org)
+            else:
+                organogramas_orfaos.append(org)
+
+        from app.routes.api import PROMPT_PADRAO
+
         return render_template(
             "admin.html",
-            organogramas=Organograma.query.order_by(Organograma.nome).all(),
-            abrangencias=Abrangencia.query.order_by(Abrangencia.nome).all(),
+            organogramas=organogramas,
+            abrangencias=abrangencias,
+            organogramas_por_abrangencia=organogramas_por_abrangencia,
+            organogramas_orfaos=organogramas_orfaos,
             sinonimos=AbrangenciaSinonimo.query.all(),
             tipos_documento=TipoDocumento.query.order_by(TipoDocumento.nome).all(),
             usuarios=Usuario.query.order_by(Usuario.username).all(),
             siglas=siglas,
             marcadores=marcadores,
+            ia_config=IaConfig.get(),
+            campos_extras=CampoExtracao.query.order_by(
+                CampoExtracao.ordem, CampoExtracao.id
+            ).all(),
+            prompt_padrao=PROMPT_PADRAO,
         )
 
     @app.route("/miac/admin/organograma", methods=["POST"])
@@ -76,14 +99,31 @@ def init_routes(app):
         acao = request.form.get("acao")
         if acao == "add":
             nome = (request.form.get("nome") or "").strip().upper()
+            abrangencia_id = request.form.get("abrangencia_id") or None
+            nome_completo = (request.form.get("nome_completo") or "").strip() or None
             if nome and not Organograma.query.filter_by(nome=nome).first():
-                db.session.add(Organograma(nome=nome))
+                db.session.add(
+                    Organograma(
+                        nome=nome,
+                        abrangencia_id=int(abrangencia_id) if abrangencia_id else None,
+                        nome_completo=nome_completo,
+                    )
+                )
+        elif acao == "update":
+            org = Organograma.query.get(request.form.get("id"))
+            if org:
+                if "abrangencia_id" in request.form:
+                    novo = request.form.get("abrangencia_id") or None
+                    org.abrangencia_id = int(novo) if novo else None
+                if "nome_completo" in request.form:
+                    novo_nome = (request.form.get("nome_completo") or "").strip()
+                    org.nome_completo = novo_nome or None
         elif acao == "remove":
             org = Organograma.query.get(request.form.get("id"))
             if org:
                 db.session.delete(org)
         db.session.commit()
-        return redirect(url_for("admin_panel") + "#organogramas")
+        return redirect(url_for("admin_panel") + "#estrutura")
 
     @app.route("/miac/admin/abrangencia", methods=["POST"])
     def admin_abrangencia():
@@ -94,19 +134,30 @@ def init_routes(app):
         acao = request.form.get("acao")
         if acao == "add":
             nome = (request.form.get("nome") or "").strip().upper()
+            cor = (request.form.get("cor") or "#007bff").strip()
             if nome and not Abrangencia.query.filter_by(nome=nome).first():
-                db.session.add(Abrangencia(nome=nome, ativo=True))
+                ordem = (db.session.query(db.func.max(Abrangencia.ordem)).scalar() or 0) + 1
+                db.session.add(Abrangencia(nome=nome, ativo=True, cor=cor, ordem=ordem))
         elif acao == "toggle":
             abrang = Abrangencia.query.get(request.form.get("id"))
             if abrang:
                 abrang.ativo = not abrang.ativo
+        elif acao == "update":
+            abrang = Abrangencia.query.get(request.form.get("id"))
+            if abrang:
+                cor = (request.form.get("cor") or "").strip()
+                if cor:
+                    abrang.cor = cor
         elif acao == "remove":
             abrang = Abrangencia.query.get(request.form.get("id"))
             if abrang:
                 AbrangenciaSinonimo.query.filter_by(para_id=abrang.id).delete()
+                Organograma.query.filter_by(abrangencia_id=abrang.id).update(
+                    {"abrangencia_id": None}
+                )
                 db.session.delete(abrang)
         db.session.commit()
-        return redirect(url_for("admin_panel") + "#abrangencias")
+        return redirect(url_for("admin_panel") + "#estrutura")
 
     @app.route("/miac/admin/sinonimo", methods=["POST"])
     def admin_abrangencia_sinonimo():
@@ -125,7 +176,7 @@ def init_routes(app):
             if sin:
                 db.session.delete(sin)
         db.session.commit()
-        return redirect(url_for("admin_panel") + "#abrangencias")
+        return redirect(url_for("admin_panel") + "#estrutura")
 
     @app.route("/miac/admin/tipo_documento", methods=["POST"])
     def admin_tipo_documento():
@@ -143,7 +194,7 @@ def init_routes(app):
             if tipo:
                 db.session.delete(tipo)
         db.session.commit()
-        return redirect(url_for("admin_panel") + "#tipos")
+        return redirect(url_for("admin_panel") + "#estrutura")
 
     @app.route("/miac/admin/sigla", methods=["POST"])
     def admin_sigla():
@@ -154,11 +205,11 @@ def init_routes(app):
         sigla = (request.form.get("sigla") or "").strip().upper()
         nome_completo = (request.form.get("nome_completo") or "").strip()
         if sigla:
-            Documento2.query.filter_by(organograma=sigla).update(
+            Documento.query.filter_by(organograma=sigla).update(
                 {"nome_completo": nome_completo}
             )
             db.session.commit()
-        return redirect(url_for("admin_panel") + "#siglas")
+        return redirect(url_for("admin_panel") + "#dados")
 
     @app.route("/miac/admin/marcador", methods=["POST"])
     def admin_marcador():
@@ -169,11 +220,11 @@ def init_routes(app):
         for key, value in request.form.items():
             if key.startswith("marcador_"):
                 _, organograma_nome, abrangencia_nome = key.split("_", 2)
-                Documento2.query.filter_by(
+                Documento.query.filter_by(
                     organograma=organograma_nome, abrangencia=abrangencia_nome
                 ).update({"marcador": value})
         db.session.commit()
-        return redirect(url_for("admin_panel") + "#marcadores")
+        return redirect(url_for("admin_panel") + "#dados")
 
     @app.route("/miac/admin/usuario", methods=["POST"])
     def admin_usuario():
@@ -242,3 +293,110 @@ def init_routes(app):
         db.session.commit()
         flash("Identidade atualizada.", "success")
         return redirect(url_for("admin_panel") + "#identidade")
+
+    @app.route("/miac/admin/ia", methods=["POST"])
+    def admin_ia():
+        guard = _require_admin()
+        if guard:
+            return guard
+
+        cfg = IaConfig.get()
+        modelo = (request.form.get("modelo_padrao") or "").strip()
+        if modelo in ("deepseek", "chatgpt"):
+            cfg.modelo_padrao = modelo
+
+        deepseek = request.form.get("deepseek_api_key", "")
+        if deepseek.strip():
+            cfg.deepseek_api_key = deepseek.strip()
+        elif request.form.get("limpar_deepseek") == "1":
+            cfg.deepseek_api_key = None
+
+        openai = request.form.get("openai_api_key", "")
+        if openai.strip():
+            cfg.openai_api_key = openai.strip()
+        elif request.form.get("limpar_openai") == "1":
+            cfg.openai_api_key = None
+
+        prompt = request.form.get("prompt_extracao")
+        if prompt is not None:
+            prompt = prompt.strip()
+            cfg.prompt_extracao = prompt or None
+
+        db.session.commit()
+        flash("Configuração de IA atualizada.", "success")
+        return redirect(url_for("admin_panel") + "#ia")
+
+    @app.route("/miac/admin/campo_extracao", methods=["POST"])
+    def admin_campo_extracao():
+        guard = _require_admin()
+        if guard:
+            return guard
+
+        acao = request.form.get("acao")
+        if acao == "add":
+            nome = (request.form.get("nome") or "").strip().lower()
+            rotulo = (request.form.get("rotulo") or "").strip()
+            tipo = request.form.get("tipo", "texto")
+            if tipo not in ("texto", "data", "numero", "select"):
+                tipo = "texto"
+            opcoes_raw = (request.form.get("opcoes") or "").strip()
+            opcoes = (
+                [o.strip() for o in opcoes_raw.split(",") if o.strip()]
+                if tipo == "select" and opcoes_raw
+                else None
+            )
+            if nome and rotulo and not CampoExtracao.query.filter_by(nome=nome).first():
+                ordem = (
+                    db.session.query(db.func.max(CampoExtracao.ordem)).scalar() or 0
+                ) + 1
+                db.session.add(CampoExtracao(
+                    nome=nome,
+                    rotulo=rotulo,
+                    tipo=tipo,
+                    opcoes=opcoes,
+                    obrigatorio=request.form.get("obrigatorio") == "on",
+                    mostrar_na_listagem=request.form.get("mostrar_na_listagem") == "on",
+                    ordem=ordem,
+                    instrucao_ia=(request.form.get("instrucao_ia") or "").strip() or None,
+                ))
+        elif acao == "update":
+            campo = CampoExtracao.query.get(request.form.get("id"))
+            if campo:
+                if "rotulo" in request.form:
+                    campo.rotulo = request.form["rotulo"].strip() or campo.rotulo
+                if "tipo" in request.form:
+                    novo_tipo = request.form["tipo"]
+                    if novo_tipo in ("texto", "data", "numero", "select"):
+                        campo.tipo = novo_tipo
+                if "opcoes" in request.form:
+                    raw = request.form["opcoes"].strip()
+                    campo.opcoes = (
+                        [o.strip() for o in raw.split(",") if o.strip()] if raw else None
+                    )
+                if "instrucao_ia" in request.form:
+                    campo.instrucao_ia = request.form["instrucao_ia"].strip() or None
+                campo.obrigatorio = request.form.get("obrigatorio") == "on"
+                campo.mostrar_na_listagem = (
+                    request.form.get("mostrar_na_listagem") == "on"
+                )
+        elif acao == "toggle":
+            campo = CampoExtracao.query.get(request.form.get("id"))
+            if campo:
+                campo.ativo = not campo.ativo
+        elif acao == "mover":
+            campo = CampoExtracao.query.get(request.form.get("id"))
+            direcao = request.form.get("direcao")
+            if campo and direcao in ("cima", "baixo"):
+                delta = -1 if direcao == "cima" else 1
+                vizinho = (
+                    CampoExtracao.query.filter(CampoExtracao.ordem == campo.ordem + delta)
+                    .first()
+                )
+                if vizinho:
+                    vizinho.ordem, campo.ordem = campo.ordem, vizinho.ordem
+        elif acao == "remove":
+            campo = CampoExtracao.query.get(request.form.get("id"))
+            if campo:
+                db.session.delete(campo)
+        db.session.commit()
+        return redirect(url_for("admin_panel") + "#ia")

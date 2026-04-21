@@ -5,7 +5,7 @@
     <h2>{{ org_config.sigla_app }}</h2>
     <ul>
         <li><a href="{{ url_for('index') }}"><i class="fas fa-home"></i> Página Inicial</a></li>
-        <li><a href="{{ url_for('publicados2') }}"><i class="fas fa-file-alt"></i> Documentos</a></li>
+        <li><a href="{{ url_for('publicados') }}"><i class="fas fa-file-alt"></i> Documentos</a></li>
         <li><a href="{{ url_for('estatisticas') }}"><i class="fas fa-chart-line"></i> Relatórios</a></li>
         {% if session.get('nivel_acesso') == 'elevado' %}
         <li><a href="{{ url_for('admin_panel') }}"><i class="fas fa-cogs"></i> Configurações</a></li>

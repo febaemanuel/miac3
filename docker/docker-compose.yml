@@ -7,7 +7,7 @@ services:
       - nginx
     volumes:
       - miac_database:/app/instance
-      - miac_uploads:/app/static/uploads2
+      - miac_uploads:/app/static/uploads
     deploy:
       mode: replicated
       replicas: 1

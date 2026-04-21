@@ -4,9 +4,421 @@
     {% include "partials/_head.html" %}
     <title>Configurações · MIAC</title>
     <style>
-        .nav-tabs .nav-link { color: var(--miac-text-soft); }
-        .nav-tabs .nav-link.active { color: var(--miac-primary); font-weight: 600; }
-        .table-compact td, .table-compact th { padding: .5rem .75rem; vertical-align: middle; }
+        .config-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 28px;
+            align-items: start;
+        }
+        @media (max-width: 900px) {
+            .config-layout { grid-template-columns: 1fr; }
+        }
+
+        .config-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            background: var(--miac-light);
+            border-radius: var(--miac-radius);
+            padding: 8px;
+            position: sticky;
+            top: 24px;
+        }
+        @media (max-width: 900px) {
+            .config-nav {
+                flex-direction: row;
+                overflow-x: auto;
+                position: static;
+                padding: 6px;
+            }
+        }
+        .config-nav__item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 14px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            color: var(--miac-text);
+            font-size: .95rem;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            transition: background .15s, color .15s;
+            white-space: nowrap;
+        }
+        .config-nav__item:hover { background: var(--miac-surface); }
+        .config-nav__item.active {
+            background: var(--miac-sidebar);
+            color: #fff;
+            box-shadow: var(--miac-shadow-sm);
+        }
+        .config-nav__item i { width: 18px; text-align: center; opacity: .85; }
+
+        .config-section { display: none; }
+        .config-section.active { display: block; animation: fadeIn .2s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+        .config-section__title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--miac-text);
+            margin-bottom: 4px;
+        }
+        .config-section__subtitle {
+            color: var(--miac-text-soft);
+            margin-bottom: 24px;
+            font-size: .95rem;
+        }
+
+        .tree-node {
+            background: var(--miac-surface);
+            border: 1px solid var(--miac-border);
+            border-radius: var(--miac-radius);
+            margin-bottom: 10px;
+            overflow: hidden;
+            box-shadow: var(--miac-shadow-sm);
+            transition: box-shadow .15s, border-color .15s;
+        }
+        .tree-node:hover { box-shadow: var(--miac-shadow); border-color: var(--miac-accent); }
+        .tree-node[open] { border-color: var(--miac-accent); }
+
+        .tree-node summary {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            cursor: pointer;
+            list-style: none;
+            user-select: none;
+            transition: background .15s;
+        }
+        .tree-node summary::-webkit-details-marker { display: none; }
+        .tree-node summary:hover { background: var(--miac-light); }
+        .tree-node[open] summary { border-bottom: 1px solid var(--miac-border); background: var(--miac-light); }
+
+        .tree-node__chevron {
+            color: var(--miac-muted);
+            transition: transform .2s;
+            width: 14px;
+            font-size: .85rem;
+        }
+        .tree-node[open] .tree-node__chevron { transform: rotate(90deg); }
+
+        .tree-node__icon {
+            width: 28px; height: 28px;
+            border-radius: 7px;
+            background: var(--miac-sidebar);
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .9rem;
+        }
+        .tree-node__title {
+            flex: 1;
+            font-weight: 600;
+            color: var(--miac-text);
+            font-size: 1rem;
+        }
+        .tree-node__meta {
+            color: var(--miac-muted);
+            font-size: .85rem;
+            margin-right: 8px;
+        }
+
+        .tree-node__body { padding: 16px 20px 18px 54px; }
+        @media (max-width: 600px) { .tree-node__body { padding: 14px 16px; } }
+
+        .tree-branch { margin-bottom: 16px; }
+        .tree-branch:last-child { margin-bottom: 0; }
+        .tree-branch__label {
+            font-size: .75rem;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            color: var(--miac-muted);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .tag-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 4px 4px 12px;
+            border-radius: 999px;
+            background: var(--miac-light);
+            border: 1px solid var(--miac-border);
+            font-size: .85rem;
+            margin: 0 6px 6px 0;
+            transition: border-color .15s;
+        }
+        .tag-pill:hover { border-color: var(--miac-accent); }
+        .tag-pill form { margin: 0; }
+        .tag-pill__remove {
+            background: none;
+            border: none;
+            padding: 2px 6px;
+            border-radius: 999px;
+            color: var(--miac-muted);
+            cursor: pointer;
+            line-height: 1;
+            font-size: .75rem;
+            transition: background .15s, color .15s;
+        }
+        .tag-pill__remove:hover { background: #fef2f2; color: var(--miac-danger); }
+
+        .quick-add {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .quick-add > .form-control, .quick-add > .form-select { flex: 1; min-width: 180px; }
+
+        .tree-actions { display: inline-flex; gap: 2px; }
+        .icon-btn {
+            background: none;
+            border: 1px solid transparent;
+            padding: 6px 10px;
+            border-radius: 7px;
+            color: var(--miac-muted);
+            cursor: pointer;
+            transition: all .15s;
+            font-size: .9rem;
+        }
+        .icon-btn:hover { background: var(--miac-surface); color: var(--miac-text); border-color: var(--miac-border); }
+        .icon-btn--danger:hover { background: #fef2f2; color: var(--miac-danger); border-color: var(--miac-danger); }
+        .icon-btn--active { color: var(--miac-success); }
+
+        .flat-card {
+            background: var(--miac-surface);
+            border: 1px solid var(--miac-border);
+            border-radius: var(--miac-radius);
+            padding: 20px;
+            margin-bottom: 14px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 32px 16px;
+            color: var(--miac-muted);
+            font-size: .95rem;
+        }
+        .empty-state i { font-size: 2rem; display: block; margin-bottom: 10px; opacity: .6; }
+
+        .section-divider {
+            height: 1px;
+            background: var(--miac-border);
+            margin: 28px 0;
+            border: none;
+        }
+
+        .id-preview {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 18px;
+            background: var(--miac-light);
+            border-radius: 10px;
+            margin-top: 16px;
+        }
+        .id-preview__logo { height: 42px; }
+        .id-preview__swatches { display: flex; gap: 6px; }
+        .id-preview__swatch { width: 28px; height: 28px; border-radius: 6px; border: 1px solid rgba(0,0,0,.1); }
+
+        .user-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 18px;
+            border: 1px solid var(--miac-border);
+            border-radius: var(--miac-radius);
+            margin-bottom: 8px;
+            background: var(--miac-surface);
+        }
+        .user-card__avatar {
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            background: var(--miac-accent);
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        .user-card__info { flex: 1; }
+        .user-card__name { font-weight: 600; color: var(--miac-text); }
+        .user-card__sub { font-size: .85rem; color: var(--miac-muted); }
+        .user-card__actions { display: flex; gap: 4px; align-items: center; }
+
+        .data-table-wrap {
+            background: var(--miac-surface);
+            border: 1px solid var(--miac-border);
+            border-radius: var(--miac-radius);
+            overflow: hidden;
+        }
+        .data-table-wrap table { margin: 0; }
+        .data-table-wrap thead th {
+            background: var(--miac-light);
+            font-weight: 600;
+            font-size: .85rem;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            color: var(--miac-text-soft);
+        }
+
+        .prompt-editor {
+            background: var(--miac-surface);
+            border: 1px solid var(--miac-border);
+            border-radius: var(--miac-radius);
+            overflow: hidden;
+            margin-top: 20px;
+            box-shadow: var(--miac-shadow-sm);
+        }
+        .prompt-editor__header {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, rgba(79,70,229,.06), rgba(79,70,229,.12));
+            border-bottom: 1px solid var(--miac-border);
+        }
+        .prompt-editor__header i { font-size: 1.5rem; color: var(--miac-accent); }
+        .prompt-editor__header h3 { margin: 0 0 2px; font-size: 1.05rem; }
+        .prompt-editor__header p { margin: 0; color: var(--miac-text-soft); font-size: .85rem; }
+
+        .prompt-mode {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 16px 20px;
+        }
+        @media (max-width: 720px) { .prompt-mode { grid-template-columns: 1fr; } }
+        .prompt-mode__option {
+            display: flex;
+            gap: 12px;
+            padding: 12px 14px;
+            border: 1.5px solid var(--miac-border);
+            border-radius: var(--miac-radius);
+            cursor: pointer;
+            background: var(--miac-light);
+            transition: border-color .15s, background .15s, box-shadow .15s;
+            margin: 0;
+        }
+        .prompt-mode__option:hover { border-color: var(--miac-accent); }
+        .prompt-mode__option input { margin-top: 3px; }
+        .prompt-mode__option i { color: var(--miac-accent); font-size: 1.1rem; margin-top: 2px; }
+        .prompt-mode__option strong { display: block; font-size: .95rem; color: var(--miac-text); }
+        .prompt-mode__option small { color: var(--miac-text-soft); font-size: .8rem; line-height: 1.4; }
+        .prompt-mode__option.is-active {
+            border-color: var(--miac-accent);
+            background: var(--miac-surface);
+            box-shadow: 0 0 0 3px rgba(79,70,229,.10);
+        }
+
+        .prompt-editor__body { padding: 0 20px 20px; }
+        .prompt-editor__body[hidden] { display: none; }
+
+        .prompt-vars {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            padding: 10px 12px;
+            background: var(--miac-light);
+            border: 1px solid var(--miac-border);
+            border-radius: var(--miac-radius);
+            margin-bottom: 14px;
+        }
+        .prompt-vars__label {
+            font-size: .75rem;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: var(--miac-text-soft);
+            font-weight: 600;
+        }
+        .prompt-var-chip {
+            display: inline-flex;
+            gap: 6px;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--miac-border);
+            background: var(--miac-surface);
+            font-size: .82rem;
+            color: var(--miac-accent);
+            font-family: 'SF Mono', Consolas, monospace;
+            cursor: pointer;
+            transition: background .15s, border-color .15s;
+        }
+        .prompt-var-chip:hover { background: rgba(79,70,229,.08); border-color: var(--miac-accent); }
+        .prompt-var-chip i { font-size: .8rem; }
+
+        .prompt-grid {
+            display: grid;
+            grid-template-columns: 1.15fr 1fr;
+            gap: 16px;
+        }
+        @media (max-width: 960px) { .prompt-grid { grid-template-columns: 1fr; } }
+
+        .prompt-label {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            font-size: .78rem;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: var(--miac-text-soft);
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .prompt-label--muted { opacity: .7; }
+
+        .prompt-textarea {
+            width: 100%;
+            min-height: 340px;
+            font-family: 'SF Mono', Consolas, monospace;
+            font-size: .85rem;
+            line-height: 1.5;
+            border: 1px solid var(--miac-border);
+            border-radius: var(--miac-radius);
+            padding: 12px;
+            resize: vertical;
+            background: var(--miac-surface);
+            color: var(--miac-text);
+        }
+        .prompt-textarea:focus {
+            outline: none;
+            border-color: var(--miac-accent);
+            box-shadow: 0 0 0 3px rgba(79,70,229,.12);
+        }
+
+        .prompt-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            font-size: .8rem;
+            color: var(--miac-text-soft);
+        }
+
+        .prompt-default {
+            background: var(--miac-light);
+            border: 1px solid var(--miac-border);
+            border-radius: var(--miac-radius);
+            padding: 12px;
+            font-family: 'SF Mono', Consolas, monospace;
+            font-size: .8rem;
+            line-height: 1.5;
+            color: var(--miac-text-soft);
+            max-height: 340px;
+            overflow: auto;
+            white-space: pre-wrap;
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -22,266 +434,634 @@
                 {% endfor %}
             {% endwith %}
 
-            <ul class="nav nav-tabs" id="adminTabs" role="tablist">
-                <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#organogramas" type="button">Organogramas</button></li>
-                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#abrangencias" type="button">Abrangências</button></li>
-                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tipos" type="button">Tipos de Documento</button></li>
-                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#siglas" type="button">Siglas</button></li>
-                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#marcadores" type="button">Marcadores</button></li>
-                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#usuarios" type="button">Usuários</button></li>
-                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#identidade" type="button">Identidade</button></li>
-            </ul>
+            <div class="config-layout">
+                <nav class="config-nav">
+                    <button type="button" class="config-nav__item active" data-section="estrutura">
+                        <i class="fas fa-sitemap"></i> Estrutura
+                    </button>
+                    <button type="button" class="config-nav__item" data-section="usuarios">
+                        <i class="fas fa-users"></i> Usuários
+                    </button>
+                    <button type="button" class="config-nav__item" data-section="identidade">
+                        <i class="fas fa-palette"></i> Identidade
+                    </button>
+                    <button type="button" class="config-nav__item" data-section="ia">
+                        <i class="fas fa-robot"></i> IA
+                    </button>
+                    <button type="button" class="config-nav__item" data-section="dados">
+                        <i class="fas fa-database"></i> Dados
+                    </button>
+                </nav>
 
-            <div class="tab-content pt-4">
-                <!-- ORGANOGRAMAS -->
-                <div class="tab-pane fade show active" id="organogramas">
-                    <form method="POST" action="{{ url_for('admin_organograma') }}" class="d-flex gap-2 mb-3">
-                        <input type="hidden" name="acao" value="add">
-                        <input type="text" name="nome" class="form-control" placeholder="Nova sigla (ex.: DIVGP)" required>
-                        <button class="btn btn-primary">Adicionar</button>
-                    </form>
-                    <table class="table table-striped table-compact">
-                        <thead><tr><th>Sigla</th><th class="text-end">Ações</th></tr></thead>
-                        <tbody>
-                            {% for o in organogramas %}
-                            <tr>
-                                <td>{{ o.nome }}</td>
-                                <td class="text-end">
-                                    <form method="POST" action="{{ url_for('admin_organograma') }}" class="d-inline" onsubmit="return confirm('Remover {{ o.nome }}?')">
-                                        <input type="hidden" name="acao" value="remove">
-                                        <input type="hidden" name="id" value="{{ o.id }}">
-                                        <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
-                                    </form>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                <div class="config-content">
 
-                <!-- ABRANGÊNCIAS -->
-                <div class="tab-pane fade" id="abrangencias">
-                    <form method="POST" action="{{ url_for('admin_abrangencia') }}" class="d-flex gap-2 mb-3">
-                        <input type="hidden" name="acao" value="add">
-                        <input type="text" name="nome" class="form-control" placeholder="Nova abrangência (ex.: HUWC)" required>
-                        <button class="btn btn-primary">Adicionar</button>
-                    </form>
-                    <table class="table table-striped table-compact">
-                        <thead><tr><th>Nome</th><th>Ativo</th><th class="text-end">Ações</th></tr></thead>
-                        <tbody>
+                    <!-- ESTRUTURA -->
+                    <section class="config-section active" id="section-estrutura">
+                        <div class="config-section__title">Estrutura organizacional</div>
+                        <p class="config-section__subtitle">
+                            Configure as abrangências da sua organização. Cada uma pode ter seus próprios sinônimos (siglas alternativas).
+                        </p>
+
+                        {% if abrangencias %}
                             {% for a in abrangencias %}
-                            <tr>
-                                <td>{{ a.nome }}</td>
-                                <td>
-                                    {% if a.ativo %}<span class="badge bg-success">Sim</span>{% else %}<span class="badge bg-secondary">Não</span>{% endif %}
-                                </td>
-                                <td class="text-end">
-                                    <form method="POST" action="{{ url_for('admin_abrangencia') }}" class="d-inline">
-                                        <input type="hidden" name="acao" value="toggle">
-                                        <input type="hidden" name="id" value="{{ a.id }}">
-                                        <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-toggle-on"></i></button>
-                                    </form>
-                                    <form method="POST" action="{{ url_for('admin_abrangencia') }}" class="d-inline" onsubmit="return confirm('Remover {{ a.nome }} e seus sinônimos?')">
-                                        <input type="hidden" name="acao" value="remove">
-                                        <input type="hidden" name="id" value="{{ a.id }}">
-                                        <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
-                                    </form>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                            {% set areas_da_abrang = organogramas_por_abrangencia.get(a.id, []) %}
+                            <details class="tree-node">
+                                <summary>
+                                    <i class="fas fa-chevron-right tree-node__chevron"></i>
+                                    <span class="tree-node__icon" style="background: {{ a.cor }};"><i class="fas fa-sitemap"></i></span>
+                                    <span class="tree-node__title">{{ a.nome }}</span>
+                                    <span class="tree-node__meta">
+                                        {{ areas_da_abrang | length }} área{{ 's' if areas_da_abrang | length != 1 else '' }}
+                                    </span>
+                                    <span class="badge {% if a.ativo %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {% if a.ativo %}Ativo{% else %}Inativo{% endif %}
+                                    </span>
+                                    <span class="tree-actions">
+                                        <form method="POST" action="{{ url_for('admin_abrangencia') }}" class="d-inline" onclick="event.stopPropagation()">
+                                            <input type="hidden" name="acao" value="toggle">
+                                            <input type="hidden" name="id" value="{{ a.id }}">
+                                            <button type="submit" class="icon-btn" title="Ativar/desativar"><i class="fas fa-power-off"></i></button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('admin_abrangencia') }}" class="d-inline" onclick="event.stopPropagation()" onsubmit="return confirm('Remover {{ a.nome }}? As áreas vinculadas ficarão sem abrangência.')">
+                                            <input type="hidden" name="acao" value="remove">
+                                            <input type="hidden" name="id" value="{{ a.id }}">
+                                            <button type="submit" class="icon-btn icon-btn--danger" title="Remover"><i class="fas fa-trash"></i></button>
+                                        </form>
+                                    </span>
+                                </summary>
+                                <div class="tree-node__body">
+                                    <div class="tree-branch">
+                                        <div class="tree-branch__label"><i class="fas fa-palette"></i> Cor do botão</div>
+                                        <form method="POST" action="{{ url_for('admin_abrangencia') }}" class="quick-add" style="margin-top:4px;">
+                                            <input type="hidden" name="acao" value="update">
+                                            <input type="hidden" name="id" value="{{ a.id }}">
+                                            <input type="color" name="cor" class="form-control form-control-color" value="{{ a.cor }}" style="flex:0 0 60px;">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">Salvar cor</button>
+                                        </form>
+                                    </div>
 
-                    <h5 class="mt-4">Sinônimos (ex.: CHUFC → HUWC)</h5>
-                    <form method="POST" action="{{ url_for('admin_abrangencia_sinonimo') }}" class="d-flex gap-2 mb-3">
-                        <input type="hidden" name="acao" value="add">
-                        <input type="text" name="de" class="form-control" placeholder="De (sigla bruta)" required>
-                        <select name="para_id" class="form-control" required>
-                            <option value="">Para...</option>
-                            {% for a in abrangencias %}<option value="{{ a.id }}">{{ a.nome }}</option>{% endfor %}
-                        </select>
-                        <button class="btn btn-primary">Adicionar</button>
-                    </form>
-                    <table class="table table-striped table-compact">
-                        <thead><tr><th>De</th><th>Para</th><th class="text-end">Ações</th></tr></thead>
-                        <tbody>
-                            {% for s in sinonimos %}
-                            <tr>
-                                <td>{{ s.de }}</td>
-                                <td>{{ s.para.nome }}</td>
-                                <td class="text-end">
-                                    <form method="POST" action="{{ url_for('admin_abrangencia_sinonimo') }}" class="d-inline">
-                                        <input type="hidden" name="acao" value="remove">
-                                        <input type="hidden" name="id" value="{{ s.id }}">
-                                        <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
-                                    </form>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                                    <div class="tree-branch">
+                                        <div class="tree-branch__label"><i class="fas fa-sitemap"></i> Organogramas (áreas vinculadas)</div>
+                                        {% if areas_da_abrang %}
+                                            {% for o in areas_da_abrang %}
+                                            <span class="tag-pill" title="{{ o.nome_completo or '' }}">
+                                                {{ o.nome }}{% if o.nome_completo %} — <small class="text-muted">{{ o.nome_completo }}</small>{% endif %}
+                                                <form method="POST" action="{{ url_for('admin_organograma') }}" onsubmit="return confirm('Remover {{ o.nome }}?')">
+                                                    <input type="hidden" name="acao" value="remove">
+                                                    <input type="hidden" name="id" value="{{ o.id }}">
+                                                    <button type="submit" class="tag-pill__remove"><i class="fas fa-times"></i></button>
+                                                </form>
+                                            </span>
+                                            {% endfor %}
+                                        {% else %}
+                                            <small class="text-muted">Nenhuma área vinculada ainda.</small>
+                                        {% endif %}
+                                        <form method="POST" action="{{ url_for('admin_organograma') }}" class="quick-add">
+                                            <input type="hidden" name="acao" value="add">
+                                            <input type="hidden" name="abrangencia_id" value="{{ a.id }}">
+                                            <input type="text" name="nome" class="form-control form-control-sm" placeholder="Sigla (ex.: DIVGP)" required>
+                                            <input type="text" name="nome_completo" class="form-control form-control-sm" placeholder="Nome completo (opcional)">
+                                            <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-plus"></i></button>
+                                        </form>
+                                    </div>
 
-                <!-- TIPOS DE DOCUMENTO -->
-                <div class="tab-pane fade" id="tipos">
-                    <form method="POST" action="{{ url_for('admin_tipo_documento') }}" class="d-flex gap-2 mb-3">
-                        <input type="hidden" name="acao" value="add">
-                        <input type="text" name="nome" class="form-control" placeholder="Novo tipo (ex.: PROCEDIMENTO OPERACIONAL PADRÃO)" required>
-                        <button class="btn btn-primary">Adicionar</button>
-                    </form>
-                    <table class="table table-striped table-compact">
-                        <thead><tr><th>Nome</th><th class="text-end">Ações</th></tr></thead>
-                        <tbody>
-                            {% for t in tipos_documento %}
-                            <tr>
-                                <td>{{ t.nome }}</td>
-                                <td class="text-end">
-                                    <form method="POST" action="{{ url_for('admin_tipo_documento') }}" class="d-inline" onsubmit="return confirm('Remover {{ t.nome }}?')">
+                                    <div class="tree-branch">
+                                        <div class="tree-branch__label"><i class="fas fa-tags"></i> Sinônimos</div>
+                                        {% set lista_sin = sinonimos | selectattr('para_id', 'equalto', a.id) | list %}
+                                        {% if lista_sin %}
+                                            {% for s in lista_sin %}
+                                            <span class="tag-pill">
+                                                {{ s.de }}
+                                                <form method="POST" action="{{ url_for('admin_abrangencia_sinonimo') }}">
+                                                    <input type="hidden" name="acao" value="remove">
+                                                    <input type="hidden" name="id" value="{{ s.id }}">
+                                                    <button type="submit" class="tag-pill__remove" title="Remover"><i class="fas fa-times"></i></button>
+                                                </form>
+                                            </span>
+                                            {% endfor %}
+                                        {% else %}
+                                            <small class="text-muted">Nenhum sinônimo cadastrado.</small>
+                                        {% endif %}
+                                        <form method="POST" action="{{ url_for('admin_abrangencia_sinonimo') }}" class="quick-add">
+                                            <input type="hidden" name="acao" value="add">
+                                            <input type="hidden" name="para_id" value="{{ a.id }}">
+                                            <input type="text" name="de" class="form-control form-control-sm" placeholder="Nova sigla sinônima (ex.: CHUFC)" required>
+                                            <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-plus"></i></button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </details>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-state">
+                                <i class="fas fa-folder-open"></i>
+                                Nenhuma abrangência cadastrada ainda.
+                            </div>
+                        {% endif %}
+
+                        <form method="POST" action="{{ url_for('admin_abrangencia') }}" class="quick-add mt-3">
+                            <input type="hidden" name="acao" value="add">
+                            <input type="text" name="nome" class="form-control" placeholder="Nova abrangência (ex.: HUWC)" required>
+                            <input type="color" name="cor" value="#007bff" class="form-control form-control-color" style="flex:0 0 60px;" title="Cor do botão">
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Adicionar abrangência</button>
+                        </form>
+
+                        {% if organogramas_orfaos %}
+                        <hr class="section-divider">
+
+                        <div class="config-section__title" style="font-size:1.15rem;">Áreas sem abrangência (Organogramas)</div>
+                        <p class="config-section__subtitle">
+                            Estas áreas ainda não estão vinculadas a nenhuma abrangência. Você pode vinculá-las abaixo.
+                        </p>
+
+                        <div class="flat-card">
+                            {% for o in organogramas_orfaos %}
+                            <div class="quick-add" style="align-items:center; margin-bottom:8px;">
+                                <strong style="min-width:100px;">{{ o.nome }}</strong>
+                                <form method="POST" action="{{ url_for('admin_organograma') }}" class="quick-add" style="margin:0; flex:1;">
+                                    <input type="hidden" name="acao" value="update">
+                                    <input type="hidden" name="id" value="{{ o.id }}">
+                                    <select name="abrangencia_id" class="form-select form-select-sm">
+                                        <option value="">-- Sem abrangência --</option>
+                                        {% for a in abrangencias %}
+                                        <option value="{{ a.id }}">{{ a.nome }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">Vincular</button>
+                                </form>
+                                <form method="POST" action="{{ url_for('admin_organograma') }}" onsubmit="return confirm('Remover {{ o.nome }}?')">
+                                    <input type="hidden" name="acao" value="remove">
+                                    <input type="hidden" name="id" value="{{ o.id }}">
+                                    <button type="submit" class="icon-btn icon-btn--danger"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <hr class="section-divider">
+
+                        <div class="config-section__title" style="font-size:1.15rem;">Tipos de documento</div>
+                        <p class="config-section__subtitle">Categorias dos documentos que podem ser publicados.</p>
+
+                        <div class="flat-card">
+                            {% if tipos_documento %}
+                                {% for t in tipos_documento %}
+                                <span class="tag-pill">
+                                    {{ t.nome }}
+                                    <form method="POST" action="{{ url_for('admin_tipo_documento') }}" onsubmit="return confirm('Remover {{ t.nome }}?')">
                                         <input type="hidden" name="acao" value="remove">
                                         <input type="hidden" name="id" value="{{ t.id }}">
-                                        <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                                        <button type="submit" class="tag-pill__remove"><i class="fas fa-times"></i></button>
                                     </form>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- SIGLAS (nome completo do organograma) -->
-                <div class="tab-pane fade" id="siglas">
-                    <p class="text-muted">Define o nome por extenso de cada sigla presente nos documentos.</p>
-                    <table class="table table-striped table-compact">
-                        <thead><tr><th>Sigla</th><th>Nome completo</th><th>Qtd. docs</th><th class="text-end">Ação</th></tr></thead>
-                        <tbody>
-                            {% for s in siglas %}
-                            <tr>
-                                <form method="POST" action="{{ url_for('admin_sigla') }}">
-                                    <input type="hidden" name="sigla" value="{{ s.organograma }}">
-                                    <td>{{ s.organograma }}</td>
-                                    <td><input type="text" name="nome_completo" class="form-control form-control-sm" value="{{ s.nome_completo or '' }}"></td>
-                                    <td>{{ s.total_documentos }}</td>
-                                    <td class="text-end"><button class="btn btn-sm btn-primary">Salvar</button></td>
-                                </form>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- MARCADORES -->
-                <div class="tab-pane fade" id="marcadores">
-                    <form method="POST" action="{{ url_for('admin_marcador') }}">
-                        <table class="table table-striped table-compact">
-                            <thead><tr><th>Organograma</th><th>Abrangência</th><th>Marcador</th></tr></thead>
-                            <tbody>
-                                {% for m in marcadores %}
-                                <tr>
-                                    <td>{{ m.organograma }}</td>
-                                    <td>{{ m.abrangencia }}</td>
-                                    <td><input type="text" name="marcador_{{ m.organograma }}_{{ m.abrangencia }}" class="form-control form-control-sm" value="{{ m.marcador or '' }}"></td>
-                                </tr>
+                                </span>
                                 {% endfor %}
-                            </tbody>
-                        </table>
-                        <button class="btn btn-primary">Salvar tudo</button>
-                    </form>
-                </div>
-
-                <!-- USUÁRIOS -->
-                <div class="tab-pane fade" id="usuarios">
-                    <form method="POST" action="{{ url_for('admin_usuario') }}" class="row g-2 mb-3">
-                        <input type="hidden" name="acao" value="add">
-                        <div class="col"><input type="text" name="username" class="form-control" placeholder="Usuário" required></div>
-                        <div class="col"><input type="password" name="senha" class="form-control" placeholder="Senha" required></div>
-                        <div class="col-auto">
-                            <select name="nivel_acesso" class="form-control">
-                                <option value="padrao">Padrão</option>
-                                <option value="elevado">Elevado</option>
-                            </select>
+                            {% else %}
+                                <small class="text-muted">Nenhum tipo cadastrado.</small>
+                            {% endif %}
+                            <form method="POST" action="{{ url_for('admin_tipo_documento') }}" class="quick-add">
+                                <input type="hidden" name="acao" value="add">
+                                <input type="text" name="nome" class="form-control form-control-sm" placeholder="Novo tipo (ex.: PROCEDIMENTO OPERACIONAL PADRÃO)" required>
+                                <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-plus"></i></button>
+                            </form>
                         </div>
-                        <div class="col-auto"><button class="btn btn-primary">Adicionar</button></div>
-                    </form>
-                    <table class="table table-striped table-compact">
-                        <thead><tr><th>Usuário</th><th>Nível</th><th>Ativo</th><th class="text-end">Ações</th></tr></thead>
-                        <tbody>
-                            {% for u in usuarios %}
-                            <tr>
-                                <td>{{ u.username }}{% if u.username == session.username %} <small class="text-muted">(você)</small>{% endif %}</td>
-                                <td>
-                                    <form method="POST" action="{{ url_for('admin_usuario') }}" class="d-inline">
-                                        <input type="hidden" name="acao" value="alterar_nivel">
-                                        <input type="hidden" name="id" value="{{ u.id }}">
-                                        <select name="nivel_acesso" class="form-control form-control-sm d-inline w-auto" onchange="this.form.submit()" {% if u.username == session.username %}disabled{% endif %}>
-                                            <option value="padrao" {% if u.nivel_acesso == 'padrao' %}selected{% endif %}>Padrão</option>
-                                            <option value="elevado" {% if u.nivel_acesso == 'elevado' %}selected{% endif %}>Elevado</option>
-                                        </select>
-                                    </form>
-                                </td>
-                                <td>
-                                    {% if u.ativo %}<span class="badge bg-success">Sim</span>{% else %}<span class="badge bg-secondary">Não</span>{% endif %}
-                                </td>
-                                <td class="text-end">
-                                    <form method="POST" action="{{ url_for('admin_usuario') }}" class="d-inline">
-                                        <input type="hidden" name="acao" value="reset_senha">
-                                        <input type="hidden" name="id" value="{{ u.id }}">
-                                        <input type="hidden" name="senha" value="">
-                                        <button type="button" class="btn btn-sm btn-outline-warning"
-                                                onclick="var s=prompt('Nova senha para {{ u.username }}:'); if(s){this.form.senha.value=s;this.form.submit();}"><i class="fas fa-key"></i></button>
-                                    </form>
-                                    {% if u.username != session.username %}
-                                    <form method="POST" action="{{ url_for('admin_usuario') }}" class="d-inline">
-                                        <input type="hidden" name="acao" value="toggle">
-                                        <input type="hidden" name="id" value="{{ u.id }}">
-                                        <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-toggle-on"></i></button>
-                                    </form>
-                                    <form method="POST" action="{{ url_for('admin_usuario') }}" class="d-inline" onsubmit="return confirm('Remover {{ u.username }}?')">
-                                        <input type="hidden" name="acao" value="remove">
-                                        <input type="hidden" name="id" value="{{ u.id }}">
-                                        <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
-                                    </form>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                <!-- IDENTIDADE (whitelabel) -->
-                <div class="tab-pane fade" id="identidade">
-                    <p class="text-muted">Personalize nome, cores e logo. Aplica em toda a interface e nos PDFs gerados.</p>
-                    <form method="POST" action="{{ url_for('admin_identidade') }}" enctype="multipart/form-data">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Nome da empresa</label>
-                                <input type="text" name="nome_empresa" class="form-control" value="{{ org_config.nome_empresa }}" required>
+                    </section>
+
+                    <!-- USUÁRIOS -->
+                    <section class="config-section" id="section-usuarios">
+                        <div class="config-section__title">Usuários</div>
+                        <p class="config-section__subtitle">Quem tem acesso e em que nível.</p>
+
+                        <div class="flat-card">
+                            <form method="POST" action="{{ url_for('admin_usuario') }}" class="quick-add" style="margin:0;">
+                                <input type="hidden" name="acao" value="add">
+                                <input type="text" name="username" class="form-control" placeholder="Usuário" required>
+                                <input type="password" name="senha" class="form-control" placeholder="Senha" required>
+                                <select name="nivel_acesso" class="form-select" style="flex:0 0 140px;">
+                                    <option value="padrao">Padrão</option>
+                                    <option value="elevado">Elevado</option>
+                                </select>
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-user-plus"></i> Adicionar</button>
+                            </form>
+                        </div>
+
+                        {% for u in usuarios %}
+                        <div class="user-card">
+                            <div class="user-card__avatar">{{ u.username[:1] | upper }}</div>
+                            <div class="user-card__info">
+                                <div class="user-card__name">
+                                    {{ u.username }}
+                                    {% if u.username == session.username %}<small class="text-muted">(você)</small>{% endif %}
+                                </div>
+                                <div class="user-card__sub">
+                                    {% if u.ativo %}<span class="badge bg-success">Ativo</span>{% else %}<span class="badge bg-secondary">Inativo</span>{% endif %}
+                                </div>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Sigla do app (sidebar)</label>
-                                <input type="text" name="sigla_app" class="form-control" value="{{ org_config.sigla_app }}" required>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Cor primária</label>
-                                <input type="color" name="cor_primaria" class="form-control form-control-color" value="{{ org_config.cor_primaria }}">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Cor da sidebar</label>
-                                <input type="color" name="cor_sidebar" class="form-control form-control-color" value="{{ org_config.cor_sidebar }}">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Logo (PNG/JPG)</label>
-                                <input type="file" name="logo" class="form-control" accept="image/*">
-                                {% if org_config.logo_path %}
-                                    <small class="text-muted">Atual: <img src="{{ url_for('static', filename=org_config.logo_path) }}" style="height:30px;vertical-align:middle;"></small>
+                            <div class="user-card__actions">
+                                <form method="POST" action="{{ url_for('admin_usuario') }}" class="d-inline">
+                                    <input type="hidden" name="acao" value="alterar_nivel">
+                                    <input type="hidden" name="id" value="{{ u.id }}">
+                                    <select name="nivel_acesso" class="form-select form-select-sm" onchange="this.form.submit()" {% if u.username == session.username %}disabled{% endif %}>
+                                        <option value="padrao" {% if u.nivel_acesso == 'padrao' %}selected{% endif %}>Padrão</option>
+                                        <option value="elevado" {% if u.nivel_acesso == 'elevado' %}selected{% endif %}>Elevado</option>
+                                    </select>
+                                </form>
+                                <form method="POST" action="{{ url_for('admin_usuario') }}" class="d-inline">
+                                    <input type="hidden" name="acao" value="reset_senha">
+                                    <input type="hidden" name="id" value="{{ u.id }}">
+                                    <input type="hidden" name="senha" value="">
+                                    <button type="button" class="icon-btn" title="Redefinir senha"
+                                            onclick="var s=prompt('Nova senha para {{ u.username }}:'); if(s){this.form.senha.value=s;this.form.submit();}"><i class="fas fa-key"></i></button>
+                                </form>
+                                {% if u.username != session.username %}
+                                <form method="POST" action="{{ url_for('admin_usuario') }}" class="d-inline">
+                                    <input type="hidden" name="acao" value="toggle">
+                                    <input type="hidden" name="id" value="{{ u.id }}">
+                                    <button type="submit" class="icon-btn" title="Ativar/desativar"><i class="fas fa-power-off"></i></button>
+                                </form>
+                                <form method="POST" action="{{ url_for('admin_usuario') }}" class="d-inline" onsubmit="return confirm('Remover {{ u.username }}?')">
+                                    <input type="hidden" name="acao" value="remove">
+                                    <input type="hidden" name="id" value="{{ u.id }}">
+                                    <button type="submit" class="icon-btn icon-btn--danger" title="Remover"><i class="fas fa-trash"></i></button>
+                                </form>
                                 {% endif %}
                             </div>
-                            <div class="col-12">
-                                <label class="form-label">Rodapé</label>
-                                <textarea name="rodape" class="form-control" rows="2">{{ org_config.rodape }}</textarea>
-                            </div>
                         </div>
-                        <button class="btn btn-primary mt-3">Salvar identidade</button>
-                    </form>
+                        {% endfor %}
+                    </section>
+
+                    <!-- IDENTIDADE -->
+                    <section class="config-section" id="section-identidade">
+                        <div class="config-section__title">Identidade visual</div>
+                        <p class="config-section__subtitle">Personalize nome, cores e logo — aplica em toda a interface e nos PDFs gerados.</p>
+
+                        <div class="flat-card">
+                            <form method="POST" action="{{ url_for('admin_identidade') }}" enctype="multipart/form-data">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Nome da empresa</label>
+                                        <input type="text" name="nome_empresa" class="form-control" value="{{ org_config.nome_empresa }}" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Sigla do app (sidebar)</label>
+                                        <input type="text" name="sigla_app" class="form-control" value="{{ org_config.sigla_app }}" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Cor primária</label>
+                                        <input type="color" name="cor_primaria" class="form-control form-control-color" value="{{ org_config.cor_primaria }}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Cor da sidebar</label>
+                                        <input type="color" name="cor_sidebar" class="form-control form-control-color" value="{{ org_config.cor_sidebar }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Logo (PNG/JPG)</label>
+                                        <input type="file" name="logo" class="form-control" accept="image/*">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Rodapé</label>
+                                        <textarea name="rodape" class="form-control" rows="2">{{ org_config.rodape }}</textarea>
+                                    </div>
+                                </div>
+
+                                <div class="id-preview">
+                                    {% if org_config.logo_path %}
+                                        <img src="{{ url_for('static', filename=org_config.logo_path) }}" class="id-preview__logo" alt="logo atual">
+                                    {% else %}
+                                        <i class="fas fa-image" style="font-size:2rem; color: var(--miac-muted);"></i>
+                                    {% endif %}
+                                    <div>
+                                        <strong>{{ org_config.nome_empresa }}</strong>
+                                        <div class="text-muted" style="font-size:.85rem;">{{ org_config.sigla_app }}</div>
+                                    </div>
+                                    <div class="id-preview__swatches ms-auto">
+                                        <div class="id-preview__swatch" style="background: {{ org_config.cor_primaria }};" title="Primária: {{ org_config.cor_primaria }}"></div>
+                                        <div class="id-preview__swatch" style="background: {{ org_config.cor_sidebar }};" title="Sidebar: {{ org_config.cor_sidebar }}"></div>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary mt-3"><i class="fas fa-save"></i> Salvar identidade</button>
+                            </form>
+                        </div>
+                    </section>
+
+                    <!-- IA -->
+                    <section class="config-section" id="section-ia">
+                        <div class="config-section__title">Inteligência Artificial</div>
+                        <p class="config-section__subtitle">
+                            Configure o modelo padrão, as chaves de API e os campos extraídos dos documentos.
+                        </p>
+
+                        <div class="flat-card">
+                            <h3 style="font-size:1.05rem; margin-top:0;">Geral</h3>
+                            <form method="POST" action="{{ url_for('admin_ia') }}">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Modelo padrão</label>
+                                        <select name="modelo_padrao" class="form-select">
+                                            <option value="deepseek" {% if ia_config.modelo_padrao == 'deepseek' %}selected{% endif %}>DeepSeek</option>
+                                            <option value="chatgpt" {% if ia_config.modelo_padrao == 'chatgpt' %}selected{% endif %}>ChatGPT (OpenAI)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">
+                                            Chave DeepSeek
+                                            {% if ia_config.deepseek_api_key %}<span class="badge bg-success">configurada</span>{% else %}<span class="badge bg-secondary">vazia</span>{% endif %}
+                                        </label>
+                                        <input type="password" name="deepseek_api_key" class="form-control"
+                                               placeholder="{% if ia_config.deepseek_api_key %}••••••••••••  (em branco = manter){% else %}cole a chave{% endif %}">
+                                        {% if ia_config.deepseek_api_key %}
+                                        <div class="form-check mt-1">
+                                            <input type="checkbox" name="limpar_deepseek" value="1" class="form-check-input" id="limpar-ds">
+                                            <label for="limpar-ds" class="form-check-label small text-muted">Remover chave</label>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">
+                                            Chave OpenAI
+                                            {% if ia_config.openai_api_key %}<span class="badge bg-success">configurada</span>{% else %}<span class="badge bg-secondary">vazia</span>{% endif %}
+                                        </label>
+                                        <input type="password" name="openai_api_key" class="form-control"
+                                               placeholder="{% if ia_config.openai_api_key %}••••••••••••  (em branco = manter){% else %}cole a chave{% endif %}">
+                                        {% if ia_config.openai_api_key %}
+                                        <div class="form-check mt-1">
+                                            <input type="checkbox" name="limpar_openai" value="1" class="form-check-input" id="limpar-oa">
+                                            <label for="limpar-oa" class="form-check-label small text-muted">Remover chave</label>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="prompt-editor" id="prompt-editor">
+                                    <div class="prompt-editor__header">
+                                        <i class="fas fa-magic"></i>
+                                        <div>
+                                            <h3>Prompt de extração</h3>
+                                            <p>Controla como a IA interpreta o PDF. O padrão já é otimizado — personalize só se precisar.</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="prompt-mode">
+                                        <label class="prompt-mode__option {% if not ia_config.prompt_extracao %}is-active{% endif %}">
+                                            <input type="radio" name="prompt_mode" value="padrao" {% if not ia_config.prompt_extracao %}checked{% endif %}>
+                                            <i class="fas fa-check-circle"></i>
+                                            <div>
+                                                <strong>Usar prompt padrão</strong>
+                                                <small>Recomendado. Otimizado para POPs, protocolos e formulários.</small>
+                                            </div>
+                                        </label>
+                                        <label class="prompt-mode__option {% if ia_config.prompt_extracao %}is-active{% endif %}">
+                                            <input type="radio" name="prompt_mode" value="custom" {% if ia_config.prompt_extracao %}checked{% endif %}>
+                                            <i class="fas fa-pen-fancy"></i>
+                                            <div>
+                                                <strong>Personalizar</strong>
+                                                <small>Escreva seu próprio prompt usando as variáveis à direita.</small>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    <div class="prompt-editor__body" {% if not ia_config.prompt_extracao %}hidden{% endif %}>
+                                        <div class="prompt-vars">
+                                            <span class="prompt-vars__label">Inserir:</span>
+                                            <button type="button" class="prompt-var-chip" data-var="{% raw %}{campos_fixos}{% endraw %}" title="Expande para a lista dos campos fixos (código, datas, organograma, tipo, abrangência, SEI, elaboradores).">
+                                                <i class="fas fa-list"></i>{% raw %}{campos_fixos}{% endraw %}
+                                            </button>
+                                            <button type="button" class="prompt-var-chip" data-var="{% raw %}{campos_extras}{% endraw %}" title="Expande para os campos adicionais configurados abaixo.">
+                                                <i class="fas fa-tags"></i>{% raw %}{campos_extras}{% endraw %}
+                                            </button>
+                                            <button type="button" class="prompt-var-chip" data-var="{% raw %}{texto_pdf}{% endraw %}" title="Texto extraído do PDF.">
+                                                <i class="fas fa-file-alt"></i>{% raw %}{texto_pdf}{% endraw %}
+                                            </button>
+                                        </div>
+
+                                        <div class="prompt-grid">
+                                            <div>
+                                                <div class="prompt-label"><i class="fas fa-pen"></i> Seu prompt</div>
+                                                <textarea name="prompt_extracao" id="prompt-extracao" class="prompt-textarea"
+                                                          placeholder="Cole ou escreva seu prompt aqui…">{{ ia_config.prompt_extracao or '' }}</textarea>
+                                                <div class="prompt-footer">
+                                                    <span><span id="prompt-count">0</span> caracteres</span>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="prompt-restore">
+                                                        <i class="fas fa-undo"></i> Copiar do padrão
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="prompt-label prompt-label--muted"><i class="fas fa-book"></i> Prompt padrão (referência)</div>
+                                                <pre class="prompt-default" id="prompt-default">{{ prompt_padrao }}</pre>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary mt-3"><i class="fas fa-save"></i> Salvar</button>
+                            </form>
+                        </div>
+
+                        <h3 style="font-size:1.05rem; margin-top:24px;">Campos extraídos</h3>
+                        <p class="config-section__subtitle" style="margin-bottom:12px;">
+                            Campos adicionais que a IA deve extrair e que aparecem no formulário de publicação. Os campos fixos (título, datas, organograma, etc.) não entram aqui.
+                        </p>
+
+                        {% if campos_extras %}
+                            {% for c in campos_extras %}
+                            <details class="tree-node">
+                                <summary>
+                                    <i class="fas fa-chevron-right tree-node__chevron"></i>
+                                    <span class="tree-node__icon"><i class="fas fa-tag"></i></span>
+                                    <span class="tree-node__title">{{ c.rotulo }} <small class="text-muted">({{ c.nome }})</small></span>
+                                    <span class="tree-node__meta">{{ c.tipo }}{% if c.obrigatorio %} · obrigatório{% endif %}</span>
+                                    <span class="badge {% if c.ativo %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {% if c.ativo %}Ativo{% else %}Inativo{% endif %}
+                                    </span>
+                                    <span class="tree-actions">
+                                        <form method="POST" action="{{ url_for('admin_campo_extracao') }}" class="d-inline" onclick="event.stopPropagation()">
+                                            <input type="hidden" name="acao" value="mover">
+                                            <input type="hidden" name="direcao" value="cima">
+                                            <input type="hidden" name="id" value="{{ c.id }}">
+                                            <button type="submit" class="icon-btn" title="Mover para cima"><i class="fas fa-arrow-up"></i></button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('admin_campo_extracao') }}" class="d-inline" onclick="event.stopPropagation()">
+                                            <input type="hidden" name="acao" value="mover">
+                                            <input type="hidden" name="direcao" value="baixo">
+                                            <input type="hidden" name="id" value="{{ c.id }}">
+                                            <button type="submit" class="icon-btn" title="Mover para baixo"><i class="fas fa-arrow-down"></i></button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('admin_campo_extracao') }}" class="d-inline" onclick="event.stopPropagation()">
+                                            <input type="hidden" name="acao" value="toggle">
+                                            <input type="hidden" name="id" value="{{ c.id }}">
+                                            <button type="submit" class="icon-btn" title="Ativar/desativar"><i class="fas fa-power-off"></i></button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('admin_campo_extracao') }}" class="d-inline" onclick="event.stopPropagation()" onsubmit="return confirm('Remover {{ c.rotulo }}? Documentos existentes manterão o valor salvo, mas o campo não aparecerá mais no formulário.')">
+                                            <input type="hidden" name="acao" value="remove">
+                                            <input type="hidden" name="id" value="{{ c.id }}">
+                                            <button type="submit" class="icon-btn icon-btn--danger" title="Remover"><i class="fas fa-trash"></i></button>
+                                        </form>
+                                    </span>
+                                </summary>
+                                <div class="tree-node__body">
+                                    <form method="POST" action="{{ url_for('admin_campo_extracao') }}" class="row g-2">
+                                        <input type="hidden" name="acao" value="update">
+                                        <input type="hidden" name="id" value="{{ c.id }}">
+                                        <div class="col-md-6">
+                                            <label class="form-label small">Rótulo (label do form)</label>
+                                            <input type="text" name="rotulo" class="form-control form-control-sm" value="{{ c.rotulo }}">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label small">Tipo</label>
+                                            <select name="tipo" class="form-select form-select-sm">
+                                                <option value="texto" {% if c.tipo == 'texto' %}selected{% endif %}>Texto</option>
+                                                <option value="data" {% if c.tipo == 'data' %}selected{% endif %}>Data</option>
+                                                <option value="numero" {% if c.tipo == 'numero' %}selected{% endif %}>Número</option>
+                                                <option value="select" {% if c.tipo == 'select' %}selected{% endif %}>Lista</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3 d-flex align-items-end gap-3">
+                                            <div class="form-check">
+                                                <input type="checkbox" name="obrigatorio" class="form-check-input" id="obr-{{ c.id }}" {% if c.obrigatorio %}checked{% endif %}>
+                                                <label for="obr-{{ c.id }}" class="form-check-label small">Obrigatório</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input type="checkbox" name="mostrar_na_listagem" class="form-check-input" id="mos-{{ c.id }}" {% if c.mostrar_na_listagem %}checked{% endif %}>
+                                                <label for="mos-{{ c.id }}" class="form-check-label small">Listagem</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label small">Opções (apenas tipo "Lista", separe por vírgula)</label>
+                                            <input type="text" name="opcoes" class="form-control form-control-sm"
+                                                   value="{% if c.opcoes %}{{ c.opcoes | join(', ') }}{% endif %}"
+                                                   placeholder="ex.: Baixo, Médio, Alto">
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label small">Instrução para a IA</label>
+                                            <textarea name="instrucao_ia" class="form-control form-control-sm" rows="2"
+                                                      placeholder="ex.: extraia o código CID-10 se mencionado no cabeçalho">{{ c.instrucao_ia or '' }}</textarea>
+                                        </div>
+                                        <div class="col-12">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">Salvar alterações</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </details>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-state">
+                                <i class="fas fa-inbox"></i>
+                                Nenhum campo personalizado ainda.
+                            </div>
+                        {% endif %}
+
+                        <div class="flat-card mt-3">
+                            <h4 style="font-size:.95rem; margin-top:0;"><i class="fas fa-plus"></i> Novo campo</h4>
+                            <form method="POST" action="{{ url_for('admin_campo_extracao') }}" class="row g-2">
+                                <input type="hidden" name="acao" value="add">
+                                <div class="col-md-3">
+                                    <label class="form-label small">Nome técnico</label>
+                                    <input type="text" name="nome" class="form-control form-control-sm" placeholder="ex.: cid10" required pattern="[a-z0-9_]+" title="só letras minúsculas, números e underscore">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">Rótulo visível</label>
+                                    <input type="text" name="rotulo" class="form-control form-control-sm" placeholder="ex.: CID-10" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small">Tipo</label>
+                                    <select name="tipo" class="form-select form-select-sm">
+                                        <option value="texto">Texto</option>
+                                        <option value="data">Data</option>
+                                        <option value="numero">Número</option>
+                                        <option value="select">Lista</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 d-flex align-items-end gap-2">
+                                    <div class="form-check">
+                                        <input type="checkbox" name="obrigatorio" class="form-check-input" id="novo-obr">
+                                        <label for="novo-obr" class="form-check-label small">Obrigatório</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input type="checkbox" name="mostrar_na_listagem" class="form-check-input" id="novo-mos">
+                                        <label for="novo-mos" class="form-check-label small">Listagem</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="text" name="opcoes" class="form-control form-control-sm" placeholder="Opções (só tipo lista, separe por vírgula)">
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="text" name="instrucao_ia" class="form-control form-control-sm" placeholder="Instrução para a IA (opcional)">
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Adicionar campo</button>
+                                </div>
+                            </form>
+                        </div>
+                    </section>
+
+                    <!-- DADOS -->
+                    <section class="config-section" id="section-dados">
+                        <div class="config-section__title">Dados</div>
+                        <p class="config-section__subtitle">Ajustes finos: nomes completos das siglas e marcadores por combinação organograma×abrangência.</p>
+
+                        <h3 style="font-size:1.05rem; margin-top:20px;">Nomes completos das siglas</h3>
+                        <div class="data-table-wrap mb-4">
+                            <table class="table table-compact mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Sigla</th>
+                                        <th>Nome completo</th>
+                                        <th class="text-center">Docs</th>
+                                        <th class="text-end">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for s in siglas %}
+                                    <tr>
+                                        <form method="POST" action="{{ url_for('admin_sigla') }}">
+                                            <input type="hidden" name="sigla" value="{{ s.organograma }}">
+                                            <td><strong>{{ s.organograma }}</strong></td>
+                                            <td><input type="text" name="nome_completo" class="form-control form-control-sm" value="{{ s.nome_completo or '' }}" placeholder="Ex.: Divisão de Gestão de Pessoas"></td>
+                                            <td class="text-center">{{ s.total_documentos }}</td>
+                                            <td class="text-end"><button type="submit" class="btn btn-sm btn-outline-primary">Salvar</button></td>
+                                        </form>
+                                    </tr>
+                                    {% endfor %}
+                                    {% if not siglas %}
+                                    <tr><td colspan="4" class="empty-state"><i class="fas fa-inbox"></i>Nenhuma sigla em uso.</td></tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h3 style="font-size:1.05rem;">Marcadores</h3>
+                        <form method="POST" action="{{ url_for('admin_marcador') }}">
+                            <div class="data-table-wrap mb-3">
+                                <table class="table table-compact mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Organograma</th>
+                                            <th>Abrangência</th>
+                                            <th>Marcador</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for m in marcadores %}
+                                        <tr>
+                                            <td>{{ m.organograma }}</td>
+                                            <td>{{ m.abrangencia }}</td>
+                                            <td><input type="text" name="marcador_{{ m.organograma }}_{{ m.abrangencia }}" class="form-control form-control-sm" value="{{ m.marcador or '' }}"></td>
+                                        </tr>
+                                        {% endfor %}
+                                        {% if not marcadores %}
+                                        <tr><td colspan="3" class="empty-state"><i class="fas fa-inbox"></i>Nenhum par cadastrado.</td></tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% if marcadores %}
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Salvar marcadores</button>
+                            {% endif %}
+                        </form>
+                    </section>
+
                 </div>
             </div>
         </div>
@@ -291,13 +1071,66 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Abre a tab correspondente ao hash (#abrangencias, etc.)
-        document.addEventListener('DOMContentLoaded', function() {
-            if (window.location.hash) {
-                var trigger = document.querySelector('[data-bs-target="' + window.location.hash + '"]');
-                if (trigger) new bootstrap.Tab(trigger).show();
+        (function() {
+            const navItems = document.querySelectorAll('.config-nav__item');
+            const sections = document.querySelectorAll('.config-section');
+
+            function activate(id) {
+                navItems.forEach(n => n.classList.toggle('active', n.dataset.section === id));
+                sections.forEach(s => s.classList.toggle('active', s.id === 'section-' + id));
+                history.replaceState(null, '', '#' + id);
             }
-        });
+
+            navItems.forEach(n => n.addEventListener('click', () => activate(n.dataset.section)));
+
+            const hash = (window.location.hash || '').replace('#', '');
+            const valid = ['estrutura', 'usuarios', 'identidade', 'ia', 'dados'];
+            if (valid.includes(hash)) activate(hash);
+            else if (['organogramas', 'abrangencias', 'tipos'].includes(hash)) activate('estrutura');
+            else if (hash === 'siglas' || hash === 'marcadores') activate('dados');
+        })();
+
+        (function () {
+            const editor = document.getElementById('prompt-editor');
+            if (!editor) return;
+            const textarea = document.getElementById('prompt-extracao');
+            const counter = document.getElementById('prompt-count');
+            const body = editor.querySelector('.prompt-editor__body');
+            const defaultEl = document.getElementById('prompt-default');
+            const restore = document.getElementById('prompt-restore');
+            const radios = editor.querySelectorAll('input[name="prompt_mode"]');
+            const options = editor.querySelectorAll('.prompt-mode__option');
+
+            const updateCount = () => { counter.textContent = textarea.value.length; };
+            textarea.addEventListener('input', updateCount);
+            updateCount();
+
+            radios.forEach(r => r.addEventListener('change', () => {
+                const custom = document.querySelector('input[name="prompt_mode"]:checked').value === 'custom';
+                body.hidden = !custom;
+                options.forEach(o => o.classList.toggle('is-active', o.querySelector('input').checked));
+                if (!custom) { textarea.value = ''; updateCount(); }
+            }));
+
+            editor.querySelectorAll('.prompt-var-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    const v = chip.dataset.var;
+                    const s = textarea.selectionStart;
+                    const e = textarea.selectionEnd;
+                    textarea.value = textarea.value.slice(0, s) + v + textarea.value.slice(e);
+                    textarea.focus();
+                    textarea.selectionStart = textarea.selectionEnd = s + v.length;
+                    updateCount();
+                });
+            });
+
+            restore.addEventListener('click', () => {
+                if (textarea.value.trim() && !confirm('Substituir o prompt atual pelo padrão?')) return;
+                textarea.value = defaultEl.textContent.trim();
+                updateCount();
+                textarea.focus();
+            });
+        })();
     </script>
 </body>
 </html>
