@@ -419,6 +419,270 @@
             white-space: pre-wrap;
             margin: 0;
         }
+
+        .campos-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            margin: 24px 0 16px;
+            flex-wrap: wrap;
+        }
+
+        .wizard-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .wizard-modal.is-open { display: flex; }
+        .wizard-modal__backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, .55);
+            backdrop-filter: blur(2px);
+        }
+        .wizard-modal__dialog {
+            position: relative;
+            background: var(--miac-surface);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 640px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .25);
+            animation: wizardIn .18s ease;
+        }
+        @keyframes wizardIn {
+            from { opacity: 0; transform: translateY(12px) scale(.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .wizard-modal__header {
+            padding: 18px 22px;
+            border-bottom: 1px solid var(--miac-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .wizard-modal__header h2 { margin: 0 0 12px; font-size: 1.15rem; }
+        .wizard-close {
+            background: none;
+            border: none;
+            font-size: 1.6rem;
+            line-height: 1;
+            color: var(--miac-muted);
+            cursor: pointer;
+            padding: 0 4px;
+        }
+        .wizard-close:hover { color: var(--miac-text); }
+
+        .wizard-steps {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .wizard-steps__dot {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: var(--miac-light);
+            border: 1.5px solid var(--miac-border);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--miac-text-soft);
+            transition: all .15s;
+        }
+        .wizard-steps__dot.is-active {
+            background: var(--miac-accent);
+            border-color: var(--miac-accent);
+            color: #fff;
+        }
+        .wizard-steps__dot.is-done {
+            background: rgba(79,70,229,.15);
+            border-color: var(--miac-accent);
+            color: var(--miac-accent);
+        }
+        .wizard-steps__line {
+            width: 24px;
+            height: 2px;
+            background: var(--miac-border);
+        }
+
+        .wizard-modal__body {
+            padding: 22px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .wizard-step { display: none; }
+        .wizard-step.is-active { display: block; }
+        .wizard-step h3 { margin: 0 0 4px; font-size: 1.05rem; }
+        .wizard-help { color: var(--miac-text-soft); font-size: .88rem; margin: 0 0 18px; }
+
+        .wizard-field {
+            display: block;
+            margin-bottom: 16px;
+        }
+        .wizard-field > span {
+            display: block;
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--miac-text);
+            margin-bottom: 6px;
+        }
+        .wizard-field .req { color: var(--miac-danger); }
+        .wizard-field input[type="text"],
+        .wizard-field textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--miac-border);
+            border-radius: 8px;
+            font-size: .95rem;
+            font-family: inherit;
+            background: var(--miac-surface);
+            color: var(--miac-text);
+            resize: vertical;
+        }
+        .wizard-field input:focus,
+        .wizard-field textarea:focus {
+            outline: none;
+            border-color: var(--miac-accent);
+            box-shadow: 0 0 0 3px rgba(79,70,229,.12);
+        }
+        .wizard-hint {
+            display: block;
+            color: var(--miac-text-soft);
+            font-size: .78rem;
+            margin-top: 4px;
+        }
+
+        .wizard-types {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .wizard-type {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 2px;
+            padding: 14px;
+            border: 1.5px solid var(--miac-border);
+            border-radius: 10px;
+            cursor: pointer;
+            background: var(--miac-light);
+            transition: all .15s;
+            margin: 0;
+        }
+        .wizard-type input { display: none; }
+        .wizard-type i {
+            font-size: 1.2rem;
+            color: var(--miac-accent);
+            margin-bottom: 4px;
+        }
+        .wizard-type strong { font-size: .95rem; color: var(--miac-text); }
+        .wizard-type small { color: var(--miac-text-soft); font-size: .78rem; }
+        .wizard-type:hover { border-color: var(--miac-accent); }
+        .wizard-type.is-active {
+            border-color: var(--miac-accent);
+            background: var(--miac-surface);
+            box-shadow: 0 0 0 3px rgba(79,70,229,.10);
+        }
+
+        .wizard-chip-input {
+            border: 1px solid var(--miac-border);
+            border-radius: 8px;
+            padding: 8px;
+            background: var(--miac-surface);
+            min-height: 52px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+        }
+        .wizard-chip-input input {
+            border: none;
+            outline: none;
+            background: transparent;
+            flex: 1;
+            min-width: 140px;
+            padding: 4px;
+            font-size: .9rem;
+        }
+        .wizard-chips { display: contents; }
+        .wizard-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            background: rgba(79,70,229,.10);
+            color: var(--miac-accent);
+            border-radius: 999px;
+            font-size: .85rem;
+        }
+        .wizard-chip button {
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            font-size: 1rem;
+            line-height: 1;
+            padding: 0 0 0 2px;
+        }
+
+        .wizard-toggle {
+            display: flex;
+            gap: 12px;
+            padding: 14px;
+            border: 1px solid var(--miac-border);
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 0 0 10px;
+            background: var(--miac-light);
+            transition: border-color .15s;
+        }
+        .wizard-toggle:hover { border-color: var(--miac-accent); }
+        .wizard-toggle input { margin-top: 3px; }
+        .wizard-toggle strong { display: block; font-size: .93rem; }
+        .wizard-toggle small { color: var(--miac-text-soft); font-size: .8rem; }
+
+        .wizard-preview {
+            margin-top: 16px;
+            padding: 14px;
+            background: var(--miac-light);
+            border: 1px dashed var(--miac-border);
+            border-radius: 10px;
+        }
+        .wizard-preview__label {
+            font-size: .75rem;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: var(--miac-text-soft);
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .wizard-preview__body { font-size: .9rem; color: var(--miac-text); line-height: 1.5; }
+        .wizard-preview__body strong { color: var(--miac-accent); }
+
+        .wizard-modal__footer {
+            padding: 14px 22px;
+            border-top: 1px solid var(--miac-border);
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            background: var(--miac-light);
+        }
+        .wizard-modal__footer > :first-child { margin-right: auto; }
     </style>
 </head>
 <body>
@@ -859,10 +1123,17 @@
                             </form>
                         </div>
 
-                        <h3 style="font-size:1.05rem; margin-top:24px;">Campos extraídos</h3>
-                        <p class="config-section__subtitle" style="margin-bottom:12px;">
-                            Campos adicionais que a IA deve extrair e que aparecem no formulário de publicação. Os campos fixos (título, datas, organograma, etc.) não entram aqui.
-                        </p>
+                        <div class="campos-header">
+                            <div>
+                                <h3 style="font-size:1.05rem; margin:0;">Campos extraídos</h3>
+                                <p class="config-section__subtitle" style="margin:4px 0 0;">
+                                    Campos adicionais que a IA deve extrair e que aparecem no formulário de publicação. Os campos fixos (título, datas, organograma, etc.) não entram aqui.
+                                </p>
+                            </div>
+                            <button type="button" class="btn btn-primary" id="abrir-wizard-campo">
+                                <i class="fas fa-plus"></i> Adicionar campo
+                            </button>
+                        </div>
 
                         {% if campos_extras %}
                             {% for c in campos_extras %}
@@ -952,47 +1223,133 @@
                             </div>
                         {% endif %}
 
-                        <div class="flat-card mt-3">
-                            <h4 style="font-size:.95rem; margin-top:0;"><i class="fas fa-plus"></i> Novo campo</h4>
-                            <form method="POST" action="{{ url_for('admin_campo_extracao') }}" class="row g-2">
-                                <input type="hidden" name="acao" value="add">
-                                <div class="col-md-3">
-                                    <label class="form-label small">Nome técnico</label>
-                                    <input type="text" name="nome" class="form-control form-control-sm" placeholder="ex.: cid10" required pattern="[a-z0-9_]+" title="só letras minúsculas, números e underscore">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label small">Rótulo visível</label>
-                                    <input type="text" name="rotulo" class="form-control form-control-sm" placeholder="ex.: CID-10" required>
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label small">Tipo</label>
-                                    <select name="tipo" class="form-select form-select-sm">
-                                        <option value="texto">Texto</option>
-                                        <option value="data">Data</option>
-                                        <option value="numero">Número</option>
-                                        <option value="select">Lista</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3 d-flex align-items-end gap-2">
-                                    <div class="form-check">
-                                        <input type="checkbox" name="obrigatorio" class="form-check-input" id="novo-obr">
-                                        <label for="novo-obr" class="form-check-label small">Obrigatório</label>
+                        <div class="wizard-modal" id="wizard-campo" aria-hidden="true">
+                            <div class="wizard-modal__backdrop" data-close></div>
+                            <div class="wizard-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="wizard-title">
+                                <form method="POST" action="{{ url_for('admin_campo_extracao') }}" id="wizard-form">
+                                    <input type="hidden" name="acao" value="add">
+                                    <input type="hidden" name="nome" id="wizard-nome">
+                                    <input type="hidden" name="tipo" id="wizard-tipo" value="texto">
+                                    <input type="hidden" name="obrigatorio" id="wizard-obrigatorio">
+                                    <input type="hidden" name="mostrar_na_listagem" id="wizard-listagem">
+
+                                    <div class="wizard-modal__header">
+                                        <div>
+                                            <h2 id="wizard-title">Novo campo</h2>
+                                            <div class="wizard-steps">
+                                                <span class="wizard-steps__dot is-active" data-dot="1">1</span>
+                                                <span class="wizard-steps__line"></span>
+                                                <span class="wizard-steps__dot" data-dot="2">2</span>
+                                                <span class="wizard-steps__line"></span>
+                                                <span class="wizard-steps__dot" data-dot="3">3</span>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="wizard-close" data-close aria-label="Fechar">&times;</button>
                                     </div>
-                                    <div class="form-check">
-                                        <input type="checkbox" name="mostrar_na_listagem" class="form-check-input" id="novo-mos">
-                                        <label for="novo-mos" class="form-check-label small">Listagem</label>
+
+                                    <div class="wizard-modal__body">
+                                        <section class="wizard-step is-active" data-step="1">
+                                            <h3>O que a IA deve identificar?</h3>
+                                            <p class="wizard-help">Dê um nome humano ao campo e, se quiser, explique em linguagem natural o que a IA deve procurar no texto.</p>
+
+                                            <label class="wizard-field">
+                                                <span>Nome visível <span class="req">*</span></span>
+                                                <input type="text" name="rotulo" id="wizard-rotulo" placeholder="ex.: CID-10" required>
+                                                <small class="wizard-hint">Aparece como label no formulário de publicação.</small>
+                                            </label>
+
+                                            <label class="wizard-field">
+                                                <span>Instrução para a IA</span>
+                                                <textarea name="instrucao_ia" id="wizard-instrucao" rows="3"
+                                                          placeholder="ex.: código CID-10 mencionado no cabeçalho do documento"></textarea>
+                                                <small class="wizard-hint">Opcional. Escreva em português natural — a IA vai usar isso para encontrar o valor.</small>
+                                            </label>
+                                        </section>
+
+                                        <section class="wizard-step" data-step="2">
+                                            <h3>Que tipo de valor é?</h3>
+                                            <p class="wizard-help">Isso define como o campo aparece no formulário e como o valor é validado.</p>
+
+                                            <div class="wizard-types">
+                                                <label class="wizard-type is-active" data-type="texto">
+                                                    <input type="radio" name="wizard-tipo-radio" value="texto" checked>
+                                                    <i class="fas fa-font"></i>
+                                                    <strong>Texto</strong>
+                                                    <small>Livre, qualquer valor.</small>
+                                                </label>
+                                                <label class="wizard-type" data-type="data">
+                                                    <input type="radio" name="wizard-tipo-radio" value="data">
+                                                    <i class="fas fa-calendar"></i>
+                                                    <strong>Data</strong>
+                                                    <small>dd/mm/aaaa.</small>
+                                                </label>
+                                                <label class="wizard-type" data-type="numero">
+                                                    <input type="radio" name="wizard-tipo-radio" value="numero">
+                                                    <i class="fas fa-hashtag"></i>
+                                                    <strong>Número</strong>
+                                                    <small>Inteiros ou decimais.</small>
+                                                </label>
+                                                <label class="wizard-type" data-type="select">
+                                                    <input type="radio" name="wizard-tipo-radio" value="select">
+                                                    <i class="fas fa-list"></i>
+                                                    <strong>Lista</strong>
+                                                    <small>Escolha entre opções.</small>
+                                                </label>
+                                            </div>
+
+                                            <div class="wizard-opcoes" id="wizard-opcoes-box" hidden>
+                                                <label class="wizard-field">
+                                                    <span>Opções disponíveis <span class="req">*</span></span>
+                                                    <div class="wizard-chip-input">
+                                                        <div class="wizard-chips" id="wizard-chips"></div>
+                                                        <input type="text" id="wizard-opcao-input" placeholder="Digite uma opção e aperte Enter">
+                                                    </div>
+                                                    <input type="hidden" name="opcoes" id="wizard-opcoes">
+                                                    <small class="wizard-hint">Aperte Enter ou vírgula para adicionar.</small>
+                                                </label>
+                                            </div>
+                                        </section>
+
+                                        <section class="wizard-step" data-step="3">
+                                            <h3>Comportamento</h3>
+                                            <p class="wizard-help">Defina se o campo é obrigatório e onde ele aparece.</p>
+
+                                            <label class="wizard-toggle">
+                                                <input type="checkbox" id="wizard-toggle-obr">
+                                                <div>
+                                                    <strong>Obrigatório</strong>
+                                                    <small>Usuário não consegue publicar sem preencher.</small>
+                                                </div>
+                                            </label>
+
+                                            <label class="wizard-toggle">
+                                                <input type="checkbox" id="wizard-toggle-lis">
+                                                <div>
+                                                    <strong>Mostrar na listagem de documentos</strong>
+                                                    <small>Aparece como coluna/tag nos cards.</small>
+                                                </div>
+                                            </label>
+
+                                            <div class="wizard-preview">
+                                                <div class="wizard-preview__label">Resumo</div>
+                                                <div class="wizard-preview__body" id="wizard-preview-body"></div>
+                                            </div>
+                                        </section>
                                     </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <input type="text" name="opcoes" class="form-control form-control-sm" placeholder="Opções (só tipo lista, separe por vírgula)">
-                                </div>
-                                <div class="col-md-6">
-                                    <input type="text" name="instrucao_ia" class="form-control form-control-sm" placeholder="Instrução para a IA (opcional)">
-                                </div>
-                                <div class="col-12">
-                                    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Adicionar campo</button>
-                                </div>
-                            </form>
+
+                                    <div class="wizard-modal__footer">
+                                        <button type="button" class="btn btn-outline-secondary" id="wizard-voltar" disabled>
+                                            <i class="fas fa-arrow-left"></i> Voltar
+                                        </button>
+                                        <button type="button" class="btn btn-primary" id="wizard-proximo">
+                                            Próximo <i class="fas fa-arrow-right"></i>
+                                        </button>
+                                        <button type="submit" class="btn btn-primary" id="wizard-criar" hidden>
+                                            <i class="fas fa-check"></i> Criar campo
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </section>
 
@@ -1129,6 +1486,164 @@
                 textarea.value = defaultEl.textContent.trim();
                 updateCount();
                 textarea.focus();
+            });
+        })();
+
+        (function () {
+            const modal = document.getElementById('wizard-campo');
+            if (!modal) return;
+
+            const abrirBtn = document.getElementById('abrir-wizard-campo');
+            const form = document.getElementById('wizard-form');
+            const dots = modal.querySelectorAll('.wizard-steps__dot');
+            const steps = modal.querySelectorAll('.wizard-step');
+            const voltarBtn = document.getElementById('wizard-voltar');
+            const proximoBtn = document.getElementById('wizard-proximo');
+            const criarBtn = document.getElementById('wizard-criar');
+
+            const rotuloEl = document.getElementById('wizard-rotulo');
+            const instrucaoEl = document.getElementById('wizard-instrucao');
+            const nomeHidden = document.getElementById('wizard-nome');
+            const tipoHidden = document.getElementById('wizard-tipo');
+            const obrigHidden = document.getElementById('wizard-obrigatorio');
+            const listaHidden = document.getElementById('wizard-listagem');
+            const opcoesHidden = document.getElementById('wizard-opcoes');
+            const opcoesBox = document.getElementById('wizard-opcoes-box');
+            const opcaoInput = document.getElementById('wizard-opcao-input');
+            const chipsEl = document.getElementById('wizard-chips');
+            const tiposEls = modal.querySelectorAll('.wizard-type');
+            const toggleObr = document.getElementById('wizard-toggle-obr');
+            const toggleLis = document.getElementById('wizard-toggle-lis');
+            const previewBody = document.getElementById('wizard-preview-body');
+
+            let stepAtual = 1;
+            let opcoes = [];
+
+            const slugify = s => s
+                .toLowerCase()
+                .normalize('NFD').replace(/[̀-ͯ]/g, '')
+                .replace(/[^a-z0-9]+/g, '_')
+                .replace(/^_+|_+$/g, '')
+                .slice(0, 60) || 'campo';
+
+            function abrir() {
+                stepAtual = 1;
+                opcoes = [];
+                form.reset();
+                renderChips();
+                atualizarTipoVisual();
+                mostrarStep(1);
+                modal.classList.add('is-open');
+                modal.setAttribute('aria-hidden', 'false');
+                setTimeout(() => rotuloEl.focus(), 50);
+            }
+            function fechar() {
+                modal.classList.remove('is-open');
+                modal.setAttribute('aria-hidden', 'true');
+            }
+
+            function mostrarStep(n) {
+                stepAtual = n;
+                steps.forEach(s => s.classList.toggle('is-active', +s.dataset.step === n));
+                dots.forEach(d => {
+                    const i = +d.dataset.dot;
+                    d.classList.toggle('is-active', i === n);
+                    d.classList.toggle('is-done', i < n);
+                });
+                voltarBtn.disabled = n === 1;
+                proximoBtn.hidden = n === 3;
+                criarBtn.hidden = n !== 3;
+                if (n === 3) atualizarPreview();
+            }
+
+            function validarStep(n) {
+                if (n === 1) {
+                    if (!rotuloEl.value.trim()) { rotuloEl.focus(); return false; }
+                    return true;
+                }
+                if (n === 2) {
+                    if (tipoHidden.value === 'select' && opcoes.length === 0) {
+                        opcaoInput.focus();
+                        alert('Adicione ao menos uma opção para o tipo Lista.');
+                        return false;
+                    }
+                    return true;
+                }
+                return true;
+            }
+
+            function atualizarTipoVisual() {
+                tiposEls.forEach(t => t.classList.toggle('is-active', t.dataset.type === tipoHidden.value));
+                opcoesBox.hidden = tipoHidden.value !== 'select';
+            }
+
+            function renderChips() {
+                chipsEl.innerHTML = '';
+                opcoes.forEach((op, i) => {
+                    const chip = document.createElement('span');
+                    chip.className = 'wizard-chip';
+                    chip.textContent = op;
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.innerHTML = '&times;';
+                    btn.addEventListener('click', () => { opcoes.splice(i, 1); renderChips(); });
+                    chip.appendChild(btn);
+                    chipsEl.appendChild(chip);
+                });
+                opcoesHidden.value = opcoes.join(', ');
+            }
+
+            function adicionarOpcao() {
+                const v = opcaoInput.value.trim().replace(/,$/, '').trim();
+                if (!v) return;
+                if (!opcoes.includes(v)) opcoes.push(v);
+                opcaoInput.value = '';
+                renderChips();
+            }
+
+            function atualizarPreview() {
+                const tipoLabel = { texto: 'texto livre', data: 'data', numero: 'número', select: 'lista' }[tipoHidden.value];
+                const req = toggleObr.checked ? 'obrigatório' : 'opcional';
+                const vis = toggleLis.checked ? ' · aparece na listagem' : '';
+                const opcStr = tipoHidden.value === 'select' && opcoes.length
+                    ? ` (${opcoes.join(', ')})` : '';
+                previewBody.innerHTML =
+                    `Campo <strong>${rotuloEl.value || '(sem nome)'}</strong> — ${tipoLabel}${opcStr}, ${req}${vis}.`;
+            }
+
+            abrirBtn.addEventListener('click', abrir);
+            modal.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', fechar));
+            document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('is-open')) fechar(); });
+
+            tiposEls.forEach(t => t.addEventListener('click', () => {
+                tipoHidden.value = t.dataset.type;
+                t.querySelector('input').checked = true;
+                atualizarTipoVisual();
+            }));
+
+            opcaoInput.addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault();
+                    adicionarOpcao();
+                } else if (e.key === 'Backspace' && !opcaoInput.value && opcoes.length) {
+                    opcoes.pop();
+                    renderChips();
+                }
+            });
+            opcaoInput.addEventListener('blur', adicionarOpcao);
+
+            voltarBtn.addEventListener('click', () => mostrarStep(Math.max(1, stepAtual - 1)));
+            proximoBtn.addEventListener('click', () => {
+                if (validarStep(stepAtual)) mostrarStep(Math.min(3, stepAtual + 1));
+            });
+
+            form.addEventListener('submit', e => {
+                if (!validarStep(1) || !validarStep(2)) { e.preventDefault(); return; }
+                nomeHidden.value = slugify(rotuloEl.value);
+                obrigHidden.value = 'on';
+                listaHidden.value = 'on';
+                obrigHidden.disabled = !toggleObr.checked;
+                listaHidden.disabled = !toggleLis.checked;
             });
         })();
     </script>
