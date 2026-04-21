@@ -173,12 +173,19 @@ def init_routes(app):
                         file.save(file_path)
 
                         pdf_text = read_last_page(file_path)
+                        logger.info(
+                            "[IA] PDF %s texto extraído: %d chars\n--- INÍCIO ---\n%s\n--- FIM ---",
+                            file.filename,
+                            len(pdf_text) if pdf_text else 0,
+                            pdf_text if pdf_text else "(vazio)",
+                        )
                         if pdf_text is None or len(pdf_text.strip()) < 20:
                             raise RuntimeError(
                                 f"Texto não encontrado ou insuficiente no PDF: {file.filename}"
                             )
 
                         prompt = _build_prompt(pdf_text, campos_extras_ativos)
+                        logger.info("[IA] prompt enviado (%d chars):\n%s", len(prompt), prompt)
                         if modelo_ia == "deepseek":
                             gpt_response = send_to_deepseek_with_retry(
                                 prompt, deepseek_key
@@ -193,9 +200,14 @@ def init_routes(app):
                                 f"Erro ao comunicar com a API de IA para: {file.filename}"
                             )
 
+                        logger.info(
+                            "[IA] resposta bruta para %s:\n%s",
+                            file.filename, gpt_response,
+                        )
                         extracted = _parse_gpt_response(
                             gpt_response, file.filename, campos_extras_ativos
                         )
+                        logger.info("[IA] extração final: %s", extracted)
 
                         extracted["abrangencia"] = (
                             resolver_abrangencia(extracted["abrangencia"])
