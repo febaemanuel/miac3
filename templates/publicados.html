@@ -172,42 +172,56 @@
             <li>
                 <div class="search-bar">
                     <form id="search-form" onsubmit="return false;">
-                        <div class="input-group mb-2">
-                            <span class="input-group-text"><i class="fas fa-search"></i></span>
-                            <input type="text" id="nome" name="nome" placeholder="Buscar por nome" class="form-control">
-                        </div>
-
-                        <div class="input-group mb-2">
-                            <span class="input-group-text"><i class="fas fa-filter"></i></span>
-                            <select id="organograma" name="organograma" class="form-control">
-                                <option value="">Organograma</option>
-                                {% for org in organogramas %}
-                                    <option value="{{ org.sigla }}">
-                                        {% if org.nome_completo %}{{ org.nome_completo }} ({{ org.sigla }}){% else %}{{ org.sigla }}{% endif %}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div class="input-group mb-2">
-                            <span class="input-group-text"><i class="fas fa-file-alt"></i></span>
-                            <select id="tipo_documento" name="tipo_documento" class="form-control">
-                                <option value="">Tipo de documento</option>
-                                {% for tipo in tipos_documento %}
-                                    <option value="{{ tipo }}">{{ tipo }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div class="input-group mb-2">
-                            <span class="input-group-text"><i class="fas fa-sitemap"></i></span>
-                            <input type="text" id="search-organograma" name="search-organograma" placeholder="Buscar por Cartão" class="form-control">
-                        </div>
-
-                        <div class="form-check form-switch text-white mb-2">
-                            <input class="form-check-input" type="checkbox" id="apenas-complexo">
-                            <label class="form-check-label" for="apenas-complexo">Apenas documentos do complexo</label>
-                        </div>
+                        {% for f in filtros %}
+                            {% if f.tipo == 'padrao' and f.campo_ref == 'nome' %}
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text"><i class="fas {{ f.icone or 'fa-search' }}"></i></span>
+                                    <input type="text" id="nome" name="nome" placeholder="{{ f.rotulo }}" class="form-control filtro-input">
+                                </div>
+                            {% elif f.tipo == 'padrao' and f.campo_ref == 'organograma' %}
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text"><i class="fas {{ f.icone or 'fa-filter' }}"></i></span>
+                                    <select id="organograma" name="organograma" class="form-control filtro-input">
+                                        <option value="">{{ f.rotulo }}</option>
+                                        {% for org in organogramas %}
+                                            <option value="{{ org.sigla }}">
+                                                {% if org.nome_completo %}{{ org.nome_completo }} ({{ org.sigla }}){% else %}{{ org.sigla }}{% endif %}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            {% elif f.tipo == 'padrao' and f.campo_ref == 'tipo_documento' %}
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text"><i class="fas {{ f.icone or 'fa-file-alt' }}"></i></span>
+                                    <select id="tipo_documento" name="tipo_documento" class="form-control filtro-input">
+                                        <option value="">{{ f.rotulo }}</option>
+                                        {% for tipo in tipos_documento %}
+                                            <option value="{{ tipo }}">{{ tipo }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            {% elif f.tipo == 'padrao' and f.campo_ref == 'search_organograma' %}
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text"><i class="fas {{ f.icone or 'fa-sitemap' }}"></i></span>
+                                    <input type="text" id="search-organograma" name="search-organograma" placeholder="{{ f.rotulo }}" class="form-control filtro-input">
+                                </div>
+                            {% elif f.tipo == 'extra' and f.campo_ref in campos_extras_ativos %}
+                                {% set campo = campos_extras_ativos[f.campo_ref] %}
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text"><i class="fas {{ f.icone or 'fa-tag' }}"></i></span>
+                                    {% if campo.tipo == 'select' or valores_campos_extras.get(f.campo_ref) %}
+                                        <select name="extra_{{ f.campo_ref }}" class="form-control filtro-extra" data-campo="{{ f.campo_ref }}">
+                                            <option value="">{{ f.rotulo }}</option>
+                                            {% for opt in valores_campos_extras.get(f.campo_ref, []) %}
+                                                <option value="{{ opt }}">{{ opt }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    {% else %}
+                                        <input type="text" name="extra_{{ f.campo_ref }}" placeholder="{{ f.rotulo }}" class="form-control filtro-extra" data-campo="{{ f.campo_ref }}">
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
 
                         <button type="button" id="limpar-filtros" class="btn btn-secondary w-100">
                             <i class="fas fa-times"></i> Limpar Filtros
@@ -246,10 +260,16 @@
         $(document).ready(function () {
             let currentAbrangencia = {{ abrangencia_selecionada | tojson }};
 
-            $('#apenas-complexo').on('change', atualizarResultados);
+            function coletarExtras() {
+                const extras = {};
+                $('.filtro-extra').each(function () {
+                    const v = $(this).val();
+                    if (v) extras['extra_' + $(this).data('campo')] = v;
+                });
+                return extras;
+            }
 
             function atualizarResultados() {
-                const apenasComplexo = $('#apenas-complexo').is(':checked');
                 const nome = $('#nome').val();
                 const organograma = $('#organograma').val();
                 const tipoDocumento = $('#tipo_documento').val();
@@ -260,12 +280,11 @@
                 $.ajax({
                     url: "{{ url_for('buscar') }}",
                     type: "GET",
-                    data: {
+                    data: Object.assign({
                         nome, organograma, tipo_documento: tipoDocumento,
                         abrangencia: currentAbrangencia,
-                        apenas_complexo: apenasComplexo,
                         search_organograma: searchOrganograma
-                    },
+                    }, coletarExtras()),
                     success: function (response) {
                         $('#organograma-grid').html(response);
                         initializePagination();
@@ -320,24 +339,20 @@
                 const nome = $('#nome').val();
                 const organograma = $('#organograma').val();
                 const tipo_documento = $('#tipo_documento').val();
-                const apenas_complexo = $('#apenas-complexo').is(':checked');
 
                 $.ajax({
                     url: "{{ url_for('buscar') }}",
                     method: 'GET',
-                    data: { nome, organograma, tipo_documento, abrangencia: currentAbrangencia, page, apenas_complexo },
+                    data: Object.assign({ nome, organograma, tipo_documento, abrangencia: currentAbrangencia, page }, coletarExtras()),
                     success: function (response) { $('#organograma-grid').html(response); },
                     error: function () { alert('Erro ao buscar documentos. Tente novamente.'); }
                 });
             }
 
-            $('#nome, #organograma, #tipo_documento').on('input', function () { searchDocuments(); });
+            $('.filtro-input, .filtro-extra').on('input change', function () { atualizarResultados(); });
 
             $('#limpar-filtros').on('click', function () {
-                $('#nome').val('');
-                $('#organograma').val('');
-                $('#tipo_documento').val('');
-                $('#apenas-complexo').prop('checked', false);
+                $('.filtro-input, .filtro-extra').val('');
 
                 const marcadoresSalvos = sessionStorage.getItem("marcadores");
                 if (marcadoresSalvos) {

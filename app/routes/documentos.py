@@ -23,6 +23,7 @@ from app.models import (
     Abrangencia,
     CampoExtracao,
     Documento,
+    FiltroPublicados,
     Organograma,
     TipoDocumento,
 )
@@ -268,6 +269,29 @@ def init_routes(app):
 
         tipos_documento_list = sorted(tipos_documento_unicos)
 
+        filtros = (
+            FiltroPublicados.query.filter_by(ativo=True)
+            .order_by(FiltroPublicados.ordem, FiltroPublicados.id)
+            .all()
+        )
+        campos_extras_ativos = {
+            c.nome: c
+            for c in CampoExtracao.query.filter_by(ativo=True).all()
+        }
+        valores_campos_extras = {}
+        for filtro in filtros:
+            if filtro.tipo == "extra" and filtro.campo_ref in campos_extras_ativos:
+                campo = campos_extras_ativos[filtro.campo_ref]
+                if campo.tipo == "select" and campo.opcoes:
+                    valores_campos_extras[filtro.campo_ref] = campo.opcoes
+                else:
+                    valores_unicos = set()
+                    for d in Documento.query.all():
+                        v = (d.campos_extras or {}).get(filtro.campo_ref)
+                        if v:
+                            valores_unicos.add(str(v))
+                    valores_campos_extras[filtro.campo_ref] = sorted(valores_unicos)
+
         return render_template(
             "publicados.html",
             documentos_agrupados=documentos_agrupados,
@@ -277,6 +301,9 @@ def init_routes(app):
             abrangencias=abrangencias_ativas,
             organograma_filtro=organograma_filtro,
             tipo_documento_filtro=tipo_documento_filtro,
+            filtros=filtros,
+            campos_extras_ativos=campos_extras_ativos,
+            valores_campos_extras=valores_campos_extras,
         )
 
     @app.route("/miac/documento/<int:doc_id>", methods=["GET"])
