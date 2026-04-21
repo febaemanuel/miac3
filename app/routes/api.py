@@ -25,39 +25,55 @@ from app.services.vocabulario import (
 
 
 PROMPT_PADRAO = (
-    "Extraia as seguintes informações do texto de forma literal. "
-    "Retorne apenas o valor encontrado ou 'Não localizado' se não houver correspondência. "
-    "Não use alternativas aproximadas.\n"
+    "Extraia as informações do texto de forma literal. "
+    "Responda EXATAMENTE no formato abaixo, uma linha por campo, começando com a CHAVE em maiúsculas seguida de ':' e o valor. "
+    "Se não encontrar, escreva 'Não localizado'. Não invente valores aproximados. Não adicione comentários.\n\n"
     "{campos_fixos}"
     "{campos_extras}"
     "\nTexto:\n{texto_pdf}"
 )
+
+CAMPOS_FIXOS = [
+    ("CODIGO", "codigo_documento", "código do documento, ex.: FOR.DIVGP-CHUFC.005"),
+    ("TITULO", "titulo_documento", "título do documento"),
+    ("DATA_ELABORACAO", "data_elaboracao", "data de elaboração no formato dd/mm/aaaa"),
+    (
+        "VENCIMENTO",
+        "vencimento",
+        "data de vencimento ou revisão no formato dd/mm/aaaa; se não houver, some 2 anos à data de elaboração",
+    ),
+    (
+        "ORGANOGRAMA",
+        "organograma",
+        "organograma; em códigos tipo POP.UAP-CHUFC.006 é a sigla do meio, ex.: UAP",
+    ),
+    ("TIPO", "tipo_documento", "tipo do documento em CAIXA ALTA"),
+    ("ABRANGENCIA", "abrangencia", "abrangência"),
+    ("SEI", "numero_sei", "número SEI, ex.: 23533.003368/2023-10"),
+    ("ELABORADORES", "elaboradores", "nomes dos elaboradores separados por vírgula"),
+]
 
 
 def _campos_fixos_instrucoes():
     abrangencias = listar_abrangencias()
     organogramas = listar_organogramas()
     tipos = listar_tipos_documento()
+    restricoes = {
+        "ORGANOGRAMA": organogramas,
+        "TIPO": tipos,
+        "ABRANGENCIA": abrangencias,
+    }
+    linhas = []
+    for chave, _, descricao in CAMPOS_FIXOS:
+        lista = restricoes.get(chave)
+        if lista:
+            descricao = f"{descricao}. Use obrigatoriamente um destes: {', '.join(lista)}"
+        linhas.append(f"{chave}: <{descricao}>\n")
+    return "".join(linhas)
 
-    def _ou_livre(lista):
-        return (
-            f"OBRIGATORIAMENTE um destes: {', '.join(lista)}"
-            if lista
-            else "valor livre"
-        )
 
-    return (
-        "Data de Elaboração (formato dd/mm/aaaa):\n"
-        "Vencimento (também pode ser 'Revisão'; formato dd/mm/aaaa; "
-        "se não houver, use data de elaboração + 2 anos):\n"
-        f"Organograma ({_ou_livre(organogramas)}; em códigos tipo 'POP.UAP-CHUFC.006' é a sigla do meio, ex.: 'UAP'):\n"
-        f"Tipo de Documento ({_ou_livre(tipos)}; retorne em CAIXA ALTA):\n"
-        f"Abrangência ({_ou_livre(abrangencias)}):\n"
-        "Código do Documento (ex.: 'FOR.DIVGP-CHUFC.005'):\n"
-        "Título do Documento:\n"
-        "Número SEI (ex.: 23533.003368/2023-10):\n"
-        "Elaboradores (separe por vírgula se mais de um):\n"
-    )
+def _extra_key(nome):
+    return f"EXTRA_{nome.upper()}"
 
 
 def _campos_extras_instrucoes(campos):
@@ -65,8 +81,8 @@ def _campos_extras_instrucoes(campos):
         return ""
     linhas = []
     for c in campos:
-        instrucao = f" ({c.instrucao_ia})" if c.instrucao_ia else ""
-        linhas.append(f"{c.rotulo}{instrucao}:\n")
+        descricao = c.instrucao_ia or c.rotulo
+        linhas.append(f"{_extra_key(c.nome)}: <{descricao}>\n")
     return "".join(linhas)
 
 
@@ -81,51 +97,33 @@ def _build_prompt(pdf_text, campos_extras):
 
 
 def _parse_gpt_response(response_text, filename, campos_extras):
-    extracted = {
-        "data_elaboracao": "Não localizado",
-        "vencimento": "Não localizado",
-        "numero_sei": "Não localizado",
-        "organograma": "Não localizado",
-        "tipo_documento": "Não localizado",
-        "abrangencia": "Não localizado",
-        "codigo_documento": "Não localizado",
-        "titulo_documento": filename,
-        "elaboradores": "Não localizado",
-    }
+    extracted = {dest: "Não localizado" for _, dest, _ in CAMPOS_FIXOS}
+    extracted["titulo_documento"] = filename
     extras_extraidos = {c.nome: "Não localizado" for c in campos_extras}
 
-    campos = {
-        "Data de Elaboração:": "data_elaboracao",
-        "Número SEI:": "numero_sei",
-        "Organograma:": "organograma",
-        "Tipo de Documento:": "tipo_documento",
-        "Abrangência:": "abrangencia",
-        "Código do Documento:": "codigo_documento",
-        "Título do Documento:": "titulo_documento",
-    }
-    rotulos_extras = {f"{c.rotulo}:": c.nome for c in campos_extras}
+    chave_para_dest = {chave: dest for chave, dest, _ in CAMPOS_FIXOS}
+    chave_para_extra = {_extra_key(c.nome): c.nome for c in campos_extras}
 
-    for line in (ln.strip() for ln in response_text.split("\n") if ln.strip()):
-        matched = False
-        for prefixo, chave in campos.items():
-            if prefixo in line:
-                extracted[chave] = line.split(":", 1)[1].strip()
-                matched = True
-                break
-        if matched:
+    for raw in response_text.split("\n"):
+        line = raw.strip().lstrip("-*• ").strip()
+        if ":" not in line:
             continue
-        for prefixo, chave in rotulos_extras.items():
-            if prefixo in line:
-                extras_extraidos[chave] = line.split(":", 1)[1].strip()
-                matched = True
-                break
-        if matched:
+        chave, valor = line.split(":", 1)
+        chave = chave.strip().upper()
+        valor = valor.strip()
+        if not valor:
             continue
-        if "Vencimento:" in line or "Revisão:" in line:
-            extracted["vencimento"] = line.split(":", 1)[1].strip()
-        elif "Elaboradores:" in line:
-            elaboradores = line.split(":", 1)[1].strip()
-            extracted["elaboradores"] = [e.strip() for e in elaboradores.split(",")]
+        if chave in chave_para_dest:
+            dest = chave_para_dest[chave]
+            if dest == "elaboradores":
+                extracted[dest] = [e.strip() for e in valor.split(",") if e.strip()]
+            else:
+                extracted[dest] = valor
+        elif chave in chave_para_extra:
+            extras_extraidos[chave_para_extra[chave]] = valor
+
+    if extracted["titulo_documento"] in ("Não localizado", ""):
+        extracted["titulo_documento"] = filename
     extracted["campos_extras"] = extras_extraidos
     return extracted
 

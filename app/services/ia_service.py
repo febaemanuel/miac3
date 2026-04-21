@@ -22,7 +22,7 @@ def _post_with_retry(url, api_key, model, prompt, retries=3, delay=2):
     data = {
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": 150,
+        "max_tokens": 800,
     }
 
     for i in range(retries):

@@ -269,6 +269,156 @@
             letter-spacing: .4px;
             color: var(--miac-text-soft);
         }
+
+        .prompt-editor {
+            background: var(--miac-surface);
+            border: 1px solid var(--miac-border);
+            border-radius: var(--miac-radius);
+            overflow: hidden;
+            margin-top: 20px;
+            box-shadow: var(--miac-shadow-sm);
+        }
+        .prompt-editor__header {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, rgba(79,70,229,.06), rgba(79,70,229,.12));
+            border-bottom: 1px solid var(--miac-border);
+        }
+        .prompt-editor__header i { font-size: 1.5rem; color: var(--miac-accent); }
+        .prompt-editor__header h3 { margin: 0 0 2px; font-size: 1.05rem; }
+        .prompt-editor__header p { margin: 0; color: var(--miac-text-soft); font-size: .85rem; }
+
+        .prompt-mode {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 16px 20px;
+        }
+        @media (max-width: 720px) { .prompt-mode { grid-template-columns: 1fr; } }
+        .prompt-mode__option {
+            display: flex;
+            gap: 12px;
+            padding: 12px 14px;
+            border: 1.5px solid var(--miac-border);
+            border-radius: var(--miac-radius);
+            cursor: pointer;
+            background: var(--miac-light);
+            transition: border-color .15s, background .15s, box-shadow .15s;
+            margin: 0;
+        }
+        .prompt-mode__option:hover { border-color: var(--miac-accent); }
+        .prompt-mode__option input { margin-top: 3px; }
+        .prompt-mode__option i { color: var(--miac-accent); font-size: 1.1rem; margin-top: 2px; }
+        .prompt-mode__option strong { display: block; font-size: .95rem; color: var(--miac-text); }
+        .prompt-mode__option small { color: var(--miac-text-soft); font-size: .8rem; line-height: 1.4; }
+        .prompt-mode__option.is-active {
+            border-color: var(--miac-accent);
+            background: var(--miac-surface);
+            box-shadow: 0 0 0 3px rgba(79,70,229,.10);
+        }
+
+        .prompt-editor__body { padding: 0 20px 20px; }
+        .prompt-editor__body[hidden] { display: none; }
+
+        .prompt-vars {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            padding: 10px 12px;
+            background: var(--miac-light);
+            border: 1px solid var(--miac-border);
+            border-radius: var(--miac-radius);
+            margin-bottom: 14px;
+        }
+        .prompt-vars__label {
+            font-size: .75rem;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: var(--miac-text-soft);
+            font-weight: 600;
+        }
+        .prompt-var-chip {
+            display: inline-flex;
+            gap: 6px;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--miac-border);
+            background: var(--miac-surface);
+            font-size: .82rem;
+            color: var(--miac-accent);
+            font-family: 'SF Mono', Consolas, monospace;
+            cursor: pointer;
+            transition: background .15s, border-color .15s;
+        }
+        .prompt-var-chip:hover { background: rgba(79,70,229,.08); border-color: var(--miac-accent); }
+        .prompt-var-chip i { font-size: .8rem; }
+
+        .prompt-grid {
+            display: grid;
+            grid-template-columns: 1.15fr 1fr;
+            gap: 16px;
+        }
+        @media (max-width: 960px) { .prompt-grid { grid-template-columns: 1fr; } }
+
+        .prompt-label {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            font-size: .78rem;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: var(--miac-text-soft);
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .prompt-label--muted { opacity: .7; }
+
+        .prompt-textarea {
+            width: 100%;
+            min-height: 340px;
+            font-family: 'SF Mono', Consolas, monospace;
+            font-size: .85rem;
+            line-height: 1.5;
+            border: 1px solid var(--miac-border);
+            border-radius: var(--miac-radius);
+            padding: 12px;
+            resize: vertical;
+            background: var(--miac-surface);
+            color: var(--miac-text);
+        }
+        .prompt-textarea:focus {
+            outline: none;
+            border-color: var(--miac-accent);
+            box-shadow: 0 0 0 3px rgba(79,70,229,.12);
+        }
+
+        .prompt-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            font-size: .8rem;
+            color: var(--miac-text-soft);
+        }
+
+        .prompt-default {
+            background: var(--miac-light);
+            border: 1px solid var(--miac-border);
+            border-radius: var(--miac-radius);
+            padding: 12px;
+            font-family: 'SF Mono', Consolas, monospace;
+            font-size: .8rem;
+            line-height: 1.5;
+            color: var(--miac-text-soft);
+            max-height: 340px;
+            overflow: auto;
+            white-space: pre-wrap;
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -643,24 +793,67 @@
                                     </div>
                                 </div>
 
-                                <details class="mt-3">
-                                    <summary style="cursor:pointer; font-weight:600;"><i class="fas fa-sliders-h"></i> Avançado — prompt de extração</summary>
-                                    <div class="mt-2">
-                                        <p class="small text-muted mb-1">
-                                            Variáveis disponíveis:
-                                            <code>{% raw %}{campos_fixos}{% endraw %}</code>,
-                                            <code>{% raw %}{campos_extras}{% endraw %}</code>,
-                                            <code>{% raw %}{texto_pdf}{% endraw %}</code>.
-                                            Deixe em branco para usar o padrão.
-                                        </p>
-                                        <textarea name="prompt_extracao" class="form-control" rows="10"
-                                                  placeholder="{{ prompt_padrao }}">{{ ia_config.prompt_extracao or '' }}</textarea>
-                                        <details class="mt-2">
-                                            <summary class="small text-muted" style="cursor:pointer;">Ver prompt padrão</summary>
-                                            <pre class="small bg-light p-2 mt-1" style="white-space:pre-wrap;">{{ prompt_padrao }}</pre>
-                                        </details>
+                                <div class="prompt-editor" id="prompt-editor">
+                                    <div class="prompt-editor__header">
+                                        <i class="fas fa-magic"></i>
+                                        <div>
+                                            <h3>Prompt de extração</h3>
+                                            <p>Controla como a IA interpreta o PDF. O padrão já é otimizado — personalize só se precisar.</p>
+                                        </div>
                                     </div>
-                                </details>
+
+                                    <div class="prompt-mode">
+                                        <label class="prompt-mode__option {% if not ia_config.prompt_extracao %}is-active{% endif %}">
+                                            <input type="radio" name="prompt_mode" value="padrao" {% if not ia_config.prompt_extracao %}checked{% endif %}>
+                                            <i class="fas fa-check-circle"></i>
+                                            <div>
+                                                <strong>Usar prompt padrão</strong>
+                                                <small>Recomendado. Otimizado para POPs, protocolos e formulários.</small>
+                                            </div>
+                                        </label>
+                                        <label class="prompt-mode__option {% if ia_config.prompt_extracao %}is-active{% endif %}">
+                                            <input type="radio" name="prompt_mode" value="custom" {% if ia_config.prompt_extracao %}checked{% endif %}>
+                                            <i class="fas fa-pen-fancy"></i>
+                                            <div>
+                                                <strong>Personalizar</strong>
+                                                <small>Escreva seu próprio prompt usando as variáveis à direita.</small>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    <div class="prompt-editor__body" {% if not ia_config.prompt_extracao %}hidden{% endif %}>
+                                        <div class="prompt-vars">
+                                            <span class="prompt-vars__label">Inserir:</span>
+                                            <button type="button" class="prompt-var-chip" data-var="{% raw %}{campos_fixos}{% endraw %}" title="Expande para a lista dos campos fixos (código, datas, organograma, tipo, abrangência, SEI, elaboradores).">
+                                                <i class="fas fa-list"></i>{% raw %}{campos_fixos}{% endraw %}
+                                            </button>
+                                            <button type="button" class="prompt-var-chip" data-var="{% raw %}{campos_extras}{% endraw %}" title="Expande para os campos adicionais configurados abaixo.">
+                                                <i class="fas fa-tags"></i>{% raw %}{campos_extras}{% endraw %}
+                                            </button>
+                                            <button type="button" class="prompt-var-chip" data-var="{% raw %}{texto_pdf}{% endraw %}" title="Texto extraído do PDF.">
+                                                <i class="fas fa-file-alt"></i>{% raw %}{texto_pdf}{% endraw %}
+                                            </button>
+                                        </div>
+
+                                        <div class="prompt-grid">
+                                            <div>
+                                                <div class="prompt-label"><i class="fas fa-pen"></i> Seu prompt</div>
+                                                <textarea name="prompt_extracao" id="prompt-extracao" class="prompt-textarea"
+                                                          placeholder="Cole ou escreva seu prompt aqui…">{{ ia_config.prompt_extracao or '' }}</textarea>
+                                                <div class="prompt-footer">
+                                                    <span><span id="prompt-count">0</span> caracteres</span>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="prompt-restore">
+                                                        <i class="fas fa-undo"></i> Copiar do padrão
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="prompt-label prompt-label--muted"><i class="fas fa-book"></i> Prompt padrão (referência)</div>
+                                                <pre class="prompt-default" id="prompt-default">{{ prompt_padrao }}</pre>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
                                 <button type="submit" class="btn btn-primary mt-3"><i class="fas fa-save"></i> Salvar</button>
                             </form>
@@ -895,6 +1088,48 @@
             if (valid.includes(hash)) activate(hash);
             else if (['organogramas', 'abrangencias', 'tipos'].includes(hash)) activate('estrutura');
             else if (hash === 'siglas' || hash === 'marcadores') activate('dados');
+        })();
+
+        (function () {
+            const editor = document.getElementById('prompt-editor');
+            if (!editor) return;
+            const textarea = document.getElementById('prompt-extracao');
+            const counter = document.getElementById('prompt-count');
+            const body = editor.querySelector('.prompt-editor__body');
+            const defaultEl = document.getElementById('prompt-default');
+            const restore = document.getElementById('prompt-restore');
+            const radios = editor.querySelectorAll('input[name="prompt_mode"]');
+            const options = editor.querySelectorAll('.prompt-mode__option');
+
+            const updateCount = () => { counter.textContent = textarea.value.length; };
+            textarea.addEventListener('input', updateCount);
+            updateCount();
+
+            radios.forEach(r => r.addEventListener('change', () => {
+                const custom = document.querySelector('input[name="prompt_mode"]:checked').value === 'custom';
+                body.hidden = !custom;
+                options.forEach(o => o.classList.toggle('is-active', o.querySelector('input').checked));
+                if (!custom) { textarea.value = ''; updateCount(); }
+            }));
+
+            editor.querySelectorAll('.prompt-var-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    const v = chip.dataset.var;
+                    const s = textarea.selectionStart;
+                    const e = textarea.selectionEnd;
+                    textarea.value = textarea.value.slice(0, s) + v + textarea.value.slice(e);
+                    textarea.focus();
+                    textarea.selectionStart = textarea.selectionEnd = s + v.length;
+                    updateCount();
+                });
+            });
+
+            restore.addEventListener('click', () => {
+                if (textarea.value.trim() && !confirm('Substituir o prompt atual pelo padrão?')) return;
+                textarea.value = defaultEl.textContent.trim();
+                updateCount();
+                textarea.focus();
+            });
         })();
     </script>
 </body>
