@@ -545,7 +545,7 @@
                                         <form method="POST" action="{{ url_for('admin_abrangencia_sinonimo') }}" class="quick-add">
                                             <input type="hidden" name="acao" value="add">
                                             <input type="hidden" name="para_id" value="{{ a.id }}">
-                                            <input type="text" name="de" class="form-control form-control-sm" placeholder="Nova sigla sinônima (ex.: CHUFC)" required>
+                                            <input type="text" name="de" class="form-control form-control-sm" placeholder="Nova sigla sinônima" required>
                                             <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-plus"></i></button>
                                         </form>
                                     </div>
@@ -561,7 +561,7 @@
 
                         <form method="POST" action="{{ url_for('admin_abrangencia') }}" class="quick-add mt-3">
                             <input type="hidden" name="acao" value="add">
-                            <input type="text" name="nome" class="form-control" placeholder="Nova abrangência (ex.: HUWC)" required>
+                            <input type="text" name="nome" class="form-control" placeholder="Nova abrangência" required>
                             <input type="color" name="cor" value="#007bff" class="form-control form-control-color" style="flex:0 0 60px;" title="Cor do botão">
                             <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Adicionar abrangência</button>
                         </form>

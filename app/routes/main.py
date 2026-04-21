@@ -35,7 +35,6 @@ def init_routes(app):
         organograma = request.args.get("organograma", "").strip()
         tipo_documento = request.args.get("tipo_documento", "").strip()
         abrangencia = request.args.get("abrangencia", "").strip()
-        apenas_complexo = request.args.get("apenas_complexo", "false") == "true"
         search_organograma = request.args.get("search_organograma", "").strip().lower()
 
         query = Documento.query
@@ -64,14 +63,6 @@ def init_routes(app):
         if abrangencia:
             query = query.filter(Documento.abrangencia == abrangencia)
 
-        if apenas_complexo:
-            query = query.filter(
-                or_(
-                    Documento.nome.like("%CH.%"),
-                    Documento.nome.like("%CHUFC.%"),
-                )
-            )
-
         documentos = query.all()
 
         if search_organograma:
@@ -89,7 +80,7 @@ def init_routes(app):
 
         documentos_agrupados = {}
         filtro_ativo = bool(
-            nome or organograma or tipo_documento or search_organograma or apenas_complexo
+            nome or organograma or tipo_documento or search_organograma
         )
         if not filtro_ativo:
             for doc in documentos:

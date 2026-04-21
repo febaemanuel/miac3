@@ -8,12 +8,12 @@ from app.services.vocabulario import (
 
 def test_abrangencia_match_exato(app):
     with app.app_context():
-        assert resolver_abrangencia("HUWC") == "HUWC"
+        assert resolver_abrangencia("UNIDADE_A") == "UNIDADE_A"
 
 
 def test_abrangencia_via_sinonimo(app):
     with app.app_context():
-        assert resolver_abrangencia("CHUFC") == "HUWC"
+        assert resolver_abrangencia("SINONIMO_A") == "UNIDADE_A"
 
 
 def test_abrangencia_invalida_retorna_none(app):

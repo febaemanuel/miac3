@@ -263,7 +263,7 @@ def _build_pdf_relatorio(documentos, abrangencia, organograma):
         else:
             status_text += status_info["detalhes"]
 
-        documento_url = f"https://hg.huwc.ufc.br/miac/documento/{documento.id}"
+        documento_url = url_for("documento_detalhes", doc_id=documento.id, _external=True)
         link_documento = f'<a href="{documento_url}" color="blue">Abrir</a>'
 
         text_style = (
@@ -466,8 +466,11 @@ def _build_pdf_relatorio(documentos, abrangencia, organograma):
     content.append(Spacer(1, 16))
 
     # QR Code + rodapé
-    relatorio_url = (
-        f"https://hg.huwc.ufc.br/miac/gerar_relatorio/{abrangencia}/{organograma}"
+    relatorio_url = url_for(
+        "gerar_relatorio",
+        abrangencia=abrangencia,
+        organograma=organograma,
+        _external=True,
     )
     qr = qrcode.QRCode(
         version=1,

@@ -201,12 +201,7 @@
 
                         <div class="input-group mb-2">
                             <span class="input-group-text"><i class="fas fa-sitemap"></i></span>
-                            <input type="text" id="search-organograma" name="search-organograma" placeholder="Buscar por Cartão" class="form-control">
-                        </div>
-
-                        <div class="form-check form-switch text-white mb-2">
-                            <input class="form-check-input" type="checkbox" id="apenas-complexo">
-                            <label class="form-check-label" for="apenas-complexo">Apenas documentos do complexo</label>
+                            <input type="text" id="search-organograma" name="search-organograma" placeholder="Buscar por organograma" class="form-control">
                         </div>
 
                         <button type="button" id="limpar-filtros" class="btn btn-secondary w-100">
@@ -246,10 +241,7 @@
         $(document).ready(function () {
             let currentAbrangencia = {{ abrangencia_selecionada | tojson }};
 
-            $('#apenas-complexo').on('change', atualizarResultados);
-
             function atualizarResultados() {
-                const apenasComplexo = $('#apenas-complexo').is(':checked');
                 const nome = $('#nome').val();
                 const organograma = $('#organograma').val();
                 const tipoDocumento = $('#tipo_documento').val();
@@ -263,7 +255,6 @@
                     data: {
                         nome, organograma, tipo_documento: tipoDocumento,
                         abrangencia: currentAbrangencia,
-                        apenas_complexo: apenasComplexo,
                         search_organograma: searchOrganograma
                     },
                     success: function (response) {
@@ -320,12 +311,11 @@
                 const nome = $('#nome').val();
                 const organograma = $('#organograma').val();
                 const tipo_documento = $('#tipo_documento').val();
-                const apenas_complexo = $('#apenas-complexo').is(':checked');
 
                 $.ajax({
                     url: "{{ url_for('buscar') }}",
                     method: 'GET',
-                    data: { nome, organograma, tipo_documento, abrangencia: currentAbrangencia, page, apenas_complexo },
+                    data: { nome, organograma, tipo_documento, abrangencia: currentAbrangencia, page },
                     success: function (response) { $('#organograma-grid').html(response); },
                     error: function () { alert('Erro ao buscar documentos. Tente novamente.'); }
                 });
@@ -337,7 +327,6 @@
                 $('#nome').val('');
                 $('#organograma').val('');
                 $('#tipo_documento').val('');
-                $('#apenas-complexo').prop('checked', false);
 
                 const marcadoresSalvos = sessionStorage.getItem("marcadores");
                 if (marcadoresSalvos) {

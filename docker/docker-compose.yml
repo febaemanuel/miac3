@@ -1,6 +1,6 @@
 services:
   api:
-    image: hg.huwc.ufc.br:5000/miac-app:latest
+    image: ${REGISTRY:-localhost:5000}/miac-app:latest
     ports:
       - 8090:8090
     networks:

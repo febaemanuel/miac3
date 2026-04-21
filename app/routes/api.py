@@ -34,7 +34,7 @@ PROMPT_PADRAO = (
 )
 
 CAMPOS_FIXOS = [
-    ("CODIGO", "codigo_documento", "código do documento, ex.: FOR.DIVGP-CHUFC.005"),
+    ("CODIGO", "codigo_documento", "código do documento, ex.: FOR.ABC-XYZ.005"),
     ("TITULO", "titulo_documento", "título do documento"),
     ("DATA_ELABORACAO", "data_elaboracao", "data de elaboração no formato dd/mm/aaaa"),
     (
@@ -45,7 +45,7 @@ CAMPOS_FIXOS = [
     (
         "ORGANOGRAMA",
         "organograma",
-        "organograma; em códigos tipo POP.UAP-CHUFC.006 é a sigla do meio, ex.: UAP",
+        "organograma; em códigos tipo POP.ABC-XYZ.006 é a sigla do meio, ex.: ABC",
     ),
     ("TIPO", "tipo_documento", "tipo do documento em CAIXA ALTA"),
     ("ABRANGENCIA", "abrangencia", "abrangência"),

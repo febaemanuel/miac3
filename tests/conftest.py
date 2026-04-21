@@ -29,11 +29,11 @@ def app():
     with flask_app.app_context():
         db.drop_all()
         db.create_all()
-        huwc = Abrangencia(nome="HUWC", ativo=True)
-        meac = Abrangencia(nome="MEAC", ativo=True)
-        db.session.add_all([huwc, meac])
+        unidade_a = Abrangencia(nome="UNIDADE_A", ativo=True)
+        unidade_b = Abrangencia(nome="UNIDADE_B", ativo=True)
+        db.session.add_all([unidade_a, unidade_b])
         db.session.flush()
-        db.session.add(AbrangenciaSinonimo(de="CHUFC", para_id=huwc.id))
+        db.session.add(AbrangenciaSinonimo(de="SINONIMO_A", para_id=unidade_a.id))
         db.session.add(Usuario(
             username="teste",
             senha_hash=generate_password_hash("senha123"),
